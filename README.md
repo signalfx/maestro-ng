@@ -32,6 +32,19 @@ contact the Docker daemon of each host in the environment to figure out
 the status of the environment and what actions to take based on the
 requested command.
 
+Dependencies
+------------
+
+MaestroNG requires Docker 0.6.5 or newer on the hosts as it makes use of
+the container naming feature.
+
+You'll also need, to run Maestro:
+
+* python-yaml
+* A recent [docker-py](http://github.com/dotcloud/docker-py)
+
+Orchestration
+=============
 
 Environment description
 -----------------------
@@ -96,7 +109,6 @@ services:
 
 Port mappings and named ports
 -----------------------------
-
 
 How Maestro orchestrates and service auto-configuration
 -------------------------------------------------------

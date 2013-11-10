@@ -85,6 +85,11 @@ class Start(BaseScore):
                     container.name, container.id)
             container.ship.backend.remove_container(container.id)
 
+        logging.debug('Pulling service image %s...', container.service.image)
+        container.ship.backend.pull(**container.service.get_image_details())
+
+        logging.debug('Creating container for instance %s of service %s...',
+                container.name, container.service.name)
         c = container.ship.backend.create_container(
                 image=container.service.image,
                 hostname=container.name,
@@ -97,6 +102,8 @@ class Start(BaseScore):
 
         print '\033[32;1m%-11s\033[;0m' % container.id[:7],
 
+        logging.debug('Starting container %s for instance %s...',
+                container.id[:7], container.name)
         container.ship.backend.start(c,
                 binds=container.volumes,
                 port_bindings=dict([('%d/tcp' % port, [{'HostIp': '0.0.0.0',

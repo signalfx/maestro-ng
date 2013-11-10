@@ -109,6 +109,13 @@ class Service(Entity):
     def image(self):
         return self._image
 
+    def get_image_details(self):
+        """Return a dictionary detailing the image used by this service, with
+        its repository name and the requested tag (defaulting to latest if not
+        specified)."""
+        p = self._image.split(':')
+        return {'repository': p[0], 'tag': len(p) > 1 and p[1] or 'latest'}
+
     @property
     def requires(self):
         """Returns the full set of direct and indirect dependencies of this

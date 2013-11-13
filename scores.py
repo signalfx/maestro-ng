@@ -20,7 +20,7 @@ class Status(BaseScore):
     status of the given services."""
 
     def run(self, services):
-        print 'ORDER %13s %-20s %-15s %-15s %-10s' % \
+        print 'ORDER %13s %-20s %-25s %-15s %-10s' % \
                 ('COMPONENT', 'INSTANCE', 'SHIP', 'CONTAINER', 'SERVICE')
         for order, service in enumerate(services, 1):
             for inst, container in enumerate(service.containers, 1):
@@ -32,7 +32,7 @@ class Status(BaseScore):
 
     def _show_container_status(self, container, first=False):
         print '\033[37;1m%-20s\033[;0m' % container.name,
-        print '%-15s' % container.ship.ip,
+        print '%-25s' % container.ship.ip[:25],
 
         status = container.status()
         print '\033[%d;1m%-15s\033[;0m' % \
@@ -55,7 +55,7 @@ class Start(BaseScore):
     one."""
 
     def run(self, services):
-        print 'ORDER %13s %-20s %-15s %-15s %-10s' % \
+        print 'ORDER %13s %-20s %-25s %-15s %-10s' % \
                 ('COMPONENT', 'INSTANCE', 'SHIP', 'CONTAINER', 'SERVICE')
         for order, service in enumerate(services, 1):
             for inst, container in enumerate(service.containers, 1):
@@ -70,7 +70,7 @@ class Start(BaseScore):
     def _start_container(self, container, first=False):
 
         print '\033[37;1m%-20s\033[;0m' % container.name,
-        print '%-15s' % container.ship.ip,
+        print '%-25s' % container.ship.ip[:25],
         sys.stdout.flush()
 
         if container.ping(retries=2):
@@ -95,7 +95,7 @@ class Start(BaseScore):
                 hostname=container.name,
                 name=container.name,
                 environment=container.env,
-                ports=dict([('%d/tcp' % port, {})
+                ports=dict([('%d/tcp' % port['exposed'], {})
                     for port in container.ports.itervalues()]))
         if not c:
             return False
@@ -106,8 +106,8 @@ class Start(BaseScore):
                 container.id[:7], container.name)
         container.ship.backend.start(c,
                 binds=container.volumes,
-                port_bindings=dict([('%d/tcp' % port, [{'HostIp': '0.0.0.0',
-                                                        'HostPort': str(port)}])
+                port_bindings=dict([('%d/tcp' % port['exposed'],
+                        [{'HostIp': '0.0.0.0', 'HostPort': str(port['external'])}])
                     for port in container.ports.itervalues()]))
 
         print '...',

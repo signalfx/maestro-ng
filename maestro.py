@@ -54,7 +54,7 @@ class Ship(Entity):
         self._backend = docker.Client(
                base_url='http://%s:%d' % (self._ip, docker_port),
                version="1.6",
-               timeout=1)
+               timeout=5)
 
     @property
     def ip(self):
@@ -175,11 +175,27 @@ class Container(Entity):
         # Register this instance container as being part of its parent service.
         self._service.register_container(self)
 
-        # Parse the configuration to extract runtime parameters.
-        self.ports = config.get('ports', {})
+        # Parse the port specs.
+        def parse_ports(ports):
+            result = {}
+            for name, spec in ports.iteritems():
+                parts = map(int, str(spec).split(':'))
+                assert len(parts) <= 2, \
+                    ('Invalid port spec %s for port %s of %s:%s!' %
+                        (spec, name, service.name, self.name))
+                result[name] = {'exposed': len(parts) > 1 and parts[1] or parts[0],
+                                'external': parts[0]}
+            return result
+
+        self.ports = parse_ports(config.get('ports', {}))
+
+        # Get environment variables.
         self.env = config.get('env', {})
-        self.volumes = dict([(src, dst)
-            for dst, src in config.get('volumes', {}).iteritems()])
+
+        # If no volume source is specified, we assume it's the same path as the
+        # destination inside the container.
+        self.volumes = dict((src or dst, dst)
+            for dst, src in config.get('volumes', {}).iteritems())
 
         # Seed the container name and host address as part of the container's
         # environment.
@@ -219,8 +235,8 @@ class Container(Entity):
         """
         basename = re.sub(r'[^\w]', '_', '%s_%s' % (self.service.name, self.name)).upper()
         links = {'%s_HOST' % basename: self.ship.ip}
-        links.update(dict([('%s_%s_PORT' % (basename, k.upper()), v)
-            for k, v in self.ports.iteritems()]))
+        links.update(dict(('%s_%s_PORT' % (basename, k.upper()), v)
+            for k, v in self.ports.iteritems()))
         return links
 
     def ping(self, retries=3):
@@ -247,7 +263,7 @@ class Container(Entity):
 
         while retries > 0:
             pings = filter(None,
-                map(lambda port: ping_port(self.ship.ip, port),
+                map(lambda port: ping_port(self.ship.ip, port['external']),
                        self.ports.itervalues()))
             if pings: return True
             retries -= 1
@@ -264,9 +280,9 @@ class Conductor:
 
     def __init__(self, config):
         self._config = config
-        self._ships = dict([
+        self._ships = dict(
             (k, Ship(k, v['ip'], v.get('docker_port', Ship.DEFAULT_DOCKER_PORT)))
-                for k, v in self._config['ships'].iteritems()])
+                for k, v in self._config['ships'].iteritems())
 
         self._services = {}
         self._containers = {}

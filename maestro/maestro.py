@@ -235,8 +235,8 @@ class Container(Entity):
         """
         basename = re.sub(r'[^\w]', '_', '%s_%s' % (self.service.name, self.name)).upper()
         links = {'%s_HOST' % basename: self.ship.ip}
-        links.update(dict(('%s_%s_PORT' % (basename, k.upper()), v)
-            for k, v in self.ports.iteritems()))
+        links.update(dict(('%s_%s_PORT' % (basename, name.upper()), spec['exposed'])
+            for name, spec in self.ports.iteritems()))
         return links
 
     def ping(self, retries=3):

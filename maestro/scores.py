@@ -40,7 +40,7 @@ class Status(BaseScore):
                  status and status['State']['Running'] \
                          and '%s' % container.id[:7] or 'down'),
 
-        if not status:
+        if not status or not status['State']['Running']:
             print 'n/a'
             return
 

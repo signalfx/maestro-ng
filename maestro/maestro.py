@@ -355,7 +355,7 @@ class Conductor:
     def clean(self, services):
         raise NotImplementedError, 'Not yet implemented!'
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Docker container orchestrator')
     parser.add_argument('command', nargs='?',
                         choices=['status', 'start', 'stop', 'clean'],
@@ -383,3 +383,6 @@ if __name__ == '__main__':
 
     c = Conductor(config)
     getattr(c, args.command)(set(args.services))
+
+if __name__ == '__main__':
+    main()

@@ -25,7 +25,7 @@ setup(
 
     entry_points={
         'console': ['maestro = maestro.maestro'],
-        'setuptools.installation': ['eggsecutable = maestro.maestro'],
+        'setuptools.installation': ['eggsecutable = maestro.maestro:main'],
     },
 
     author='Maxime Petazzoni',

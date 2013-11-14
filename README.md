@@ -113,3 +113,54 @@ Port mappings and named ports
 How Maestro orchestrates and service auto-configuration
 -------------------------------------------------------
 
+Usage
+=====
+
+Maestro is available both as a library through the `maestro` package and
+as an executable. To run Maestro, simply execute the main Python module:
+
+```
+$ ./maestro/maestro.py -h
+usage: maestro.py [-h] [-f [FILE]] [-v]
+                  [{status,start,stop,clean}] [services [services ...]]
+
+Docker container orchestrator
+
+positional arguments:
+  {status,start,stop,clean}
+                        Orchestration command to execute
+  services              Service(s) to affect
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f [FILE], --file [FILE]
+                        Read environment description from FILE (use -
+for
+                        stdin)
+  -v, --verbose         Be verbose
+```
+
+By default, Maestro will read the environment description from the
+standard input so if you run Maestro without arguments it will appear to
+not do anything and just be "stuck". You can also use the `-f` flag to
+specify the path to the environment file. The two following commands are
+identical:
+
+```
+$ ./maestro/maestro.py < demo.yaml
+$ ./maestro/maestro.py -f demo.yaml
+```
+
+The first positional argument is a command you want Maestro to execute.
+The available commands are `status`, `start`, `stop` and `clean`. They
+should all be self-explanatory. Service dependency is always honored for
+all commands. Note that if services don't have any dependencies (or have
+the same dependencies), their start order might not always be the same.
+
+You can also pass one or more service names on which to execute the
+command, to restrict the action of the command to just these services.
+Note that Maestro will do its best to examine the state of the system
+and not perform any action unless it's really necessary.
+
+Finally, if started without any command and service names, Maestro will
+default to the `status` command, showing the state of the environment.

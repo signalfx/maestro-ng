@@ -4,6 +4,7 @@
 #
 # Docker container orchestration utility.
 
+import docker
 import logging
 import sys
 
@@ -63,12 +64,21 @@ class Start(BaseScore):
                     print '\033[;1m%2d: %15s\033[;0m' % (order, service.name),
                 else:
                     print ' ' * 19,
-                if not self._start_container(container, inst == 1):
-                    # Halt the sequence if a container failed to start.
+
+                try:
+                    if not self._start_container(container, inst == 1):
+                        # Halt the sequence if a container failed to start.
+                        logging.error('Container for instance %s of service %s '
+                            'failed to start. Halting sequence!',
+                            container.name, service.name)
+                        sys.stderr.write(container.ship.backend.logs(container.id))
+                        return
+                except docker.client.APIError, e:
+                    print '\033[31;1mfail!\033[;0m'
+                    logging.error(e)
                     return
 
     def _start_container(self, container, first=False):
-
         print '\033[37;1m%-20s\033[;0m' % container.name,
         print '%-25s' % container.ship.ip[:25],
         sys.stdout.flush()
@@ -97,8 +107,6 @@ class Start(BaseScore):
                 environment=container.env,
                 ports=dict([('%d/tcp' % port['exposed'], {})
                     for port in container.ports.itervalues()]))
-        if not c:
-            return False
 
         print '\033[32;1m%-11s\033[;0m' % container.id[:7],
 

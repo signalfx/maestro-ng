@@ -224,7 +224,7 @@ class Container(Entity):
         None if the container doesn't exist."""
         try:
             return self.ship.backend.inspect_container(self.name)
-        except:
+        except docker.client.APIError:
             return None
 
     def get_link_variables(self):

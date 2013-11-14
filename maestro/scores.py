@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (C) 2013 SignalFuse, Inc.
 #
 # Docker container orchestration utility.
@@ -9,9 +7,9 @@ import logging
 import sys
 
 class BaseScore:
-    def _cond_label(self, cond, t, f): return cond and t or f
-    def _color(self, cond): return self._cond_label(cond, 32, 31)
-    def _up(self, cond): return self._cond_label(cond, 'up', 'down')
+    def __cond_label(self, cond, t, f): return cond and t or f
+    def _color(self, cond): return self.__cond_label(cond, 32, 31)
+    def _up(self, cond): return self.__cond_label(cond, 'up', 'down')
 
     def run(self):
         raise NotImplementedError
@@ -35,11 +33,15 @@ class Status(BaseScore):
         print '\033[37;1m%-20s\033[;0m' % container.name,
         print '%-25s' % container.ship.ip[:25],
 
-        status = container.status()
-        print '\033[%d;1m%-15s\033[;0m' % \
-                (self._color(status and status['State']['Running']),
-                 status and status['State']['Running'] \
-                         and '%s' % container.id[:7] or 'down'),
+        status = None
+        try:
+            status = container.status()
+            print '\033[%d;1m%-15s\033[;0m' % \
+                    (self._color(status and status['State']['Running']),
+                     status and status['State']['Running'] \
+                             and '%s' % container.id[:7] or 'down'),
+        except:
+            print '\033[31;1m%-15s\033[;0m' % 'host down',
 
         if not status or not status['State']['Running']:
             print 'n/a'

@@ -108,7 +108,8 @@ class Start(BaseScore):
                 binds=container.volumes,
                 port_bindings=dict([('%d/tcp' % port['exposed'],
                         [{'HostIp': '0.0.0.0', 'HostPort': str(port['external'])}])
-                    for port in container.ports.itervalues()]))
+                    for port in container.ports.itervalues()]),
+                create_local_bind_dirs=True)
 
         print '...',
         sys.stdout.flush()

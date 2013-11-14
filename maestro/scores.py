@@ -29,7 +29,7 @@ class Status(BaseScore):
                     print ' ' * 19,
                 self._show_container_status(container)
 
-    def _show_container_status(self, container, first=False):
+    def _show_container_status(self, container):
         print '\033[37;1m%-20s\033[;0m' % container.name,
         print '%-25s' % container.ship.ip[:25],
 
@@ -68,7 +68,7 @@ class Start(BaseScore):
                     print ' ' * 19,
 
                 try:
-                    if not self._start_container(container, inst == 1):
+                    if not self._start_container(container):
                         # Halt the sequence if a container failed to start.
                         logging.error('Container for instance %s of service %s '
                             'failed to start. Halting sequence!',
@@ -80,7 +80,7 @@ class Start(BaseScore):
                     logging.error(e)
                     return
 
-    def _start_container(self, container, first=False):
+    def _start_container(self, container):
         print '\033[37;1m%-20s\033[;0m' % container.name,
         print '%-25s' % container.ship.ip[:25],
         sys.stdout.flush()
@@ -89,7 +89,7 @@ class Start(BaseScore):
             print '%-15s already running' % container.id[:7]
             return True
 
-        print '...',
+        print '..',
         sys.stdout.flush()
 
         if container.id:
@@ -99,6 +99,9 @@ class Start(BaseScore):
 
         logging.debug('Pulling service image %s...', container.service.image)
         container.ship.backend.pull(**container.service.get_image_details())
+
+        print '..',
+        sys.stdout.flush()
 
         logging.debug('Creating container for instance %s of service %s...',
                 container.name, container.service.name)
@@ -129,3 +132,41 @@ class Start(BaseScore):
         ping = container.ping(retries=30)
         print '\033[%d;1m%s\033[;0m' % (self._color(ping), self._up(ping))
         return ping
+
+class Stop(BaseScore):
+    """The Stop score is a Maestro orchestration play that will stop and remove
+    the containers of the requested services, in the inverse dependency
+    order."""
+
+    def run(self, services):
+        print 'ORDER %13s %-20s %-25s %-15s %-10s' % \
+                ('COMPONENT', 'INSTANCE', 'SHIP', 'CONTAINER', 'RESULT')
+        for order, service in enumerate(services[::-1], 1):
+            for inst, container in enumerate(service.containers, 1):
+                if inst == 1:
+                    print '\033[;1m%2d: %15s\033[;0m' % (order, service.name),
+                else:
+                    print ' ' * 19,
+
+                self._stop_container(container)
+
+    def _stop_container(self, container):
+        print '\033[37;1m%-20s\033[;0m' % container.name,
+        print '%-25s' % container.ship.ip[:25],
+        sys.stdout.flush()
+
+        if not container.ping(retries=2):
+            print '%-15s already down' % 'n/a'
+            return True
+
+        print '%-15s ..' % container.id[:7],
+        sys.stdout.flush()
+
+        try:
+            container.ship.backend.stop(container.id)
+            container.ship.backend.remove_container(container.id)
+            print '\033[32;1mstopped\033[;0m'
+            return True
+        except:
+            print '\033[31;1mfail!\033[;0m'
+            return False

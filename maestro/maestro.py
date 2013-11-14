@@ -350,7 +350,7 @@ class Conductor:
         scores.Start().run(self._ordered_dependencies(services))
  
     def stop(self, services):
-        raise NotImplementedError, 'Not yet implemented!'
+        scores.Stop().run(self._ordered_dependencies(services))
 
     def clean(self, services):
         raise NotImplementedError, 'Not yet implemented!'

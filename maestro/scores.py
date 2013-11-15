@@ -42,6 +42,7 @@ class Status(BaseScore):
                              and '%s' % container.id[:7] or 'down'),
         except:
             print '\033[31;1m%-15s\033[;0m' % 'host down',
+        sys.stdout.flush()
 
         if not status or not status['State']['Running']:
             print 'n/a'

@@ -46,6 +46,21 @@ You'll also need, to run Maestro:
 Orchestration
 =============
 
+The orchestration features of Maestro obviously rely on the
+collaboration of the Docker containers that you are controlling with
+Maestro. Maestro basically takes care of two things:
+
+1. Controlling the start (and stop) order of services during environment
+   bring up and tear down according to the defined dependencies between
+   services.
+1. Passing extra environment variables to each container to pass all the
+   information it may need to operate in that environment, in particular
+   information about its dependencies.
+
+Let's first look at how environments and services are described, then
+we'll discuss what information Maestro passes down to the containers
+through their environment.
+
 Environment description
 -----------------------
 
@@ -110,6 +125,49 @@ services:
 Port mappings and named ports
 -----------------------------
 
+When services depend on each other, they most likely need to
+communicate. If service B depends on service A, service B needs to be
+configured with information on how to reach service A (its host and
+port).
+
+Even though Docker can provide inter-container networking, in a
+multi-host environment this is not possible. Maestro also needs to keep
+in mind that not all hosting and cloud providers provide advanced
+networking features like multicast or bridged frames. This is why
+Maestro makes the choice of always using the host's external IP address
+and relies on traditional layer 3 communication between containers.
+
+There is no performance hit from this, even when two containers on the
+same host communicate, and it enables inter-host communication in a more
+generic way regardless of where the two containers are located. Of
+course, it is up to you to make sure that the hosts in your environment
+can communicate with each other.
+
+Finally, Maestro makes the choice of using one-to-one port mappings from
+the container to the host. This _may_ change in the future, but for now
+this simplifies things:
+
+* it means Maestro doesn't have to do a lot of introspection on the
+  containers to figure out which external port Docker assigned them;
+* it makes it a bit easier for troubleshooting as port numbers are the
+  same inside and outside the containers;
+* some services (Cassandra is one example) assume that all their nodes
+  use the same port(s).
+
+One of the downsides of this approach is that if you run multiple
+instances of the same service on the same host, you need to manually
+make sure they don't use the same ports, through their configuration.
+
+
+Finally, Maestro uses _named_ ports, where each port your configure for
+each service instance is named. This name is the name used by the
+instance container to find out how it should be configured and on which
+port(s) it needs to listen, but it's also the name used for each port
+exposed through environment variables to other containers. This way, a
+dependent service can know the address of a remote service, and the
+specific port number of a desired endpoint. For example, service
+depending on ZooKeeper would be looking for its `client` port.
+
 How Maestro orchestrates and service auto-configuration
 -------------------------------------------------------
 
@@ -164,3 +222,21 @@ and not perform any action unless it's really necessary.
 
 Finally, if started without any command and service names, Maestro will
 default to the `status` command, showing the state of the environment.
+
+Examples
+========
+
+For examples of Docker images that are suitable for use with Maestro,
+you can look at the following repositories:
+
+- http://github.com/signalfuse/docker-cassandra  
+  A Cassandra image. Nodes within the same cluster are automatically
+  used as Gossip seed peers.
+
+- http://github.com/signalfuse/docker-elasticsearch  
+  ElasicSearch with ZooKeeper-based discovery instead of the
+  multicast-based discovery, to work in cloud environments.
+
+- http://github.com/signalfuse/docker-zookeeper  
+  A ZooKeeper image, automatically creating a cluster with the other
+  instances in the same environment.

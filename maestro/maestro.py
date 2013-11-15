@@ -169,6 +169,7 @@ class Container(Entity):
                 instance's configuration (ports, environment, volumes, etc.)
         """
         Entity.__init__(self, name)
+        self._status = None # The container's status, cached.
         self._ship = ship
         self._service = service
 
@@ -219,13 +220,16 @@ class Container(Entity):
         status = self.status()
         return status and status['ID'] or None
 
-    def status(self):
+    def status(self, refresh=False):
         """Retrieve the details about this container from the Docker daemon, or
         None if the container doesn't exist."""
-        try:
-            return self.ship.backend.inspect_container(self.name)
-        except docker.client.APIError:
-            return None
+        if refresh or not self._status:
+            try:
+                self._status = self.ship.backend.inspect_container(self.name)
+            except docker.client.APIError:
+                pass
+
+        return self._status
 
     def get_link_variables(self):
         """Build and return a dictionary of environment variables providing
@@ -343,14 +347,19 @@ class Conductor:
         return self._service_order(self._gather_dependencies(
             map(lambda n: self._services[n], services or self._services.keys())))
 
+    def _ordered_containers(self, services):
+        return reduce(lambda l, s: l + s.containers,
+                self._ordered_dependencies(services),
+                [])
+
     def status(self, services):
-        scores.Status().run(self._ordered_dependencies(services))
+        scores.Status().run(self._ordered_containers(services))
 
     def start(self, services):
-        scores.Start().run(self._ordered_dependencies(services))
+        scores.Start().run(self._ordered_containers(services))
  
     def stop(self, services):
-        scores.Stop().run(self._ordered_dependencies(services))
+        scores.Stop().run(self._ordered_containers(services))
 
     def clean(self, services):
         raise NotImplementedError, 'Not yet implemented!'

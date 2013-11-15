@@ -14,42 +14,52 @@ class BaseScore:
     def run(self):
         raise NotImplementedError
 
+class OutputFormatter:
+    def __init__(self, prefix):
+        self._committed = prefix
+
+    def commit(self, s=None):
+        self._committed = '{} {}'.format(self._committed, s)
+        print '{}\033[K\r'.format(self._committed),
+        sys.stdout.flush()
+
+    def pending(self, s):
+        print '{} {}\033[K\r'.format(self._committed, s),
+        sys.stdout.flush()
+
+    def end(self):
+        print
+        sys.stdout.flush()
+
 class Status(BaseScore):
     """The Status score is a Maestro orchestration play that displays the
     status of the given services."""
 
-    def run(self, services):
-        print 'ORDER %13s %-20s %-25s %-15s %-10s' % \
-                ('COMPONENT', 'INSTANCE', 'SHIP', 'CONTAINER', 'SERVICE')
-        for order, service in enumerate(services, 1):
-            for inst, container in enumerate(service.containers, 1):
-                if inst == 1:
-                    print '\033[;1m%2d: %15s\033[;0m' % (order, service.name),
-                else:
-                    print ' ' * 19,
-                self._show_container_status(container)
+    def run(self, containers):
+        print '{:>3s}  {:<20s} {:<15s} {:<25s} {:<15s} {:<10s}'.format(
+            '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
 
-    def _show_container_status(self, container):
-        print '\033[37;1m%-20s\033[;0m' % container.name,
-        print '%-25s' % container.ship.ip[:25],
+        for order, container in enumerate(containers, 1):
+            o = OutputFormatter(
+                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<25s}'.format(
+                order, container.name, container.service.name, container.ship.ip[:25]))
 
-        status = None
-        try:
-            status = container.status()
-            print '\033[%d;1m%-15s\033[;0m' % \
-                    (self._color(status and status['State']['Running']),
-                     status and status['State']['Running'] \
-                             and '%s' % container.id[:7] or 'down'),
-        except:
-            print '\033[31;1m%-15s\033[;0m' % 'host down',
-        sys.stdout.flush()
+            try:
+                o.pending('checking container...')
+                status = container.status()
+                o.commit('\033[{:d};1m{:<15s}\033[;0m'.format(
+                    self._color(status and status['State']['Running']),
+                    (status and status['State']['Running'] and container.id[:7] or 'down')))
 
-        if not status or not status['State']['Running']:
-            print 'n/a'
-            return
+                o.pending('checking service...')
+                ping = container.ping(1)
+                o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
+                    self._color(ping), self._up(ping)))
+            except Exception, e:
+                logging.exception(e); sys.exit(1)
+                o.commit('\033[31;1m{:<12s} {:<10s}\033[;0m'.format('host down', 'down'))
+            o.end()
 
-        ping = container.ping(1)
-        print '\033[%d;1m%-10s\033[;0m' % (self._color(ping), self._up(ping))
 
 class Start(BaseScore):
     """The Start score is a Maestro orchestration play that will execute the
@@ -58,80 +68,69 @@ class Start(BaseScore):
     container's application to become available before moving to the next
     one."""
 
-    def run(self, services):
-        print 'ORDER %13s %-20s %-25s %-15s %-10s' % \
-                ('COMPONENT', 'INSTANCE', 'SHIP', 'CONTAINER', 'SERVICE')
-        for order, service in enumerate(services, 1):
-            for inst, container in enumerate(service.containers, 1):
-                if inst == 1:
-                    print '\033[;1m%2d: %15s\033[;0m' % (order, service.name),
-                else:
-                    print ' ' * 19,
+    def run(self, containers):
+        print '{:>3s}  {:<20s} {:<15s} {:<25s} {:<15s} {:<10s}'.format(
+            '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
 
-                try:
-                    if not self._start_container(container):
-                        # Halt the sequence if a container failed to start.
-                        logging.error('Container for instance %s of service %s '
-                            'failed to start. Halting sequence!',
-                            container.name, service.name)
-                        sys.stderr.write(container.ship.backend.logs(container.id))
-                        return
-                except docker.client.APIError, e:
-                    print '\033[31;1mfail!\033[;0m'
-                    logging.error(e)
+        for order, container in enumerate(containers, 1):
+            o = OutputFormatter(
+                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<25s}'.format(
+                order, container.name, container.service.name, container.ship.ip[:25]))
+            error = None
+            try:
+                if not self._start_container(o, container):
+                    # Halt the sequence if a container failed to start.
+                    error = container.ship.backend.logs(container.id)
                     return
+            except docker.client.APIError, e:
+                o.commit('\033[31;1mfail!\033[;0m')
+                error = e
+            finally:
+                o.end()
+                if error:
+                    sys.stderr.write(error)
 
-    def _start_container(self, container):
-        print '\033[37;1m%-20s\033[;0m' % container.name,
-        print '%-25s' % container.ship.ip[:25],
-        sys.stdout.flush()
-
+    def _start_container(self, o, container):
+        o.pending('checking service...')
         if container.ping(retries=2):
-            print '%-15s already running' % container.id[:7]
+            o.commit('\033[34;0m{:<15s} {:<10s}\033[;0m'.format(
+                container.id[:7], 'already up'))
             return True
 
-        print '..',
-        sys.stdout.flush()
-
+        # Otherwise we need to start it.
         if container.id:
-            logging.debug('Removing old container %s (id: %7s)',
-                    container.name, container.id)
+            o.pending('removing old container {}...'.format(container.id[:7]))
             container.ship.backend.remove_container(container.id)
 
-        logging.debug('Pulling service image %s...', container.service.image)
+        o.pending('pulling image {}...'.format(container.service.image))
         container.ship.backend.pull(**container.service.get_image_details())
 
-        print '..',
-        sys.stdout.flush()
-
-        logging.debug('Creating container for instance %s of service %s...',
-                container.name, container.service.name)
+        o.pending('creating container...')
         c = container.ship.backend.create_container(
-                image=container.service.image,
-                hostname=container.name,
-                name=container.name,
-                environment=container.env,
-                ports=dict([('%d/tcp' % port['exposed'], {})
-                    for port in container.ports.itervalues()]))
+            image=container.service.image,
+            hostname=container.name,
+            name=container.name,
+            environment=container.env,
+            ports=dict([('%d/tcp' % port['exposed'], {})
+                for port in container.ports.itervalues()]))
 
-        print '\033[32;1m%-11s\033[;0m' % container.id[:7],
+        container.status(refresh=True)
+        o.commit('\033[32;1m{:<15s}\033[;0m'.format(container.id[:7]))
 
-        logging.debug('Starting container %s for instance %s...',
-                container.id[:7], container.name)
+        o.pending('starting container...')
         container.ship.backend.start(c,
-                binds=container.volumes,
-                port_bindings=dict([('%d/tcp' % port['exposed'],
-                        [{'HostIp': '0.0.0.0', 'HostPort': str(port['external'])}])
-                    for port in container.ports.itervalues()]),
-                create_local_bind_dirs=True)
-
-        print '...',
-        sys.stdout.flush()
+            binds=container.volumes,
+            port_bindings=dict([('%d/tcp' % port['exposed'],
+                    [{'HostIp': '0.0.0.0', 'HostPort': str(port['external'])}])
+                for port in container.ports.itervalues()]),
+            create_local_bind_dirs=True)
 
         # Wait up to 30 seconds for the container to be up before
         # moving to the next one.
+        o.pending('waiting for service...')
         ping = container.ping(retries=30)
-        print '\033[%d;1m%s\033[;0m' % (self._color(ping), self._up(ping))
+        o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
+            self._color(ping), self._up(ping)))
         return ping
 
 class Stop(BaseScore):
@@ -139,35 +138,31 @@ class Stop(BaseScore):
     the containers of the requested services, in the inverse dependency
     order."""
 
-    def run(self, services):
-        print 'ORDER %13s %-20s %-25s %-15s %-10s' % \
-                ('COMPONENT', 'INSTANCE', 'SHIP', 'CONTAINER', 'RESULT')
-        for order, service in enumerate(services[::-1], 1):
-            for inst, container in enumerate(service.containers, 1):
-                if inst == 1:
-                    print '\033[;1m%2d: %15s\033[;0m' % (order, service.name),
-                else:
-                    print ' ' * 19,
+    def run(self, containers):
+        print '{:>3s}  {:<20s} {:<15s} {:<25s} {:<15s} {:<10s}'.format(
+            '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'RESULT')
 
-                self._stop_container(container)
+        for order, container in enumerate(containers):
+            o = OutputFormatter(
+                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<25s}'.format(
+                len(containers) - order, container.name,
+                container.service.name, container.ship.ip[:25]))
 
-    def _stop_container(self, container):
-        print '\033[37;1m%-20s\033[;0m' % container.name,
-        print '%-25s' % container.ship.ip[:25],
-        sys.stdout.flush()
+            o.pending('checking service...')
+            if not container.ping(retries=2):
+                o.commit('{:<15s} {:<10s}'.format('n/a', 'already down'))
+                o.end()
+                continue
 
-        if not container.ping(retries=2):
-            print '%-15s already down' % 'n/a'
-            return True
+            o.commit('{:<15s}'.format(container.id[:7]))
 
-        print '%-15s ..' % container.id[:7],
-        sys.stdout.flush()
+            try:
+                o.pending('stopping service...')
+                container.ship.backend.stop(container.id)
+                o.pending('removing container...')
+                container.ship.backend.remove_container(container.id)
+                o.commit('\033[32;1mstopped\033[;0m')
+            except:
+                o.commit('\033[31;1mfail!\033[;0m')
 
-        try:
-            container.ship.backend.stop(container.id)
-            container.ship.backend.remove_container(container.id)
-            print '\033[32;1mstopped\033[;0m'
-            return True
-        except:
-            print '\033[31;1mfail!\033[;0m'
-            return False
+            o.end()

@@ -52,12 +52,9 @@ class Status(BaseScore):
                     (status and status['State']['Running'] and container.id[:7] or 'down')))
 
                 o.pending('checking service...')
-                if container.ports:
-                    ping = container.ping(1)
-                    o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
-                        self._color(ping), self._up(ping)))
-                else:
-                    o.commit('n/a')
+                ping = container.ping(1)
+                o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
+                    self._color(ping), self._up(ping)))
             except Exception, e:
                 o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format('host down', 'down'))
             o.end()
@@ -86,13 +83,11 @@ class Start(BaseScore):
                 o.end()
 
                 if not result:
-                    # sys.stderr.write(container.ship.backend.logs(container.id))
                     # Halt the sequence if a container failed to start.
                     return
-            except docker.client.APIError, e:
+            except docker.client.APIError:
                 o.commit('\033[31;1mfail!\033[;0m')
                 o.end()
-                logging.exception(e)
 
     def _start_container(self, o, container):
         o.pending('checking service...')

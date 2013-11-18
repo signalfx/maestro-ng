@@ -259,7 +259,7 @@ class Container(Entity):
 
     def ping(self, retries=3):
         """Check whether this container is alive or not. If the container
-        doesn't expose any ports, assume it is running. If the container
+        doesn't expose any ports, assume it is not running. If the container
         exposes multiple ports, as soon as one port is active the application
         inside the container is considered to be up and running.
         
@@ -267,7 +267,7 @@ class Container(Entity):
             retries (int): number of attempts (timeout is 1 second).
         """
         if not self.ports:
-            return True
+            return False
 
         def ping_port(ip, port):
             try:

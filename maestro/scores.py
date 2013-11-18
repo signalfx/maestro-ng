@@ -52,9 +52,12 @@ class Status(BaseScore):
                     (status and status['State']['Running'] and container.id[:7] or 'down')))
 
                 o.pending('checking service...')
-                ping = container.ping(1)
-                o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
-                    self._color(ping), self._up(ping)))
+                if container.ports:
+                    ping = container.ping(1)
+                    o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
+                        self._color(ping), self._up(ping)))
+                else:
+                    o.commit('n/a')
             except Exception, e:
                 o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format('host down', 'down'))
             o.end()

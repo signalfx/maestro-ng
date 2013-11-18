@@ -401,7 +401,7 @@ class Conductor:
     def clean(self, services):
         raise NotImplementedError, 'Not yet implemented!'
 
-def main():
+def main(args):
     parser = argparse.ArgumentParser(description='Docker container orchestrator')
     parser.add_argument('command', nargs='?',
                         choices=['status', 'start', 'stop', 'clean'],
@@ -414,13 +414,13 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_const',
                         const=logging.DEBUG, default=logging.INFO,
                         help='Be verbose')
-    args = parser.parse_args()
+    options = parser.parse_args(args)
 
-    stream = args.file == '-' and sys.stdin or open(args.file)
+    stream = options.file == '-' and sys.stdin or open(options.file)
     config = yaml.load(stream)
     stream.close()
 
-    logging.basicConfig(stream=sys.stdout, level=args.verbose,
+    logging.basicConfig(stream=sys.stdout, level=options.verbose,
             format='%(message)s')
 
     # Shutup urllib3, wherever it comes from.
@@ -428,7 +428,7 @@ def main():
     logging.getLogger('urllib3.connectionpool').setLevel(logging.WARN)
 
     c = Conductor(config)
-    getattr(c, args.command)(set(args.services))
+    getattr(c, options.command)(set(options.services))
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

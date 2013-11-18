@@ -100,6 +100,7 @@ class Service(Entity):
         Entity.__init__(self, name)
         self._image = image
         self._requires = set([])
+        self._needed_for = set([])
         self._containers = {}
 
     def __repr__(self):
@@ -126,6 +127,15 @@ class Service(Entity):
         return dependencies
 
     @property
+    def needed_for(self):
+        """Returns the full set of direct and indirect dependents (aka services
+        that depend on this service)."""
+        dependents = self._needed_for
+        for dep in dependents:
+            dependents = dependents.union(dep.needed_for)
+        return dependents
+
+    @property
     def containers(self):
         """Return an ordered list of instance containers for this service, by
         instance name."""
@@ -134,6 +144,10 @@ class Service(Entity):
     def add_dependency(self, service):
         """Declare that this service depends on the passed service."""
         self._requires.add(service)
+
+    def add_dependent(self, service):
+        """Declare that the passed service depends on this service."""
+        self._needed_for.add(service)
 
     def register_container(self, container):
         """Register a new instance container as part of this service."""
@@ -305,6 +319,7 @@ class Conductor:
         for kind, service in self._config['services'].iteritems():
             for dependency in service.get('requires', []):
                 self._services[kind].add_dependency(self._services[dependency])
+                self._services[dependency].add_dependent(self._services[kind])
 
         # Provide link environment variables to each container of each service.
         for service in self._services.itervalues():
@@ -315,7 +330,7 @@ class Conductor:
                 for dependency in service.requires:
                     container.env.update(dependency.get_link_variables())
 
-    def _service_order(self, pending=[], ordered=[]):
+    def _service_order(self, pending=[], ordered=[], forward=True):
         """Calculate the service start order based on each service's
         dependencies.
 
@@ -325,41 +340,58 @@ class Conductor:
         """
         wait = []
         for service in pending:
-            if service.requires and not service.requires.issubset(set(ordered + [service])):
+            s = service.requires if forward else service.needed_for
+            if s and not s.issubset(set(ordered + [service])):
                 wait.append(service)
             else:
                 ordered.append(service)
 
-        if len(wait) == len(pending):
+        if wait and pending and len(wait) == len(pending):
             raise Exception, \
                 'Cannot resolve dependencies in environment for services %s!' % wait
-        return wait and self._service_order(wait, ordered) or ordered
+        return wait and self._service_order(wait, ordered, forward) or ordered
 
-    def _gather_dependencies(self, services):
-        """Returns the extended set of services with dependencies for the
-        requested services."""
-        result = set(services)
-        for service in services:
-            result = result.union(service.requires)
+    def _gather_from_services(self, services, forward=True):
+        result = set(map(lambda s: self._services[s], services) or self._services.values())
+        for service in result:
+            result = result.union(service.requires if forward else service.needed_for)
         return result
 
-    def _ordered_dependencies(self, services):
-        return self._service_order(self._gather_dependencies(
-            map(lambda n: self._services[n], services or self._services.keys())))
+    def _ordered_from_services(self, services, forward=True):
+        return self._service_order(
+            self._gather_from_services(services, forward),
+            forward=forward)
 
-    def _ordered_containers(self, services):
+    def _ordered_containers(self, services, forward=True):
         return reduce(lambda l, s: l + s.containers,
-                self._ordered_dependencies(services),
+                self._ordered_from_services(services, forward),
                 [])
 
     def status(self, services):
+        """Display the status of the given services."""
         scores.Status().run(self._ordered_containers(services))
 
     def start(self, services):
+        """Start the given services(s). Dependencies of the requested services
+        are started first.
+
+        Args:
+            services (list<string>): The list of services to start.
+        """
         scores.Start().run(self._ordered_containers(services))
  
     def stop(self, services):
-        scores.Stop().run(self._ordered_containers(services))
+        """Stop the given service(s).
+
+        This one is a bit more tricky because we don't want to look at the
+        dependencies of the services we want to stop, but at which services
+        depend on the services we want to stop.
+
+        Args:
+            services (list<string>): The list of services to stop.
+        """
+
+        scores.Stop().run(self._ordered_containers(services, False))
 
     def clean(self, services):
         raise NotImplementedError, 'Not yet implemented!'

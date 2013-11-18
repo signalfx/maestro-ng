@@ -56,8 +56,7 @@ class Status(BaseScore):
                 o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
                     self._color(ping), self._up(ping)))
             except Exception, e:
-                logging.exception(e); sys.exit(1)
-                o.commit('\033[31;1m{:<12s} {:<10s}\033[;0m'.format('host down', 'down'))
+                o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format('host down', 'down'))
             o.end()
 
 
@@ -78,17 +77,19 @@ class Start(BaseScore):
                 order, container.name, container.service.name, container.ship.ip[:25]))
             error = None
             try:
-                if not self._start_container(o, container):
+                result = self._start_container(o, container)
+                o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
+                    self._color(ping), result and 'up' or 'failed to start!'))
+                o.end()
+
+                if not result:
+                    sys.stderr.write(container.ship.backend.logs(container.id))
                     # Halt the sequence if a container failed to start.
-                    error = container.ship.backend.logs(container.id)
                     return
             except docker.client.APIError, e:
                 o.commit('\033[31;1mfail!\033[;0m')
-                error = e
-            finally:
                 o.end()
-                if error:
-                    sys.stderr.write(error)
+                sys.stderr.write(e)
 
     def _start_container(self, o, container):
         o.pending('checking service...')
@@ -128,10 +129,7 @@ class Start(BaseScore):
         # Wait up to 30 seconds for the container to be up before
         # moving to the next one.
         o.pending('waiting for service...')
-        ping = container.ping(retries=30)
-        o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
-            self._color(ping), self._up(ping)))
-        return ping
+        return container.ping(retries=30)
 
 class Stop(BaseScore):
     """The Stop score is a Maestro orchestration play that will stop and remove
@@ -148,9 +146,14 @@ class Stop(BaseScore):
                 len(containers) - order, container.name,
                 container.service.name, container.ship.ip[:25]))
 
-            o.pending('checking service...')
-            if not container.ping(retries=2):
-                o.commit('{:<15s} {:<10s}'.format('n/a', 'already down'))
+            o.pending('checking container...')
+            try:
+                if not container.status():
+                    o.commit('{:<15s} {:<10s}'.format('n/a', 'already down'))
+                    o.end()
+                    continue
+            except:
+                o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format('host down', 'down'))
                 o.end()
                 continue
 

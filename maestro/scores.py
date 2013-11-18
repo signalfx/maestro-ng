@@ -82,23 +82,22 @@ class Start(BaseScore):
             try:
                 result = self._start_container(o, container)
                 o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
-                    self._color(ping), result and 'up' or 'failed to start!'))
+                    self._color(result), result and 'up' or 'failed to start!'))
                 o.end()
 
                 if not result:
-                    sys.stderr.write(container.ship.backend.logs(container.id))
+                    # sys.stderr.write(container.ship.backend.logs(container.id))
                     # Halt the sequence if a container failed to start.
                     return
             except docker.client.APIError, e:
                 o.commit('\033[31;1mfail!\033[;0m')
                 o.end()
-                sys.stderr.write(e)
+                logging.exception(e)
 
     def _start_container(self, o, container):
         o.pending('checking service...')
         if container.ping(retries=2):
-            o.commit('\033[34;0m{:<15s} {:<10s}\033[;0m'.format(
-                container.id[:7], 'already up'))
+            o.commit('\033[34;0m{:<15s}\033[;0m'.format(container.id[:7]))
             return True
 
         # Otherwise we need to start it.

@@ -6,14 +6,14 @@
 import os
 from setuptools import setup, find_packages
 
-requirements = ['docker-py==0.2.2']
-
 setup(
     name='maestro',
     version='0.0.1',
     description='Orchestrator for multi-host Docker deployments',
-
+    zip_safe=True,
     packages=find_packages(),
+    install_requires=['docker-py'],
+    dependency_links=['https://github.com/mpetazzoni/docker-py/archive/timeout-and-localbinddirs.zip#egg=docker-py'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',

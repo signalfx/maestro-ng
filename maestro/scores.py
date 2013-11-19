@@ -37,12 +37,12 @@ class Status(BaseScore):
     status of the given services."""
 
     def run(self, containers):
-        print '{:>3s}  {:<20s} {:<15s} {:<25s} {:<15s} {:<10s}'.format(
+        print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
             '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
 
         for order, container in enumerate(containers, 1):
             o = OutputFormatter(
-                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<25s}'.format(
+                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20s}'.format(
                 order, container.name, container.service.name, container.ship.ip[:25]))
 
             try:
@@ -69,12 +69,12 @@ class Start(BaseScore):
     one."""
 
     def run(self, containers):
-        print '{:>3s}  {:<20s} {:<15s} {:<25s} {:<15s} {:<10s}'.format(
+        print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
             '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
 
         for order, container in enumerate(containers, 1):
             o = OutputFormatter(
-                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<25s}'.format(
+                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20s}'.format(
                 order, container.name, container.service.name, container.ship.ip[:25]))
 
             error = None
@@ -152,12 +152,12 @@ class Stop(BaseScore):
     order."""
 
     def run(self, containers):
-        print '{:>3s}  {:<20s} {:<15s} {:<25s} {:<15s} {:<10s}'.format(
+        print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
             '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'RESULT')
 
         for order, container in enumerate(containers):
             o = OutputFormatter(
-                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<25s}'.format(
+                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20s}'.format(
                 len(containers) - order, container.name,
                 container.service.name, container.ship.ip[:25]))
 

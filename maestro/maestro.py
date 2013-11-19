@@ -330,6 +330,10 @@ class Conductor:
                 for dependency in service.requires:
                     container.env.update(dependency.get_link_variables())
 
+    @property
+    def services(self):
+        return self._services.keys()
+
     def _service_order(self, pending=[], ordered=[], forward=True):
         """Calculate the service start order based on each service's
         dependencies.

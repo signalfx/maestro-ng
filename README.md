@@ -43,6 +43,30 @@ You'll also need, to run Maestro:
 * python-yaml
 * A recent [docker-py](http://github.com/dotcloud/docker-py)
 
+Installation
+------------
+
+Maestro provides `setuptools`-style installation. Running this will do
+the trick:
+
+```
+$ python setup.py install
+```
+
+Depending on your setup, you might need to change the permissions of
+Python's `dist-packages` or `site-packages` directories so that your
+user can access this newly installed Python module. For example, on
+MacOS, it would look something like:
+
+```
+$ sudo chmod -R a+rX /Library/Python/2.7/site-packages/
+```
+
+If you don't want to install Maestro system-wide, you can just leave it
+as-is in its Git repository clone. You'll just need to add the path to
+the repository to your `PYTHONPATH` environment variable.
+
+
 Orchestration
 =============
 
@@ -171,14 +195,18 @@ depending on ZooKeeper would be looking for its `client` port.
 How Maestro orchestrates and service auto-configuration
 -------------------------------------------------------
 
+
 Usage
 =====
 
-Maestro is available both as a library through the `maestro` package and
-as an executable. To run Maestro, simply execute the main Python module:
+Once installed, Maestro is available both as a library through the
+`maestro` package and as an executable. Note that if you didn't install
+Maestro system-wide, you can still run it with the same commands as long
+as your `PYTHONPATH` contains the path to your `maestro-ng` repository
+clone. To run Maestro, simply execute the main Python package:
 
 ```
-$ ./maestro/maestro.py -h
+$ python -m maestro -h
 usage: maestro.py [-h] [-f [FILE]] [-v]
                   [{status,start,stop,clean}] [services [services ...]]
 
@@ -205,8 +233,8 @@ specify the path to the environment file. The two following commands are
 identical:
 
 ```
-$ ./maestro/maestro.py < demo.yaml
-$ ./maestro/maestro.py -f demo.yaml
+$ python -m maestro < demo.yaml
+$ python -m maestro -f demo.yaml
 ```
 
 The first positional argument is a command you want Maestro to execute.
@@ -223,8 +251,8 @@ and not perform any action unless it's really necessary.
 Finally, if started without any command and service names, Maestro will
 default to the `status` command, showing the state of the environment.
 
-Examples
-========
+Examples of Docker images with Maestro orchestration
+====================================================
 
 For examples of Docker images that are suitable for use with Maestro,
 you can look at the following repositories:

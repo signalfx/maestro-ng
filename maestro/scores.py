@@ -5,6 +5,7 @@
 import docker
 import logging
 import sys
+import time
 
 class BaseScore:
     def __cond_label(self, cond, t, f): return cond and t or f
@@ -75,19 +76,29 @@ class Start(BaseScore):
             o = OutputFormatter(
                 '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<25s}'.format(
                 order, container.name, container.service.name, container.ship.ip[:25]))
+
             error = None
             try:
                 result = self._start_container(o, container)
                 o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
-                    self._color(result), result and 'up' or 'failed to start!'))
-                o.end()
+                    self._color(result), result and 'up' or 'service did not start!'))
 
                 if not result:
-                    # Halt the sequence if a container failed to start.
-                    return
+                    # TODO: grab the container logs?
+                    error = True
             except docker.client.APIError:
-                o.commit('\033[31;1mfail!\033[;0m')
-                o.end()
+                o.commit('\033[31;1mfailed to start container!\033[;0m')
+                # TODO: grab the error message?
+                error = True
+                logging.exception(e)
+
+            o.end()
+
+            # Halt the sequence if a container failed to start.
+            if error:
+                logging.error('%s/%s failed to start. Halting sequence.',
+                    container.service.name, container.name)
+                return
 
     def _start_container(self, o, container):
         o.pending('checking service...')
@@ -123,8 +134,15 @@ class Start(BaseScore):
                 for port in container.ports.itervalues()]),
             create_local_bind_dirs=True)
 
-        # Wait up to 30 seconds for the container to be up before
-        # moving to the next one.
+        # Waiting one second and checking container state again to make sure
+        # initialization didn't fail.
+        o.pending('waiting for container initialization...')
+        time.sleep(1)
+        status = container.status(refresh=True)
+        if not status or not status['State']['Running']:
+            return False
+
+        # Wait up to 30 seconds for the container's application to come online.
         o.pending('waiting for service...')
         return container.ping(retries=30)
 

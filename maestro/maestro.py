@@ -334,6 +334,10 @@ class Conductor:
     def services(self):
         return self._services.keys()
 
+    @property
+    def containers(self):
+        return self._containers.keys()
+
     def _service_order(self, pending=[], ordered=[], forward=True):
         """Calculate the service start order based on each service's
         dependencies.
@@ -399,3 +403,13 @@ class Conductor:
 
     def clean(self, services):
         raise NotImplementedError, 'Not yet implemented!'
+
+    def logs(self, containers):
+        """Display the logs of the given container."""
+        assert len(containers) == 1, \
+                'Can only display logs for a single container!'
+        container = self._containers[list(containers)[0]]
+        status = container.status()
+        if not status:
+            return
+        print container.ship.backend.logs(container.id)

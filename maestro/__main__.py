@@ -12,18 +12,18 @@ import yaml
 from . import maestro
 
 def main(args):
-    commands = ['status', 'start', 'stop', 'clean']
-    parser = argparse.ArgumentParser(description='Docker container orchestrator')
+    commands = ['status', 'start', 'stop', 'clean', 'logs']
+    parser = argparse.ArgumentParser(description='Docker container orchestrator.')
     parser.add_argument('command', nargs='?',
                         choices=commands,
                         default='status',
-                        help='Orchestration command to execute')
-    parser.add_argument('services', nargs='*',
-                        help='Service(s) to affect')
+                        help='orchestration command to execute')
+    parser.add_argument('service', nargs='*',
+                        help='service(s) to act on')
     parser.add_argument('-f', '--file', nargs='?', default='-', metavar='FILE',
-                        help='Read environment description from FILE (use - for stdin)')
+                        help='read environment description from FILE (use - for stdin)')
     parser.add_argument('-c', '--completion', metavar='CMD',
-                        help='List commands or services in environment based on CMD')
+                        help='list commands, services or containers in environment based on CMD')
     parser.add_argument('-v', '--verbose', action='store_const',
                         const=logging.DEBUG, default=logging.INFO,
                         help='Be verbose')
@@ -46,10 +46,17 @@ def main(args):
         if len(args) == 2:
             print ' '.join([x for x in commands if x.startswith(args[1])])
         elif len(args) == 3:
-            print ' '.join([x for x in c.services if x.startswith(args[2])])
+            if args[1] != 'logs':
+                print ' '.join([x for x in c.services if x.startswith(args[2])])
+            else:
+                print ' '.join([x for x in c.containers if x.startswith(args[2])])
         return
 
-    getattr(c, options.command)(set(options.services))
+    try:
+        getattr(c, options.command)(set(options.service))
+    except KeyError, e:
+        logging.error('Service or container {} does not exist!\n'.format(e))
+        sys.exit(1)
 
 if __name__ == '__main__':
     main(sys.argv[1:])

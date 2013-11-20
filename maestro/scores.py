@@ -177,8 +177,6 @@ class Stop(BaseScore):
             try:
                 o.pending('stopping service...')
                 container.ship.backend.stop(container.id)
-                o.pending('removing container...')
-                container.ship.backend.remove_container(container.id)
                 o.commit('\033[32;1mstopped\033[;0m')
             except:
                 o.commit('\033[31;1mfail!\033[;0m')

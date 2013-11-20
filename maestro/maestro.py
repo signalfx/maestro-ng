@@ -375,20 +375,27 @@ class Conductor:
                 self._ordered_from_services(services, forward),
                 [])
 
-    def status(self, services):
-        """Display the status of the given services."""
-        scores.Status().run(self._ordered_containers(services))
+    def status(self, **kwargs):
+        """Display the status of the given services.
 
-    def start(self, services):
+        Args:
+            services (set<string>): The services to show the status of.
+        """
+        scores.Status(self._ordered_containers(
+                kwargs.get('services', []))).run()
+
+    def start(self, **kwargs):
         """Start the given services(s). Dependencies of the requested services
         are started first.
 
         Args:
-            services (list<string>): The list of services to start.
+            services (set<string>): The list of services to start.
         """
-        scores.Start().run(self._ordered_containers(services))
+        scores.Start(self._ordered_containers(
+                kwargs.get('services', [])),
+                kwargs.get('offline', False)).run()
  
-    def stop(self, services):
+    def stop(self, **kwargs):
         """Stop the given service(s).
 
         This one is a bit more tricky because we don't want to look at the
@@ -396,20 +403,22 @@ class Conductor:
         depend on the services we want to stop.
 
         Args:
-            services (list<string>): The list of services to stop.
+            services (set<string>): The list of services to stop.
         """
 
-        scores.Stop().run(self._ordered_containers(services, False))
+        scores.Stop(self._ordered_containers(
+                kwargs.get('services', []), False)).run()
 
-    def clean(self, services):
+    def clean(self, **kwargs):
         raise NotImplementedError, 'Not yet implemented!'
 
-    def logs(self, containers):
+    def logs(self, **kwargs):
         """Display the logs of the given container."""
-        assert len(containers) == 1, \
-                'Can only display logs for a single container!'
+        containers = kwargs.get('services', [])
+        if len(containers) > 1:
+            logging.error('Logs can only be shown for a single container at once!')
+            return
         container = self._containers[list(containers)[0]]
         status = container.status()
-        if not status:
-            return
-        print container.ship.backend.logs(container.id)
+        if status:
+            print container.ship.backend.logs(container.id)

@@ -8,6 +8,11 @@ import sys
 import time
 
 class BaseScore:
+
+    def __init__(self, containers=[], offline=False):
+        self._containers = containers
+        self._offline = offline
+
     def __cond_label(self, cond, t, f): return cond and t or f
     def _color(self, cond): return self.__cond_label(cond, 32, 31)
     def _up(self, cond): return self.__cond_label(cond, 'up', 'down')
@@ -36,11 +41,14 @@ class Status(BaseScore):
     """The Status score is a Maestro orchestration play that displays the
     status of the given services."""
 
-    def run(self, containers):
+    def __init__(self, containers=[], offline=False):
+        BaseScore.__init__(self, containers, offline)
+
+    def run(self):
         print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
             '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
 
-        for order, container in enumerate(containers, 1):
+        for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
                 '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20s}'.format(
                 order, container.name, container.service.name, container.ship.ip[:25]))
@@ -68,11 +76,14 @@ class Start(BaseScore):
     container's application to become available before moving to the next
     one."""
 
-    def run(self, containers):
+    def __init__(self, containers=[], offline=False):
+        BaseScore.__init__(self, containers, offline)
+
+    def run(self):
         print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
             '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
 
-        for order, container in enumerate(containers, 1):
+        for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
                 '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20s}'.format(
                 order, container.name, container.service.name, container.ship.ip[:25]))
@@ -84,13 +95,10 @@ class Start(BaseScore):
                     self._color(result), result and 'up' or 'service did not start!'))
 
                 if not result:
-                    # TODO: grab the container logs?
-                    error = True
-            except docker.client.APIError:
+                    error = container.ship.backend.logs(container.id)
+            except docker.client.APIError, e:
                 o.commit('\033[31;1mfailed to start container!\033[;0m')
-                # TODO: grab the error message?
-                error = True
-                logging.exception(e)
+                error = e
 
             o.end()
 
@@ -98,6 +106,7 @@ class Start(BaseScore):
             if error:
                 logging.error('%s/%s failed to start. Halting sequence.',
                     container.service.name, container.name)
+                logging.error(error)
                 return
 
     def _start_container(self, o, container):
@@ -111,8 +120,9 @@ class Start(BaseScore):
             o.pending('removing old container {}...'.format(container.id[:7]))
             container.ship.backend.remove_container(container.id)
 
-        o.pending('pulling image {}...'.format(container.service.image))
-        container.ship.backend.pull(**container.service.get_image_details())
+        if not self._offline:
+            o.pending('pulling image {}...'.format(container.service.image))
+            container.ship.backend.pull(**container.service.get_image_details())
 
         o.pending('creating container...')
         c = container.ship.backend.create_container(
@@ -151,14 +161,17 @@ class Stop(BaseScore):
     the containers of the requested services, in the inverse dependency
     order."""
 
-    def run(self, containers):
-        print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
-            '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'RESULT')
+    def __init__(self, containers=[], offline=False):
+        BaseScore.__init__(self, containers, offline)
 
-        for order, container in enumerate(containers):
+    def run(self):
+        print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
+            '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
+
+        for order, container in enumerate(self._containers):
             o = OutputFormatter(
                 '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20s}'.format(
-                len(containers) - order, container.name,
+                len(self._containers) - order, container.name,
                 container.service.name, container.ship.ip[:25]))
 
             o.pending('checking container...')

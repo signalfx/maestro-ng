@@ -26,7 +26,10 @@ def main(args):
                         help='list commands, services or containers in environment based on CMD')
     parser.add_argument('-v', '--verbose', action='store_const',
                         const=logging.DEBUG, default=logging.INFO,
-                        help='Be verbose')
+                        help='be verbose; show debugging messages')
+    parser.add_argument('-o', '--offline', action='store_const',
+                        const=True, default=False,
+                        help='work offline (will not pull images from the registry)')
     options = parser.parse_args(args)
 
     stream = options.file == '-' and sys.stdin or open(options.file)
@@ -53,7 +56,8 @@ def main(args):
         return
 
     try:
-        getattr(c, options.command)(set(options.service))
+        getattr(c, options.command)(services=set(options.service),
+                                    offline=options.offline)
     except KeyError, e:
         logging.error('Service or container {} does not exist!\n'.format(e))
         sys.exit(1)

@@ -50,8 +50,8 @@ class Status(BaseScore):
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
-                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20s}'.format(
-                order, container.name, container.service.name, container.ship.ip[:25]))
+                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20.20s}'.format(
+                order, container.name, container.service.name, container.ship.ip))
 
             try:
                 o.pending('checking container...')
@@ -85,8 +85,8 @@ class Start(BaseScore):
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
-                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20s}'.format(
-                order, container.name, container.service.name, container.ship.ip[:25]))
+                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20.20s}'.format(
+                order, container.name, container.service.name, container.ship.ip))
 
             error = None
             try:
@@ -170,9 +170,9 @@ class Stop(BaseScore):
 
         for order, container in enumerate(self._containers):
             o = OutputFormatter(
-                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20s}'.format(
+                '{:>3d}. \033[37;1m{:<20s}\033[;0m {:<15s} {:<20.20s}'.format(
                 len(self._containers) - order, container.name,
-                container.service.name, container.ship.ip[:25]))
+                container.service.name, container.ship.ip))
 
             o.pending('checking container...')
             try:

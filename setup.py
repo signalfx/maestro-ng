@@ -13,7 +13,7 @@ setup(
     zip_safe=True,
     packages=find_packages(),
     install_requires=['docker-py'],
-    dependency_links=['https://github.com/mpetazzoni/docker-py/archive/timeout-and-localbinddirs.zip#egg=docker-py'],
+    dependency_links=['https://github.com/mpetazzoni/docker-py/archive/next.zip#egg=docker-py'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',

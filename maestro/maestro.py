@@ -207,8 +207,9 @@ class Container(Entity):
         self.volumes = dict((src or dst, dst)
             for dst, src in config.get('volumes', {}).iteritems())
 
-        # Seed the container name and host address as part of the container's
-        # environment.
+        # Seed the service name, container name and host address as part of the
+        # container's environment.
+        self.env['SERVICE_NAME'] = self.service.name
         self.env['CONTAINER_NAME'] = self.name
         self.env['CONTAINER_HOST_ADDRESS'] = self.ship.ip
 

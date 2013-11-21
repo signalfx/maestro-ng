@@ -45,7 +45,7 @@ def main(args):
 
     c = maestro.Conductor(config)
     if options.completion is not None:
-        args = options.completion.split(' ', 2)
+        args = filter(lambda x: not x.startswith('-'), options.completion.split(' '))
         if len(args) == 2:
             print ' '.join([x for x in commands if x.startswith(args[1])])
         elif len(args) == 3:

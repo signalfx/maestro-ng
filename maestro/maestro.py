@@ -166,7 +166,7 @@ class Container(Entity):
     """A Container represents an instance of a particular service that will be
     executed inside a Docker container on its target ship/host."""
 
-    def __init__(self, name, ship, service, config):
+    def __init__(self, name, ship, service, config, env_name='local'):
         """Create a new Container object.
 
         Args:
@@ -176,6 +176,7 @@ class Container(Entity):
             service (Service): the Service this container is an instance of.
             config (dict): the YAML-parsed dictionary containing this
                 instance's configuration (ports, environment, volumes, etc.)
+            env_name (string): the name of the Maestro environment.
         """
         Entity.__init__(self, name)
         self._status = None # The container's status, cached.
@@ -209,6 +210,7 @@ class Container(Entity):
 
         # Seed the service name, container name and host address as part of the
         # container's environment.
+        self.env['MAESTRO_ENVIRONMENT_NAME'] = env_name
         self.env['SERVICE_NAME'] = self.service.name
         self.env['CONTAINER_NAME'] = self.name
         self.env['CONTAINER_HOST_ADDRESS'] = self.ship.ip
@@ -313,7 +315,9 @@ class Conductor:
             for name, instance in service['instances'].iteritems():
                 self._containers[name] = Container(name,
                         self._ships[instance['ship']],
-                        self._services[kind], instance)
+                        self._services[kind],
+                        instance,
+                        self._config['name'])
 
         # Resolve dependencies between services.
         logging.debug('Resolving service dependencies...')

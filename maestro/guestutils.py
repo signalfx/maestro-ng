@@ -10,9 +10,10 @@ import re
 class MaestroEnvironmentError(Exception):
     pass
 
-def get_realm_name():
-    """Return the name of the realm the container calling this is in."""
-    return os.environ.get('DISCO_REALM', 'local')
+def get_environment_name():
+    """Return the name of the environment the container calling this in a part
+    of."""
+    return os.environ.get('MAESTRO_ENVIRONMENT_NAME', 'local')
 
 def get_service_name():
     """Returns the service name of the container calling it."""

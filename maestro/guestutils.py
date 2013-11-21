@@ -37,16 +37,17 @@ def get_container_host_address():
 def get_port(name, default=None):
     """Return the port number for the given port, or the given default if not
     found."""
-    return _get_service_port(
+    return get_specific_port(
         get_service_name(), get_container_name(),
         name, default)
 
-def _to_env_var_name(s):
-    """Transliterate a service or container name into the form used for
-    environment variable names."""
-    return re.sub(r'[^\w]', '_', s).upper()
+def get_specific_host(service, container):
+    """Return the hostname/address of a specific container/instance of the
+    given service."""
+    return os.environ['{}_{}_HOST'.format(_to_env_var_name(service),
+                                          _to_env_var_name(container))]
 
-def _get_service_port(service, container, port, default=None):
+def get_specific_port(service, container, port, default=None):
     """Return the port number of a specific port of a specific container from a
     given service."""
     return int(os.environ.get(
@@ -58,20 +59,29 @@ def _get_service_port(service, container, port, default=None):
 def get_node_list(service, ports=[], minimum=1):
     """Build a list of nodes for the given service from the environment,
     eventually adding the ports from the list of port names. The resulting
-    entries will be of the form 'host[:port1[:port2]]'."""
+    entries will be of the form 'host[:port1[:port2]]' and sorted by container
+    name."""
     nodes = []
 
-    regex = re.compile(r'^{}_(\w+)_HOST$'.format(_to_env_var_name(service)))
-
-    for k, v in os.environ.iteritems():
-        m = re.match(regex, k)
-        if not m: continue
-        node = v
+    for container in _get_service_instance_names(service):
+        node = get_specific_host(service, container)
         for port in ports:
-            node = '{}:{}'.format(node, _get_service_port(service, m.group(1), port))
+            node = '{}:{}'.format(node, get_specific_port(service, container, port))
         nodes.append(node)
 
     if len(nodes) < minimum:
         raise MaestroEnvironmentError, \
             'No or not enough {} nodes configured'.format(service)
     return nodes
+
+def _to_env_var_name(s):
+    """Transliterate a service or container name into the form used for
+    environment variable names."""
+    return re.sub(r'[^\w]', '_', s).upper()
+
+def _get_service_instance_names(service):
+    """Return the list of container/instance names for the given service."""
+    def extract_name(var):
+        m = re.match(r'^{}_(\w+)_HOST$'.format(_to_env_var_name(service)), var)
+        return m and m.group(1) or None
+    return filter(None, map(extract_name, sorted(os.environ.keys())))

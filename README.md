@@ -195,6 +195,38 @@ depending on ZooKeeper would be looking for its `client` port.
 How Maestro orchestrates and service auto-configuration
 -------------------------------------------------------
 
+The orchestration performed by Maestro is two-fold. The first part is
+providing a way for each container to learn about the environment they
+evolve into, to discover about their peers and/or the container
+instances of other services in their environment. The second part is by
+controlling the start/stop sequence of services and their containers,
+taking service dependencies into account.
+
+With inspiration from Docker's _links_ feature, Maestro utilizes
+environment variables to pass information down to each container. Each
+container is guaranteed to get the following environment variables:
+
+* `SERVICE_NAME`: the friendly name of the service the container is an
+  instance of. Note that it is possible to have multiple clusters of the
+  same kind of application by giving them distinct friendly names.
+* `CONTAINER_NAME`: the friendly name of the instance, which is also
+  used as the name of the container itself. This will also be the
+  visible hostname from inside the container.
+* `CONTAINER_HOST_ADDRESS`: the external IP address of the host of the
+  container. This can be used as the "advertised" address when services
+  use dynamic service discovery techniques.
+
+Then, for each container of each service that the container depends on,
+a set of environment variables is added:
+
+* `<SERVICE_NAME>_<CONTAINER_NAME>_HOST`: the external IP address of the
+  host of the container, which is the address the application inside the
+  container can be reached with accross the network.
+* For each port declared by the dependent container:
+  `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_PORT`, containing the
+  port number.
+
+
 
 Usage
 =====
@@ -220,9 +252,12 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -f [FILE], --file [FILE]
-                        Read environment description from FILE (use -
-for
+                        Read environment description from FILE (use - for
                         stdin)
+  -c CMD, --completion CMD
+                        list commands, services or containers in environment
+                        based on CMD
+  -v, --verbose         be verbose; show debugging messages
   -v, --verbose         Be verbose
 ```
 

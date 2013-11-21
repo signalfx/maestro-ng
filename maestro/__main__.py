@@ -27,9 +27,9 @@ def main(args):
     parser.add_argument('-v', '--verbose', action='store_const',
                         const=logging.DEBUG, default=logging.INFO,
                         help='be verbose; show debugging messages')
-    parser.add_argument('-o', '--offline', action='store_const',
+    parser.add_argument('-r', '--refresh-images', action='store_const',
                         const=True, default=False,
-                        help='work offline (will not pull images from the registry)')
+                        help='force refresh of container images from registry')
     options = parser.parse_args(args)
 
     stream = options.file == '-' and sys.stdin or open(options.file)
@@ -57,7 +57,7 @@ def main(args):
 
     try:
         getattr(c, options.command)(services=set(options.service),
-                                    offline=options.offline)
+                                    refresh_images=options.refresh_images)
     except KeyError, e:
         logging.error('Service or container {} does not exist!\n'.format(e))
         sys.exit(1)

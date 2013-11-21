@@ -9,9 +9,8 @@ import time
 
 class BaseScore:
 
-    def __init__(self, containers=[], offline=False):
+    def __init__(self, containers=[]):
         self._containers = containers
-        self._offline = offline
 
     def __cond_label(self, cond, t, f): return cond and t or f
     def _color(self, cond): return self.__cond_label(cond, 32, 31)
@@ -41,8 +40,8 @@ class Status(BaseScore):
     """The Status score is a Maestro orchestration play that displays the
     status of the given services."""
 
-    def __init__(self, containers=[], offline=False):
-        BaseScore.__init__(self, containers, offline)
+    def __init__(self, containers=[]):
+        BaseScore.__init__(self, containers)
 
     def run(self):
         print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
@@ -76,8 +75,9 @@ class Start(BaseScore):
     container's application to become available before moving to the next
     one."""
 
-    def __init__(self, containers=[], offline=False):
-        BaseScore.__init__(self, containers, offline)
+    def __init__(self, containers=[], refresh_images=False):
+        BaseScore.__init__(self, containers)
+        self._refresh_images = refresh_images
 
     def run(self):
         print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
@@ -120,7 +120,7 @@ class Start(BaseScore):
             o.pending('removing old container {}...'.format(container.id[:7]))
             container.ship.backend.remove_container(container.id)
 
-        if not self._offline:
+        if self._refresh_images:
             o.pending('pulling image {}...'.format(container.service.image))
             container.ship.backend.pull(**container.service.get_image_details())
 
@@ -161,8 +161,8 @@ class Stop(BaseScore):
     the containers of the requested services, in the inverse dependency
     order."""
 
-    def __init__(self, containers=[], offline=False):
-        BaseScore.__init__(self, containers, offline)
+    def __init__(self, containers=[]):
+        BaseScore.__init__(self, containers)
 
     def run(self):
         print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(

@@ -394,7 +394,7 @@ class Conductor:
         """
         scores.Start(self._ordered_containers(
                 kwargs.get('services', [])),
-                kwargs.get('offline', False)).run()
+                kwargs.get('refresh_images', False)).run()
  
     def stop(self, **kwargs):
         """Stop the given service(s).

@@ -90,10 +90,19 @@ Environment description
 
 The environment is described using YAML. The format is still a bit in
 flux but the base has been set and should remain fairly stable. It is
-composed of two main sections: the _ships_, hosts that will execute the
-Docker containers and the _services_, which define what service make up
-the environment, the dependencies between these services and the
-instances of each of these services that need to run.
+named and composed of two main sections: the _ships_, hosts that will
+execute the Docker containers and the _services_, which define what
+service make up the environment, the dependencies between these services
+and the instances of each of these services that need to run. Here's the
+outline:
+
+```yaml
+name: demo
+ships:
+  # Ships definitions (see below)
+services:
+  # Services definition (see below)
+```
 
 The _ships_ are simple to define. They are named (but that name doesn't
 need to match their DNS resolvable host name), and need an `ip`
@@ -102,13 +111,9 @@ of 4243, the `docker_port` can be overriden:
 
 ```yaml
 ships:
-  vm1.ore1:
-    ip: c414.ore1.domain.com
-  vm2.ore2:
-    ip: c415.ore1.domain.com
-    docker_port: 4244
-  controller:
-    ip: 42.42.42.1
+  vm1.ore1:   {ip: c414.ore1.domain.com}
+  vm2.ore2:   {ip: c415.ore1.domain.com, docker_port: 4244}
+  controller: {ip: 42.42.42.1}
 ```
 
 Services are also named. Their name is used for commands that act on
@@ -128,20 +133,23 @@ services:
   zookeeper:
     image: zookeeper:3.4.5
     instances:
-      zk:
+      zk-1:
         ship: vm1.ore1
-        ports:
-          client: 2181
+        ports: {client: 2181, peer: 2888, leader_election: 3888}
+        volumes:
+          /var/lib/zookeeper: /data/zookeeper
+      zk-2:
+        ship: vm2.ore1
+        ports: {client: 2181, peer: 2888, leader_election: 3888}
         volumes:
           /var/lib/zookeeper: /data/zookeeper
   kafka:
     image: kafka:latest
-    requires: [zookeeper]
+    requires: [ zookeeper ]
     instances:
       kafka-broker:
         ship: vm2.ore1
-        ports:
-          broker: 9092
+        ports: {broker: 9092}
         volumes:
           /var/lib/kafka: /data/kafka
 ``` 
@@ -226,6 +234,82 @@ a set of environment variables is added:
   `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_PORT`, containing the
   port number.
 
+With all this information available in the container's environment, each
+container can then easily know about its surroundings and the other
+services it might need to talk to. It then becomes really easy to bridge
+the gap between the information Maestro provides to the container via
+its environment and the application you want to run inside the
+container.
+
+You could, of course, have your application directly read the
+environment variables pushed in by Maestro. But that would tie your
+application logic to Maestro, a specific orchestration system; you do
+not want that. Instead, you can write a _startup script_ that will
+inspect the environment and generate a configuration file for your
+application (or pass in command-line flags).
+
+To make this easier, Maestro provides a set of helper functions
+available in its `maestro.guestutils` module. The recommended (or
+easiest) way to build this startup script is to write it in Python, and
+have the Maestro package installed in your container.
+
+Guest utils helper functions
+----------------------------
+
+To make use of the Maestro guest utils functions, you'll need to have
+the Maestro package installed inside your container. You can easily
+achieve this by adding the following to your Dockerfile:
+
+```
+RUN apt-get update
+RUN apt-get -y install python python-setuptools
+RUN easy_install http://github.com/signalfuse/maestro-ng/archive/maestro-0.1.0.zip
+```
+
+This will install Maestro 0.1.0. Feel free to change that to any, more
+current version of Maestro you like or need.
+
+Then, from your startup script (in Python), do:
+
+```
+from maestro.guestutils import *
+```
+
+And you're ready to go. Here's a summary of the functions available at
+your disposal that will make your life much easier:
+
+  - `get_environment_name()` returns the name of the environment as
+    defined in the description file. Could be useful to namespace
+    information inside ZooKeeper for example.
+  - `get_service_name()` returns the friendly name of the service the
+    container is a member of.
+  - `get_container_name()` returns the friendly name of the container
+    itself.
+  - `get_container_host_address()` returns the IP address or hostname of
+    the host of the container. Useful if your application needs to
+    advertise itself to some service discovery system.
+  - `get_port(name, default)` will return the port number of a given
+    named port for the current container instance. This is useful to set
+    configuration parameters for example.
+
+Another very useful function is the `get_node_list` function. It takes
+in a service name and an optional list of port names and returns the
+list of IP addresses/hostname of the containers of that service. For
+each port specified, in order, it will append `:<port number>` to each
+host.  For example, if you want to return the list of ZooKeeper
+endpoints with their client ports:
+
+```python
+get_node_list('zookeeper', ports=['client']) -> ['c414.ore1.domain.com:2181', 'c415.ore1.domain.com:2181']
+```
+
+Other functions you might need are:
+
+  - `get_specific_host(service, container)`, which can be used to return
+    the hostname or IP address of a specific container from a given
+    service, and
+  - `get_specific_port(service, container, port, default)`, to retrieve
+    the port number of a specific named port of a given container.
 
 
 Usage

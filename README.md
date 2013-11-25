@@ -1,7 +1,7 @@
 MaestroNG, an orchestrator of Docker-based deployments
 ======================================================
 
-The original [Maestro](http://github.com/toscanini/mastro) was developed
+The original [Maestro](http://github.com/toscanini/maestro) was developed
 as a single-host orchestrator for Docker-based deployments. Given the
 state of Docker at the time of its writing, it was a great first step
 towards orchestration of deployments using Docker containers as the unit

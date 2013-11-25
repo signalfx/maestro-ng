@@ -120,10 +120,15 @@ class Start(BaseScore):
             o.pending('removing old container {}...'.format(container.id[:7]))
             container.ship.backend.remove_container(container.id)
 
-        if self._refresh_images:
+        # Check if the image is available, or if we need to pull it down.
+        image = container.service.get_image_details()
+        if self._refresh_images or \
+                not filter(lambda i: i['Tag'] == image['tag'],
+                           container.ship.backend.images(name=image['repository'])):
             o.pending('pulling image {}...'.format(container.service.image))
-            container.ship.backend.pull(**container.service.get_image_details())
+            container.ship.backend.pull(**image)
 
+        # Create and start the container.
         o.pending('creating container...')
         c = container.ship.backend.create_container(
             image=container.service.image,

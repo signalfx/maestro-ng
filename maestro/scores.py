@@ -157,9 +157,9 @@ class Start(BaseScore):
         if not status or not status['State']['Running']:
             return False
 
-        # Wait up to 30 seconds for the container's application to come online.
+        # Wait up for the container's application to come online.
         o.pending('waiting for service...')
-        return container.ping(retries=30)
+        return container.ping(retries=60)
 
 class Stop(BaseScore):
     """The Stop score is a Maestro orchestration play that will stop and remove

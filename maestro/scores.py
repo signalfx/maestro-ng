@@ -90,11 +90,16 @@ class Start(BaseScore):
 
             error = None
             try:
+                # TODO: None is used to indicate that no action was performed
+                # because the container and its application were already
+                # running. This makes the following code not very nice and this
+                # could be improved.
                 result = self._start_container(o, container)
                 o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
-                    self._color(result), result and 'up' or 'service did not start!'))
-
-                if not result:
+                    self._color(result is not False),
+                    result is None and 'up' or \
+                        result and 'started' or 'service did not start!'))
+                if result is False:
                     error = container.ship.backend.logs(container.id)
             except docker.client.APIError, e:
                 o.commit('\033[31;1mfailed to start container!\033[;0m')
@@ -110,10 +115,22 @@ class Start(BaseScore):
                 return
 
     def _start_container(self, o, container):
+        """Start the given container.
+
+        If the container and its application are already running, no action is
+        performed and the function returns None to indicate that. Otherwise, a
+        new container must be created and started. To achieve this, any
+        existing container of the same name is first removed. Then, if
+        necessary or if requested, the container image is pulled from its
+        registry. Finally, the container is created and started, configured as
+        necessary. We then wait for the application to start and return True or
+        False depending on whether the start was successful."""
         o.pending('checking service...')
         if container.ping(retries=2):
             o.commit('\033[34;0m{:<15s}\033[;0m'.format(container.id[:7]))
-            return True
+            # We use None as a special marker showing the container and the
+            # application were already running.
+            return None
 
         # Otherwise we need to start it.
         if container.id:
@@ -181,7 +198,8 @@ class Stop(BaseScore):
 
             o.pending('checking container...')
             try:
-                if not container.status():
+                status = container.status(refresh=True)
+                if not status or not status['State']['Running']:
                     o.commit('{:<15s} {:<10s}'.format('n/a', 'already down'))
                     o.end()
                     continue

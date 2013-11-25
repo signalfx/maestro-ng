@@ -45,7 +45,7 @@ class Status(BaseScore):
 
     def run(self):
         print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
-            '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
+            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
@@ -81,7 +81,7 @@ class Start(BaseScore):
 
     def run(self):
         print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
-            '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
+            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
@@ -188,7 +188,7 @@ class Stop(BaseScore):
 
     def run(self):
         print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
-            '  #', 'COMPONENT', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
+            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
 
         for order, container in enumerate(self._containers):
             o = OutputFormatter(

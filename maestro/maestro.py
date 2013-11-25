@@ -420,10 +420,17 @@ class Conductor:
     def logs(self, **kwargs):
         """Display the logs of the given container."""
         containers = kwargs.get('services', [])
-        if len(containers) > 1:
+        if len(containers) != 1:
             logging.error('Logs can only be shown for a single container at once!')
             return
+
         container = self._containers[list(containers)[0]]
+
         status = container.status()
-        if status:
-            print container.ship.backend.logs(container.id)
+        if not status:
+            return
+
+        logs = container.ship.backend.logs(container.id)
+        if not logs:
+            return
+        print logs

@@ -19,8 +19,8 @@ def main(args):
                         choices=commands,
                         default='status',
                         help='orchestration command to execute')
-    parser.add_argument('service', nargs='*',
-                        help='service(s) to act on')
+    parser.add_argument('thing', nargs='*',
+                        help='container(s) or service(s) to act on')
     parser.add_argument('-f', '--file', nargs='?', default='-', metavar='FILE',
                         help='read environment description from FILE (use - for stdin)')
     parser.add_argument('-c', '--completion', metavar='CMD',
@@ -31,6 +31,9 @@ def main(args):
     parser.add_argument('-r', '--refresh-images', action='store_const',
                         const=True, default=False,
                         help='force refresh of container images from registry')
+    parser.add_argument('-o', '--only', action='store_const',
+                        const=True, default=False,
+                        help='only affect the selected container or service')
     options = parser.parse_args(args)
 
     stream = options.file == '-' and sys.stdin or open(options.file)
@@ -57,7 +60,7 @@ def main(args):
         return
 
     try:
-        getattr(c, options.command)(services=set(options.service),
+        getattr(c, options.command)(services=set(options.thing),
                                     refresh_images=options.refresh_images)
     except KeyError, e:
         logging.error('Service or container {} does not exist!\n'.format(e))

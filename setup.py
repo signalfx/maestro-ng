@@ -12,7 +12,7 @@ setup(
     description='Orchestrator for multi-host Docker deployments',
     zip_safe=True,
     packages=find_packages(),
-    install_requires=['docker-py'],
+    install_requires=['docker-py', 'pyyaml'],
     dependency_links=['https://github.com/mpetazzoni/docker-py/archive/next.zip#egg=docker-py'],
     classifiers=[
         'Development Status :: 3 - Alpha',

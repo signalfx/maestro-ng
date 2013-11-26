@@ -258,15 +258,16 @@ Guest utils helper functions
 
 To make use of the Maestro guest utils functions, you'll need to have
 the Maestro package installed inside your container. You can easily
-achieve this by adding the following to your Dockerfile:
+achieve this by adding the following to your Dockerfile (select the
+version of Maestro that you need):
 
 ```
 RUN apt-get update
 RUN apt-get -y install python python-setuptools
-RUN easy_install http://github.com/signalfuse/maestro-ng/archive/maestro-0.1.1.zip
+RUN easy_install http://github.com/signalfuse/maestro-ng/archive/maestro-0.1.2.zip
 ```
 
-This will install Maestro 0.1.1. Feel free to change that to any, more
+This will install Maestro 0.1.2. Feel free to change that to any, more
 current version of Maestro you like or need.
 
 Then, from your startup script (in Python), do:
@@ -323,26 +324,27 @@ clone. To run Maestro, simply execute the main Python package:
 
 ```
 $ python -m maestro -h
-usage: maestro.py [-h] [-f [FILE]] [-v]
-                  [{status,start,stop,clean}] [services [services ...]]
+usage: maestro [-h] [-f [FILE]] [-c CMD] [-v] [-r] [-o]
+               [{status,start,stop,clean,logs}] [thing [thing ...]]
 
-Docker container orchestrator
+Docker container orchestrator.
 
 positional arguments:
-  {status,start,stop,clean}
-                        Orchestration command to execute
-  services              Service(s) to affect
+  {status,start,stop,clean,logs}
+                        orchestration command to execute
+  thing                 container(s) or service(s) to act on
 
 optional arguments:
   -h, --help            show this help message and exit
   -f [FILE], --file [FILE]
-                        Read environment description from FILE (use - for
+                        read environment description from FILE (use - for
                         stdin)
   -c CMD, --completion CMD
                         list commands, services or containers in environment
                         based on CMD
   -v, --verbose         be verbose; show debugging messages
-  -v, --verbose         Be verbose
+  -r, --refresh-images  force refresh of container images from registry
+  -o, --only            only affect the selected container or service
 ```
 
 By default, Maestro will read the environment description from the
@@ -362,13 +364,17 @@ should all be self-explanatory. Service dependency is always honored for
 all commands. Note that if services don't have any dependencies (or have
 the same dependencies), their start order might not always be the same.
 
-You can also pass one or more service names on which to execute the
-command, to restrict the action of the command to just these services.
-Note that Maestro will do its best to examine the state of the system
-and not perform any action unless it's really necessary.
+You can also pass one or more service names or container names on which
+to execute the command, to restrict the action of the command to just
+these services or containers (or any combination of both).  Note that
+Maestro will do its best to examine the state of the system and not
+perform any action unless it's really necessary.
 
-Finally, if started without any command and service names, Maestro will
-default to the `status` command, showing the state of the environment.
+You can force Maestro to operate only on the containers and services
+that were explicitely given on the command-line by using the `-o` flag.
+
+Finally, if started without any arguments, default to the `status`
+command on all containers, thus showing the state of the environment.
 
 Examples of Docker images with Maestro orchestration
 ====================================================

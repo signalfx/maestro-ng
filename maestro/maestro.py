@@ -343,89 +343,130 @@ class Conductor:
     def containers(self):
         return self._containers.keys()
 
-    def _service_order(self, pending=[], ordered=[], forward=True):
-        """Calculate the service start order based on each service's
-        dependencies.
+    def _order_dependencies(self, pending=[], ordered=[], forward=True):
+        """Order the given set of containers into an order respecting the
+        service dependencies in the given direction.
 
-        Services are initially all into the pending list and moved to the
-        ordered list iff they have no dependency or all their dependencies have
-        been met, that is are already into the ordered list.
+        The list of containers to order should be passed in the pending
+        parameter. The ordered list will be returned by the function (the
+        ordered parameter is for internal recursion use only).
+
+        The direction of the dependencies controls whether the ordering should
+        be constructed for startup (dependencies first) or shutdown (dependents
+        first).
         """
         wait = []
-        for service in pending:
-            s = service.requires if forward else service.needed_for
-            if s and not s.issubset(set(ordered + [service])):
-                wait.append(service)
-            else:
-                ordered.append(service)
 
+        for container in pending:
+            deps = self._gather_dependencies([container], forward)
+            if deps and not deps.issubset(set(ordered + [container])):
+                wait.append(container)
+            else:
+                ordered.append(container)
+
+        # If wait and pending are not empty and have the same length, it means
+        # we were not able to order any container from the pending list (they
+        # all went to the wait list). This means the dependency tree cannot be
+        # resolved and an error should be raised.
         if wait and pending and len(wait) == len(pending):
             raise Exception, \
-                'Cannot resolve dependencies in environment for services %s!' % wait
-        return wait and self._service_order(wait, ordered, forward) or ordered
+                'Cannot resolve dependencies for containers {}!'.format(
+                    map(lambda x: x.name, wait))
 
-    def _gather_from_services(self, services, forward=True):
-        result = set(map(lambda s: self._services[s], services) or self._services.values())
-        for service in result:
-            result = result.union(service.requires if forward else service.needed_for)
+        # As long as 'wait' has elements, keep recursing to resolve
+        # dependencies. Otherwise, returned the ordered list, which should now
+        # be final.
+        return wait and self._order_dependencies(wait, ordered, forward) or ordered
+
+    def _gather_dependencies(self, containers, forward=True):
+        """Transitively gather all containers from the dependencies or
+        dependents (depending on the value of the forward parameter) services
+        that the services the given containers are members of."""
+        result = set(containers or self._containers.values())
+        for container in result:
+            deps = container.service.requires if forward else container.service.needed_for
+            deps = reduce(lambda x, y: x.union(y), map(lambda s: s.containers, deps), set([]))
+            result = result.union(deps)
         return result
 
-    def _ordered_from_services(self, services, forward=True):
-        return self._service_order(
-            self._gather_from_services(services, forward),
+    def _to_containers(self, things):
+        """Transform a list of "things", container names or service names, to
+        an expended list of Container objects."""
+        def parse_thing(s):
+            if s in self._containers:
+                return [self._containers[s]]
+            elif s in self._services:
+                return self._services[s].containers
+            raise Exception, '{} is neither a service nor a container!'.format(s)
+        return reduce(lambda x, y: x+y, map(parse_thing, things), [])
+
+    def _ordered_containers(self, things, forward=True):
+        """Return the ordered list of containers from the list of names passed
+        to it (either container names or service names).
+
+        Args:
+            things (list<string>):
+            forward (boolean): controls the direction of the dependency tree.
+        """
+        return self._order_dependencies(
+            self._gather_dependencies(self._to_containers(things), forward),
             forward=forward)
 
-    def _ordered_containers(self, services, forward=True):
-        return reduce(lambda l, s: l + s.containers,
-                self._ordered_from_services(services, forward),
-                [])
-
-    def status(self, **kwargs):
+    def status(self, things=[], only=False, **kwargs):
         """Display the status of the given services.
 
         Args:
-            services (set<string>): The services to show the status of.
+            things (set<string>): The things to show the status of.
+            only (boolean): Whether to only show the status of the specified
+                things, or their dependencies as well.
         """
-        scores.Status(self._ordered_containers(
-                kwargs.get('services', []))).run()
+        containers = self._ordered_containers(things) if not only \
+                else self._to_containers(things)
+        scores.Status(containers).run()
 
-    def start(self, **kwargs):
-        """Start the given services(s). Dependencies of the requested services
-        are started first.
+    def start(self, things=[], refresh_images=False, only=False, **kwargs):
+        """Start the given container(s) and services(s). Dependencies of the
+        requested containers and services are started first.
 
         Args:
-            services (set<string>): The list of services to start.
+            things (set<string>): The list of things to start.
+            refresh_images (boolean): Whether to force an image pull for each
+                container or not.
+            only (boolean): Whether to act on only the specified things, or
+                their dependencies as well.
         """
-        scores.Start(self._ordered_containers(
-                kwargs.get('services', [])),
-                kwargs.get('refresh_images', False)).run()
+        containers = self._ordered_containers(things) if not only \
+                else self._to_containers(things)
+        scores.Start(containers, refresh_images).run()
  
-    def stop(self, **kwargs):
-        """Stop the given service(s).
+    def stop(self, things=[], only=False, **kwargs):
+        """Stop the given container(s) and service(s).
 
         This one is a bit more tricky because we don't want to look at the
-        dependencies of the services we want to stop, but at which services
-        depend on the services we want to stop.
+        dependencies of the containers and services we want to stop, but at
+        which services depend on the containers and services we want to stop.
+        Unless of course the only parameter is set to True.
 
         Args:
-            services (set<string>): The list of services to stop.
+            things (set<string>): The list of things to stop.
+            only (boolean): Whether to act on only the specified things, or
+                their dependencies as well.
         """
-
-        scores.Stop(self._ordered_containers(
-                kwargs.get('services', []), False)).run()
+        containers = self._ordered_containers(things, False) if not only \
+                else self._to_containers(things)
+        scores.Stop(containers).run();
 
     def clean(self, **kwargs):
         raise NotImplementedError, 'Not yet implemented!'
 
-    def logs(self, **kwargs):
+    def logs(self, things=[], **kwargs):
         """Display the logs of the given container."""
-        containers = kwargs.get('services', [])
+        containers = self._to_containers(things)
         if len(containers) != 1:
             logging.error('Logs can only be shown for a single container at once!')
             return
 
-        container = self._containers[list(containers)[0]]
-
+        container = containers[0]
         status = container.status()
         if not status:
             return

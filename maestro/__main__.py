@@ -19,7 +19,7 @@ def main(args):
                         choices=commands,
                         default='status',
                         help='orchestration command to execute')
-    parser.add_argument('thing', nargs='*',
+    parser.add_argument('things', nargs='*', metavar='thing',
                         help='container(s) or service(s) to act on')
     parser.add_argument('-f', '--file', nargs='?', default='-', metavar='FILE',
                         help='read environment description from FILE (use - for stdin)')
@@ -50,18 +50,15 @@ def main(args):
     c = maestro.Conductor(config)
     if options.completion is not None:
         args = filter(lambda x: not x.startswith('-'), options.completion.split(' '))
-        if len(args) == 2:
-            print ' '.join([x for x in commands if x.startswith(args[1])])
-        elif len(args) == 3:
-            if args[1] != 'logs':
-                print ' '.join([x for x in c.services if x.startswith(args[2])])
-            else:
-                print ' '.join([x for x in c.containers if x.startswith(args[2])])
+        if len(args) == 2: prefix = args[1]; choices = commands
+        elif len(args) == 3: prefix = args[2]; choices = c.services + c.containers
+        else: return
+        print ' '.join(filter(lambda x: x.startswith(prefix), set(choices)))
         return
 
     try:
-        getattr(c, options.command)(services=set(options.thing),
-                                    refresh_images=options.refresh_images)
+        options.things = set(options.things)
+        getattr(c, options.command)(**vars(options))
     except KeyError, e:
         logging.error('Service or container {} does not exist!\n'.format(e))
         sys.exit(1)

@@ -35,12 +35,14 @@ requested command.
 Dependencies
 ------------
 
-MaestroNG requires Docker 0.6.5 or newer on the hosts as it makes use of
-the container naming feature.
+MaestroNG requires Docker 0.6.7 or newer on the hosts as it makes use of
+the container naming feature and bug fixes in NAT port forwarding.
 
-You'll also need, to run Maestro:
+You'll also need the following Python modules, although these will be
+automatically installed by `setuptools` if you follow the instructions
+below.
 
-* python-yaml
+* PyYAML
 * A recent [docker-py](http://github.com/dotcloud/docker-py)
 
 Installation

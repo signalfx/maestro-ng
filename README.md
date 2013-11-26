@@ -263,10 +263,10 @@ achieve this by adding the following to your Dockerfile:
 ```
 RUN apt-get update
 RUN apt-get -y install python python-setuptools
-RUN easy_install http://github.com/signalfuse/maestro-ng/archive/maestro-0.1.0.zip
+RUN easy_install http://github.com/signalfuse/maestro-ng/archive/maestro-0.1.1.zip
 ```
 
-This will install Maestro 0.1.0. Feel free to change that to any, more
+This will install Maestro 0.1.1. Feel free to change that to any, more
 current version of Maestro you like or need.
 
 Then, from your startup script (in Python), do:

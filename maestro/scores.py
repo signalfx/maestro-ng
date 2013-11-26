@@ -3,23 +3,31 @@
 # Docker container orchestration utility.
 
 import docker
-import logging
 import sys
 import time
 
-class BaseScore:
+import exceptions
 
+# Some utility functions for output.
+def __cond_label(self, cond, t, f):
+    return t if cond else f
+def __color(self, cond):
+    return __cond_label(cond, 32, 31)
+def __up(self, cond):
+    return __cond_label(cond, 'up', 'down')
+
+class BaseScore:
     def __init__(self, containers=[]):
         self._containers = containers
-
-    def __cond_label(self, cond, t, f): return cond and t or f
-    def _color(self, cond): return self.__cond_label(cond, 32, 31)
-    def _up(self, cond): return self.__cond_label(cond, 'up', 'down')
-
     def run(self):
         raise NotImplementedError
 
 class OutputFormatter:
+    """Output formatter for nice, progressive terminal output.
+
+    Manages the output of a progressively updated terminal line, with "in
+    progress" labels and a "committed" base label.
+    """
     def __init__(self, prefix):
         self._committed = prefix
 
@@ -109,10 +117,9 @@ class Start(BaseScore):
 
             # Halt the sequence if a container failed to start.
             if error:
-                logging.error('%s/%s failed to start. Halting sequence.',
-                    container.service.name, container.name)
-                logging.error(error)
-                return
+                raise exceptions.OrchestrationException, \
+                    ('Halting start sequence because {} failed to start!\n{}'
+                        .format(container, error))
 
     def _start_container(self, o, container):
         """Start the given container.

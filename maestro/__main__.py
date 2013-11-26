@@ -9,7 +9,7 @@ import logging
 import sys
 import yaml
 
-from . import maestro
+from . import exceptions, maestro
 
 def main(args):
     commands = ['status', 'start', 'stop', 'clean', 'logs']
@@ -25,9 +25,6 @@ def main(args):
                         help='read environment description from FILE (use - for stdin)')
     parser.add_argument('-c', '--completion', metavar='CMD',
                         help='list commands, services or containers in environment based on CMD')
-    parser.add_argument('-v', '--verbose', action='store_const',
-                        const=logging.DEBUG, default=logging.INFO,
-                        help='be verbose; show debugging messages')
     parser.add_argument('-r', '--refresh-images', action='store_const',
                         const=True, default=False,
                         help='force refresh of container images from registry')
@@ -40,9 +37,6 @@ def main(args):
     config = yaml.load(stream)
     stream.close()
 
-    logging.basicConfig(stream=sys.stdout, level=options.verbose,
-            format='%(message)s')
-
     # Shutup urllib3, wherever it comes from.
     logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARN)
     logging.getLogger('urllib3.connectionpool').setLevel(logging.WARN)
@@ -51,7 +45,7 @@ def main(args):
     if options.completion is not None:
         args = filter(lambda x: not x.startswith('-'), options.completion.split(' '))
         if len(args) == 2: prefix = args[1]; choices = commands
-        elif len(args) == 3: prefix = args[2]; choices = c.services + c.containers
+        elif len(args) >= 3: prefix = args[len(args)-1]; choices = c.services + c.containers
         else: return
         print ' '.join(filter(lambda x: x.startswith(prefix), set(choices)))
         return
@@ -59,8 +53,8 @@ def main(args):
     try:
         options.things = set(options.things)
         getattr(c, options.command)(**vars(options))
-    except KeyError, e:
-        logging.error('Service or container {} does not exist!\n'.format(e))
+    except exceptions.MaestroException, e:
+        sys.stderr.write('{}\n'.format(e))
         sys.exit(1)
 
 if __name__ == '__main__':

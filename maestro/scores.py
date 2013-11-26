@@ -9,12 +9,12 @@ import time
 import exceptions
 
 # Some utility functions for output.
-def __cond_label(self, cond, t, f):
+def cond_label(cond, t, f):
     return t if cond else f
-def __color(self, cond):
-    return __cond_label(cond, 32, 31)
-def __up(self, cond):
-    return __cond_label(cond, 'up', 'down')
+def color(cond):
+    return cond_label(cond, 32, 31)
+def up(cond):
+    return cond_label(cond, 'up', 'down')
 
 class BaseScore:
     def __init__(self, containers=[]):
@@ -64,14 +64,14 @@ class Status(BaseScore):
                 o.pending('checking container...')
                 status = container.status()
                 o.commit('\033[{:d};1m{:<15s}\033[;0m'.format(
-                    self._color(status and status['State']['Running']),
+                    color(status and status['State']['Running']),
                     (status and status['State']['Running'] and container.id[:7] or 'down')))
 
                 o.pending('checking service...')
                 ping = container.ping(1)
-                o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
-                    self._color(ping), self._up(ping)))
+                o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(color(ping), up(ping)))
             except Exception, e:
+                print e
                 o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format('host down', 'down'))
             o.end()
 
@@ -104,7 +104,7 @@ class Start(BaseScore):
                 # could be improved.
                 result = self._start_container(o, container)
                 o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
-                    self._color(result is not False),
+                    color(result is not False),
                     result is None and 'up' or \
                         result and 'started' or 'service did not start!'))
                 if result is False:

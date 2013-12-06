@@ -5,6 +5,16 @@ ChangeLog
 * Implemented properly typed and defined exceptions that allow for
   correct error reporting and non-zero exit codes when necessary
 
+Maestro 0.1.3
+-------------
+
+_December 6th, 2013_
+
+* Download progress indicator when pulling an image
+* Correctly exit with a non-zero exit code on error through better
+  exception handling and reporting
+* Bugfixes and code cleanups
+
 Maestro 0.1.2
 -------------
 

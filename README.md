@@ -266,10 +266,10 @@ version of Maestro that you need):
 ```
 RUN apt-get update
 RUN apt-get -y install python python-setuptools
-RUN easy_install http://github.com/signalfuse/maestro-ng/archive/maestro-0.1.2.zip
+RUN easy_install http://github.com/signalfuse/maestro-ng/archive/maestro-0.1.3.zip
 ```
 
-This will install Maestro 0.1.2. Feel free to change that to any, more
+This will install Maestro 0.1.3. Feel free to change that to any, more
 current version of Maestro you like or need.
 
 Then, from your startup script (in Python), do:

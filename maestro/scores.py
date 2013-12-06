@@ -3,6 +3,8 @@
 # Docker container orchestration utility.
 
 import docker
+import json
+import re
 import sys
 import time
 
@@ -83,6 +85,8 @@ class Start(BaseScore):
     container's application to become available before moving to the next
     one."""
 
+    PULL_PROGRESS_MATCH = re.compile(r'[^\(]+ \((\d+)%\)')
+
     def __init__(self, containers=[], refresh_images=False):
         BaseScore.__init__(self, containers)
         self._refresh_images = refresh_images
@@ -121,6 +125,22 @@ class Start(BaseScore):
                     ('Halting start sequence because {} failed to start!\n{}'
                         .format(container, error))
 
+    def _update_pull_progress(self, progress, last):
+        """Update an image pull progress map with latest download progress
+        information for one of the image layers, and return the average of the
+        download progress of all layers as an indication of the overall
+        progress of the pull."""
+        try:
+            last = json.loads(last)
+            m = Start.PULL_PROGRESS_MATCH.match(last['progress'])
+            progress[last['id']] = 100 if last['progress'] == 'complete' \
+                    else (m and int(m.group(1)) or 0)
+        except:
+            pass
+
+        return reduce(lambda x, y: x+y, progress.values()) / len(progress) \
+                if progress else 0
+
     def _start_container(self, o, container):
         """Start the given container.
 
@@ -150,7 +170,10 @@ class Start(BaseScore):
                 not filter(lambda i: i['Tag'] == image['tag'],
                            container.ship.backend.images(name=image['repository'])):
             o.pending('pulling image {}...'.format(container.service.image))
-            container.ship.backend.pull(**image)
+            progress = {}
+            for dlstatus in container.ship.backend.pull(stream=True, **image):
+                o.pending('... {:.1f}%'.format(
+                    self._update_pull_progress(progress, dlstatus)))
 
         # Create and start the container.
         o.pending('creating container...')

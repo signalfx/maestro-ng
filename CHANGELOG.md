@@ -1,9 +1,15 @@
 ChangeLog
 =========
 
-* Removed the useless -v/--verbose option
-* Implemented properly typed and defined exceptions that allow for
-  correct error reporting and non-zero exit codes when necessary
+Maestro 0.1.4
+-------------
+
+_December 9th, 2013_
+
+* Optimize status score by not polling the service if the container is
+  down (it can't be running then)
+* Add guest helper function to retrieve the internal IP address of the
+  container
 
 Maestro 0.1.3
 -------------
@@ -13,6 +19,7 @@ _December 6th, 2013_
 * Download progress indicator when pulling an image
 * Correctly exit with a non-zero exit code on error through better
   exception handling and reporting
+* Removed the useless -v/--verbose option
 * Bugfixes and code cleanups
 
 Maestro 0.1.2

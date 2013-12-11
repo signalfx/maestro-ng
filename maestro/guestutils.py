@@ -4,8 +4,11 @@
 # Utility functions for service start scripts that help work with Maestro
 # orchestration.
 
+import docker
 import os
 import re
+
+import entities
 
 class MaestroEnvironmentError(Exception):
     pass
@@ -30,10 +33,17 @@ def get_container_name():
     return name
 
 def get_container_host_address():
+    """Return the publicly-addressable IP address of the host of the
+    container."""
     address = os.environ.get('CONTAINER_HOST_ADDRESS', '')
     if not address:
         raise MaestroEnvironmentError, 'Container host address was not defined'
     return address
+
+def get_container_internal_address():
+    """Return the internal, private IP address assigned to the container."""
+    ship = entities.Ship('host', get_container_host_address())
+    return str(ship.backend.inspect_container(get_container_name())['NetworkSettings']['IPAddress'])
 
 def get_port(name, default=None):
     """Return the port number for the given port, or the given default if not

@@ -291,6 +291,8 @@ your disposal that will make your life much easier:
   - `get_container_host_address()` returns the IP address or hostname of
     the host of the container. Useful if your application needs to
     advertise itself to some service discovery system.
+  - `get_container_internal_address()` returns the IP address assigned
+    to the container itself by Docker (its private IP address).
   - `get_port(name, default)` will return the port number of a given
     named port for the current container instance. This is useful to set
     configuration parameters for example.

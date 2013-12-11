@@ -70,7 +70,7 @@ class Status(BaseScore):
                     (status and status['State']['Running'] and container.id[:7] or 'down')))
 
                 o.pending('checking service...')
-                ping = container.ping(1)
+                ping = status and status['State']['Running'] and container.ping(1)
                 o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(color(ping), up(ping)))
             except Exception, e:
                 print e

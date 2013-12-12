@@ -2,6 +2,11 @@ ChangeLog
 =========
 
 * Fix download indicator for compatibility with Docker 0.7.x
+* Renamed 'status' command to 'fullstatus', and implemented new, faster
+  'status' command that only looks at the state of the containers, not
+  the services themselves.
+* Sort containers before building dependencies to try to keep them a bit
+  more organized without breaking the dependency order.
 
 Maestro 0.1.4
 -------------

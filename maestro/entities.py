@@ -306,3 +306,10 @@ class Container(Entity):
     def __repr__(self):
         return '<container:%s/%s [on %s]>' % \
             (self.name, self.service.name, self.ship.name)
+
+    def __lt__(self, other):
+        return self.name < other.name
+    def __eq__(self, other):
+        return self.name == other.name
+    def __hash__(self):
+        return hash(self.name)

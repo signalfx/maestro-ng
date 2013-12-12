@@ -29,23 +29,29 @@ class OutputFormatter:
     Manages the output of a progressively updated terminal line, with "in
     progress" labels and a "committed" base label.
     """
-    def __init__(self, prefix):
+    def __init__(self, prefix=None):
         self._committed = prefix
 
     def commit(self, s=None):
-        self._committed = '{} {}'.format(self._committed, s)
+        if self._committed and s:
+            self._committed = '{} {}'.format(self._committed, s)
+        elif not self._committed and s:
+            self._committed = s
         print '{}\033[K\r'.format(self._committed),
         sys.stdout.flush()
 
     def pending(self, s):
-        print '{} {}\033[K\r'.format(self._committed, s),
+        if self._committed and s:
+            print '{} {}\033[K\r'.format(self._committed, s),
+        elif not self._committed and s:
+            print '{}\033[K\r'.format(s),
         sys.stdout.flush()
 
     def end(self):
         print
         sys.stdout.flush()
 
-class Status(BaseScore):
+class FullStatus(BaseScore):
     """The Status score is a Maestro orchestration play that displays the
     status of the given services."""
 
@@ -74,6 +80,38 @@ class Status(BaseScore):
             except Exception, e:
                 print e
                 o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format('host down', 'down'))
+            o.end()
+
+
+class Status(BaseScore):
+    """A less advanced, but faster status display score that only looks at the
+    presence and status of the containers. Status information is bulk-polled
+    from each ship's Docker daemon."""
+
+    def __init__(self, containers=[]):
+        BaseScore.__init__(self, containers)
+
+    def run(self):
+        status = {}
+        o = OutputFormatter()
+        for ship in set([container.ship for container in self._containers]):
+            o.pending('Gathering container information from {} ({})...'.format(
+                ship.name, ship.ip))
+            status.update(dict((c['Names'][0][1:], c)
+                for c in ship.backend.containers()))
+
+        print '{:>3s}  {:<20s} {:<15s} {:<30s} {:<15s}'.format(
+            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER')
+
+        for order, container in enumerate(self._containers, 1):
+            o = OutputFormatter(
+                '{:>3d}. \033[37;1m{:<20.20s}\033[;0m {:<15.15s} {:<30.30s}'.format(
+                order, container.name, container.service.name,
+                container.ship.ip))
+            if container.name in status and status[container.name]['Status'].startswith('Up'):
+                o.commit('\033[32;1m{}\033[;0m'.format(status[container.name]['Id'][:7]))
+            else:
+                o.commit('\033[31;1mdown\033[;0m')
             o.end()
 
 

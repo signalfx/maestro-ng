@@ -74,7 +74,6 @@ class Conductor:
         first).
         """
         wait = []
-
         for container in pending:
             deps = self._gather_dependencies([container], forward)
             if deps and not deps.issubset(set(ordered + [container])):
@@ -130,11 +129,12 @@ class Conductor:
             forward (boolean): controls the direction of the dependency tree.
         """
         return self._order_dependencies(
-            self._gather_dependencies(self._to_containers(things), forward),
+            sorted(self._gather_dependencies(self._to_containers(things), forward)),
             forward=forward)
 
     def status(self, things=[], only=False, **kwargs):
-        """Display the status of the given services.
+        """Display the status of the given services and containers, but only
+        looking at the container's state, not the application availability.
 
         Args:
             things (set<string>): The things to show the status of.
@@ -144,6 +144,19 @@ class Conductor:
         containers = self._ordered_containers(things) if not only \
                 else self._to_containers(things)
         scores.Status(containers).run()
+
+    def fullstatus(self, things=[], only=False, **kwargs):
+        """Display the status of the given services and containers, pinging for
+        application availability (slower).
+
+        Args:
+            things (set<string>): The things to show the status of.
+            only (boolean): Whether to only show the status of the specified
+                things, or their dependencies as well.
+        """
+        containers = self._ordered_containers(things) if not only \
+                else self._to_containers(things)
+        scores.FullStatus(containers).run()
 
     def start(self, things=[], refresh_images=False, only=False, **kwargs):
         """Start the given container(s) and services(s). Dependencies of the
@@ -175,7 +188,7 @@ class Conductor:
         """
         containers = self._ordered_containers(things, False) if not only \
                 else self._to_containers(things)
-        scores.Stop(containers).run();
+        scores.Stop(containers).run()
 
     def clean(self, **kwargs):
         raise NotImplementedError, 'Not yet implemented!'

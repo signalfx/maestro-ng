@@ -12,7 +12,7 @@ import yaml
 from . import exceptions, maestro
 
 def main(args):
-    commands = ['status', 'start', 'stop', 'clean', 'logs']
+    commands = ['status', 'fullstatus', 'start', 'stop', 'clean', 'logs']
     parser = argparse.ArgumentParser(prog='maestro',
                                      description='Docker container orchestrator.')
     parser.add_argument('command', nargs='?',

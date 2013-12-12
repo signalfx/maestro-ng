@@ -110,7 +110,7 @@ class Start(BaseScore):
                         result and 'started' or 'service did not start!'))
                 if result is False:
                     error = container.ship.backend.logs(container.id)
-            except docker.client.APIError, e:
+            except Exception, e:
                 o.commit('\033[31;1mfailed to start container!\033[;0m')
                 error = e
 
@@ -193,10 +193,11 @@ class Start(BaseScore):
 
         o.pending('waiting for container creation...')
         if not self._wait_for_status(container, lambda x: x):
-            return False
+            raise exceptions.OrchestrationException, \
+                    'Container status could not be obtained after creation!'
         o.commit('\033[32;1m{:<15s}\033[;0m'.format(container.id[:7]))
 
-        o.pending('starting container...')
+        o.pending('starting container {}...'.format(container.id[:7]))
         container.ship.backend.start(container.id,
             binds=container.volumes,
             port_bindings=dict([('%d/tcp' % port['exposed'],
@@ -208,7 +209,8 @@ class Start(BaseScore):
         # initialization didn't fail.
         o.pending('waiting for container initialization...')
         if not self._wait_for_status(container, lambda x: x and x['State']['Running']):
-            return False
+            raise exceptions.OrchestrationException, \
+                    'Container status could not be obtained after start!'
 
         # Wait up for the container's application to come online.
         o.pending('waiting for service...')

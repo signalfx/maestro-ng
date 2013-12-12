@@ -138,6 +138,15 @@ class Start(BaseScore):
         return reduce(lambda x, y: x+y, progress.values()) / len(progress) \
                 if progress else 0
 
+    def _wait_for_status(self, container, cond, retries=10):
+        while retries >= 0:
+            status = container.status(refresh=True)
+            if cond(status):
+                return True
+            time.sleep(0.5)
+            retries -= 1
+        return False
+
     def _start_container(self, o, container):
         """Start the given container.
 
@@ -174,7 +183,7 @@ class Start(BaseScore):
 
         # Create and start the container.
         o.pending('creating container...')
-        c = container.ship.backend.create_container(
+        container.ship.backend.create_container(
             image=container.service.image,
             hostname=container.name,
             name=container.name,
@@ -182,12 +191,13 @@ class Start(BaseScore):
             ports=dict([('%d/tcp' % port['exposed'], {})
                 for port in container.ports.itervalues()]))
 
-        if not container.status(refresh=True):
+        o.pending('waiting for container creation...')
+        if not self._wait_for_status(container, lambda x: x):
             return False
         o.commit('\033[32;1m{:<15s}\033[;0m'.format(container.id[:7]))
 
         o.pending('starting container...')
-        container.ship.backend.start(c,
+        container.ship.backend.start(container.id,
             binds=container.volumes,
             port_bindings=dict([('%d/tcp' % port['exposed'],
                     [{'HostIp': '0.0.0.0', 'HostPort': str(port['external'])}])
@@ -197,9 +207,7 @@ class Start(BaseScore):
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.
         o.pending('waiting for container initialization...')
-        time.sleep(1)
-        status = container.status(refresh=True)
-        if not status or not status['State']['Running']:
+        if not self._wait_for_status(container, lambda x: x and x['State']['Running']):
             return False
 
         # Wait up for the container's application to come online.

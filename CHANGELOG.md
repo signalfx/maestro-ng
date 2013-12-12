@@ -1,6 +1,8 @@
 ChangeLog
 =========
 
+* Fix download indicator for compatibility with Docker 0.7.x
+
 Maestro 0.1.4
 -------------
 

@@ -4,7 +4,6 @@
 
 import docker
 import json
-import re
 import sys
 import time
 
@@ -85,8 +84,6 @@ class Start(BaseScore):
     container's application to become available before moving to the next
     one."""
 
-    PULL_PROGRESS_MATCH = re.compile(r'[^\(]+ \((\d+)%\)')
-
     def __init__(self, containers=[], refresh_images=False):
         BaseScore.__init__(self, containers)
         self._refresh_images = refresh_images
@@ -132,9 +129,9 @@ class Start(BaseScore):
         progress of the pull."""
         try:
             last = json.loads(last)
-            m = Start.PULL_PROGRESS_MATCH.match(last['progress'])
-            progress[last['id']] = 100 if last['progress'] == 'complete' \
-                    else (m and int(m.group(1)) or 0)
+            progress[last['id']] = last['status'] == 'Download complete' \
+                and 100 \
+                or 100.0 * last['progressDetail']['current'] / last['progressDetail']['total']
         except:
             pass
 
@@ -185,7 +182,8 @@ class Start(BaseScore):
             ports=dict([('%d/tcp' % port['exposed'], {})
                 for port in container.ports.itervalues()]))
 
-        container.status(refresh=True)
+        if not container.status(refresh=True):
+            return False
         o.commit('\033[32;1m{:<15s}\033[;0m'.format(container.id[:7]))
 
         o.pending('starting container...')

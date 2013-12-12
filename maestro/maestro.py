@@ -116,7 +116,7 @@ class Conductor:
                 return [self._containers[s]]
             elif s in self._services:
                 return self._services[s].containers
-            raise OrchestrationException, \
+            raise exceptions.OrchestrationException, \
                 '{} is neither a service nor a container!'.format(s)
         return reduce(lambda x, y: x+y, map(parse_thing, things), [])
 

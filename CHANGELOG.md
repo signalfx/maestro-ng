@@ -9,6 +9,8 @@ ChangeLog
   more organized without breaking the dependency order
 * Don't use white in commands output, just bold text
 * Compatibility fixes with docker-py 0.2.3
+* The 'logs' command now streams logs instead of dumping them, until you
+  hit ^C to stop
 
 Maestro 0.1.4
 -------------

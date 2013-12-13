@@ -205,7 +205,8 @@ class Conductor:
         if not status:
             return
 
-        logs = container.ship.backend.logs(container.id)
-        if not logs:
-            return
-        print logs
+        try:
+            for line in container.ship.backend.logs(container.id, stream=True):
+                print line
+        except:
+            pass

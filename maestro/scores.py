@@ -221,13 +221,14 @@ class Start(BaseScore):
 
         # Create and start the container.
         o.pending('creating container...')
+        ports = container.ports and [(port['exposed'], 'tcp')
+            for port in container.ports.itervalues()] or None
         container.ship.backend.create_container(
             image=container.service.image,
             hostname=container.name,
             name=container.name,
             environment=container.env,
-            ports=dict([('%d/tcp' % port['exposed'], {})
-                for port in container.ports.itervalues()]))
+            ports=ports)
 
         o.pending('waiting for container creation...')
         if not self._wait_for_status(container, lambda x: x):
@@ -236,16 +237,18 @@ class Start(BaseScore):
         o.commit('\033[32;1m{:<15s}\033[;0m'.format(container.id[:7]))
 
         o.pending('starting container {}...'.format(container.id[:7]))
+        ports = container.ports and dict([
+            (port['exposed'], ('0.0.0.0', port['external']))
+                for port in container.ports.itervalues()]) or None
         container.ship.backend.start(container.id,
             binds=container.volumes,
-            port_bindings=dict([('%d/tcp' % port['exposed'],
-                    [{'HostIp': '0.0.0.0', 'HostPort': str(port['external'])}])
-                for port in container.ports.itervalues()]))
+            port_bindings=ports)
 
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.
         o.pending('waiting for container initialization...')
-        if not self._wait_for_status(container, lambda x: x and x['State']['Running']):
+        if not self._wait_for_status(container,
+                                     lambda x: x and x['State']['Running']):
             raise exceptions.OrchestrationException, \
                     'Container status could not be obtained after start!'
 

@@ -8,6 +8,7 @@ ChangeLog
 * Sort containers before building dependencies to try to keep them a bit
   more organized without breaking the dependency order
 * Don't use white in commands output, just bold text
+* Compatibility fixes with docker-py 0.2.3
 
 Maestro 0.1.4
 -------------

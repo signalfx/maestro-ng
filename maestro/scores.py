@@ -97,8 +97,11 @@ class Status(BaseScore):
         for ship in set([container.ship for container in self._containers]):
             o.pending('Gathering container information from {} ({})...'.format(
                 ship.name, ship.ip))
-            status.update(dict((c['Names'][0][1:], c)
-                for c in ship.backend.containers()))
+            try:
+                status.update(dict((c['Names'][0][1:], c)
+                    for c in ship.backend.containers()))
+            except:
+                pass
 
         print '{:>3s}  {:<20s} {:<15s} {:<30s} {:<15s}'.format(
             '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER')

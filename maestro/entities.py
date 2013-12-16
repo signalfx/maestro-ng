@@ -34,7 +34,7 @@ class Ship(Entity):
     DEFAULT_DOCKER_VERSION = '1.6'
     DEFAULT_DOCKER_TIMEOUT = 5
 
-    def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT):
+    def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT, timeout=None):
         """Instantiate a new ship.
 
         Args:
@@ -49,7 +49,7 @@ class Ship(Entity):
         self._backend_url = 'http://{:s}:{:d}'.format(ip, docker_port)
         self._backend = docker.Client(base_url=self._backend_url,
                                       version=Ship.DEFAULT_DOCKER_VERSION,
-                                      timeout=Ship.DEFAULT_DOCKER_TIMEOUT)
+                                      timeout=timeout or Ship.DEFAULT_DOCKER_TIMEOUT)
 
     @property
     def ip(self):

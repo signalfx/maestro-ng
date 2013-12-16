@@ -4,22 +4,31 @@
 
 import entities
 import exceptions
-import scores
+import plays
 
 class Conductor:
     """The Maestro; the Conductor.
 
     The conductor is in charge of parsing and analyzing the environment
-    description and carrying out the orchestration scores to act on the
-    services and containers described in the environment.
+    description and carrying out the orchestration plays to act on the services
+    and containers described in the environment.
     """
 
     def __init__(self, config):
         self._config = config
+
+        # Create container ships.
         self._ships = dict((k, entities.Ship(k, v['ip'],
                                              v.get('docker_port',
                                              entities.Ship.DEFAULT_DOCKER_PORT)))
             for k, v in self._config['ships'].iteritems())
+
+        # Register defined private Docker registries authentications
+        self._registries = self._config.get('registries', {})
+        for name, registry in self._registries.iteritems():
+            if 'username' not in registry or 'password' not in registry:
+                raise exceptions.OrchestrationException, \
+                        'Incomplete registry auth data for {}!'.format(name)
 
         # Build all the entities.
         self._services = {}
@@ -143,7 +152,7 @@ class Conductor:
         """
         containers = self._ordered_containers(things) if not only \
                 else self._to_containers(things)
-        scores.Status(containers).run()
+        plays.Status(containers).run()
 
     def fullstatus(self, things=[], only=False, **kwargs):
         """Display the status of the given services and containers, pinging for
@@ -156,7 +165,7 @@ class Conductor:
         """
         containers = self._ordered_containers(things) if not only \
                 else self._to_containers(things)
-        scores.FullStatus(containers).run()
+        plays.FullStatus(containers).run()
 
     def start(self, things=[], refresh_images=False, only=False, **kwargs):
         """Start the given container(s) and services(s). Dependencies of the
@@ -171,7 +180,7 @@ class Conductor:
         """
         containers = self._ordered_containers(things) if not only \
                 else self._to_containers(things)
-        scores.Start(containers, refresh_images).run()
+        plays.Start(containers, self._registries, refresh_images).run()
  
     def stop(self, things=[], only=False, **kwargs):
         """Stop the given container(s) and service(s).
@@ -188,7 +197,7 @@ class Conductor:
         """
         containers = self._ordered_containers(things, False) if not only \
                 else self._to_containers(things)
-        scores.Stop(containers).run()
+        plays.Stop(containers).run()
 
     def clean(self, **kwargs):
         raise NotImplementedError, 'Not yet implemented!'

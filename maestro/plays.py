@@ -17,7 +17,7 @@ def color(cond):
 def up(cond):
     return cond_label(cond, 'up', 'down')
 
-class BaseScore:
+class BaseOrchestrationPlay:
     def __init__(self, containers=[]):
         self._containers = containers
     def run(self):
@@ -51,12 +51,12 @@ class OutputFormatter:
         print
         sys.stdout.flush()
 
-class FullStatus(BaseScore):
-    """The Status score is a Maestro orchestration play that displays the
-    status of the given services."""
+class FullStatus(BaseOrchestrationPlay):
+    """A Maestro orchestration play that displays the status of the given
+    services and/or instance containers."""
 
     def __init__(self, containers=[]):
-        BaseScore.__init__(self, containers)
+        BaseOrchestrationPlay.__init__(self, containers)
 
     def run(self):
         print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
@@ -83,13 +83,13 @@ class FullStatus(BaseScore):
             o.end()
 
 
-class Status(BaseScore):
-    """A less advanced, but faster status display score that only looks at the
-    presence and status of the containers. Status information is bulk-polled
-    from each ship's Docker daemon."""
+class Status(BaseOrchestrationPlay):
+    """A less advanced, but faster status display orchestration play that only
+    looks at the presence and status of the containers. Status information is
+    bulk-polled from each ship's Docker daemon."""
 
     def __init__(self, containers=[]):
-        BaseScore.__init__(self, containers)
+        BaseOrchestrationPlay.__init__(self, containers)
 
     def run(self):
         status = {}
@@ -118,15 +118,15 @@ class Status(BaseScore):
             o.end()
 
 
-class Start(BaseScore):
-    """The Start score is a Maestro orchestration play that will execute the
-    start sequence of the requested services, starting each container for each
-    instance of the services, in the given start order, waiting for each
-    container's application to become available before moving to the next
-    one."""
+class Start(BaseOrchestrationPlay):
+    """A Maestro orchestration play that will execute the start sequence of the
+    requested services, starting each container for each instance of the
+    services, in the given start order, waiting for each container's
+    application to become available before moving to the next one."""
 
-    def __init__(self, containers=[], refresh_images=False):
-        BaseScore.__init__(self, containers)
+    def __init__(self, containers=[], registries={}, refresh_images=False):
+        BaseOrchestrationPlay.__init__(self, containers)
+        self._registries = registries
         self._refresh_images = refresh_images
 
     def run(self):
@@ -188,6 +188,25 @@ class Start(BaseScore):
             retries -= 1
         return False
 
+    def _login_to_registry(self, o, container):
+        """Extract the registry name from the image needed for the container,
+        and if authentication data is provided for that registry, login to it
+        so a subsequent pull operation can be performed."""
+        image = container.service.get_image_details()
+        if image['repository'].find('/') <= 0:
+            return
+
+        registry, repo_name = image['repository'].split('/', 1)
+        if registry not in self._registries:
+            return
+
+        o.pending('logging in to {}...'.format(registry))
+        try:
+            container.ship.backend.login(**self._registries[registry])
+        except Exception, e:
+            raise exceptions.OrchestrationException, \
+                    'Login to {} failed: {}'.format(registry, e)
+
     def _start_container(self, o, container):
         """Start the given container.
 
@@ -216,6 +235,8 @@ class Start(BaseScore):
         if self._refresh_images or \
                 not filter(lambda i: i['Tag'] == image['tag'],
                            container.ship.backend.images(name=image['repository'])):
+            # First, attempt to login if we can/need to.
+            self._login_to_registry(o, container)
             o.pending('pulling image {}...'.format(container.service.image))
             progress = {}
             for dlstatus in container.ship.backend.pull(stream=True, **image):
@@ -259,13 +280,13 @@ class Start(BaseScore):
         o.pending('waiting for service...')
         return container.ping(retries=60)
 
-class Stop(BaseScore):
-    """The Stop score is a Maestro orchestration play that will stop and remove
-    the containers of the requested services, in the inverse dependency
-    order."""
+class Stop(BaseOrchestrationPlay):
+    """A Maestro orchestration play that will stop and remove the containers of
+    the requested services. The list of containers should be provided reversed
+    so that dependent services are stopped first."""
 
     def __init__(self, containers=[]):
-        BaseScore.__init__(self, containers)
+        BaseOrchestrationPlay.__init__(self, containers)
 
     def run(self):
         print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(

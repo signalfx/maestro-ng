@@ -92,18 +92,37 @@ Environment description
 
 The environment is described using YAML. The format is still a bit in
 flux but the base has been set and should remain fairly stable. It is
-named and composed of two main sections: the _ships_, hosts that will
-execute the Docker containers and the _services_, which define what
-service make up the environment, the dependencies between these services
-and the instances of each of these services that need to run. Here's the
-outline:
+named and composed of three main sections: the _registries_ that define
+authentication credentials that might be needed to pull the Docker
+images for the defined _services_ from their registries, the _ships_,
+hosts that will execute the Docker containers, and the _services_, which
+define what service make up the environment, the dependencies between
+these services and the instances of each of these services that need to
+run. Here's the outline:
 
 ```yaml
 name: demo
+registries:
+  # Auth credentials for each registry that needs them (see below)
 ships:
   # Ships definitions (see below)
 services:
   # Services definition (see below)
+```
+
+The _registries_ define for each Docker registry Maestro might need to
+pull images from the authentication credentials needed to access them
+(see below _Working with image registries_). For each registry, the full
+registry URL, a `username` and a `password` are required, and depending
+on the registry the `email` might be as well. For example:
+
+```yaml
+registries:
+  my-private-registry:
+    registry: https://my-private-registry/v1/
+    username: maestro
+    password: secret
+    email: maestro-robot@domain.com
 ```
 
 The _ships_ are simple to define. They are named (but that name doesn't
@@ -266,11 +285,11 @@ version of Maestro that you need):
 ```
 RUN apt-get update
 RUN apt-get -y install python python-setuptools
-RUN easy_install http://github.com/signalfuse/maestro-ng/archive/maestro-0.1.4.zip
+RUN easy_install http://github.com/signalfuse/maestro-ng/archive/master.zip
 ```
 
-This will install Maestro 0.1.4. Feel free to change that to any, more
-current version of Maestro you like or need.
+This will install the latest available version of Maestro. Feel free to
+change that to any other version of Maestro you like or need.
 
 Then, from your startup script (in Python), do:
 
@@ -316,6 +335,28 @@ Other functions you might need are:
   - `get_specific_port(service, container, port, default)`, to retrieve
     the port number of a specific named port of a given container.
 
+Working with image registries
+-----------------------------
+
+When Maestro needs to start a new container, it will do whatever it can
+to make sure the image this container needs is available; the image full
+name is specified at the service level.
+
+Maestro will first check if the target Docker daemon reports the image
+to be available. If the image is not available, or if the `-r` flag was
+passed on the command-line (to force refresh the images), Maestro will
+attempt to pull the image.
+
+To do so, it will first analyze the name of the image and try to
+identify a registry name (for example
+`my-private-registry/my-image:tag`, the address of the registry is
+`my-private-registry`) and look for a corresponding entry in the
+`registries` section of the environment description file to look for
+authentication credentials, if they are needed to access the images from
+that registry.
+
+If credentials are found, Maestro will login to the registry before
+attempting to pull the image.
 
 Usage
 =====

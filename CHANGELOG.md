@@ -11,6 +11,8 @@ ChangeLog
 * Compatibility fixes with docker-py 0.2.3
 * The 'logs' command now streams logs instead of dumping them, until you
   hit ^C to stop
+* Implement registry login before pull, when needed and if possible
+* Renamed 'scores' to 'plays', makes more sense
 
 Maestro 0.1.4
 -------------

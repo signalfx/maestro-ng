@@ -103,12 +103,13 @@ class Status(BaseOrchestrationPlay):
             except:
                 pass
 
-        print '{:>3s}  {:<20s} {:<15s} {:<30s} {:<15s}'.format(
-            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER')
+        o.commit('{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s}'.format(
+            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER'))
+        o.end()
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} {:<30.30s}'.format(
+                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} {:<20.20s}'.format(
                 order, container.name, container.service.name,
                 container.ship.name))
             if container.name in status and status[container.name]['Status'].startswith('Up'):

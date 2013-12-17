@@ -65,7 +65,7 @@ class FullStatus(BaseOrchestrationPlay):
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
                 '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} {:<20.20s}'.format(
-                order, container.name, container.service.name, container.ship.ip))
+                order, container.name, container.service.name, container.ship.name))
 
             try:
                 o.pending('checking container...')
@@ -110,7 +110,7 @@ class Status(BaseOrchestrationPlay):
             o = OutputFormatter(
                 '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} {:<30.30s}'.format(
                 order, container.name, container.service.name,
-                container.ship.ip))
+                container.ship.name))
             if container.name in status and status[container.name]['Status'].startswith('Up'):
                 o.commit('\033[32;1m{}\033[;0m'.format(status[container.name]['Id'][:7]))
             else:
@@ -136,7 +136,8 @@ class Start(BaseOrchestrationPlay):
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
                 '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} {:<20.20s}'.format(
-                order, container.name, container.service.name, container.ship.ip))
+                order, container.name, container.service.name,
+                container.ship.name))
 
             error = None
             try:
@@ -296,7 +297,7 @@ class Stop(BaseOrchestrationPlay):
             o = OutputFormatter(
                 '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} {:<20.20s}'.format(
                 len(self._containers) - order, container.name,
-                container.service.name, container.ship.ip))
+                container.service.name, container.ship.name))
 
             o.pending('checking container...')
             try:

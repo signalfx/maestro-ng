@@ -1,0 +1,2 @@
+docker-py>=0.2.3
+pyyaml

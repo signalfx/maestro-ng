@@ -262,9 +262,13 @@ class Start(BaseOrchestrationPlay):
                     'Container status could not be obtained after creation!'
         o.commit('\033[32;1m{:<15s}\033[;0m'.format(container.id[:7]))
 
+        if container.ship._bind_to_ip:
+        	ip = container.ship.ip
+        else:
+        	ip = "0.0.0.0"
         o.pending('starting container {}...'.format(container.id[:7]))
         ports = container.ports and dict([
-            (port['exposed'], ('0.0.0.0', port['external']))
+            (port['exposed'], (ip, port['external']))
                 for port in container.ports.itervalues()]) or None
         container.ship.backend.start(container.id,
             binds=container.volumes,

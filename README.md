@@ -1,7 +1,7 @@
 MaestroNG, an orchestrator of Docker-based deployments
 ======================================================
 
-[![Build Status](https://travis-ci.org/signalfuse/maestro-ng)](https://travis-ci.org/signalfuse/maestro-ng)
+[![Build Status](https://travis-ci.org/signalfuse/maestro-ng.png)](https://travis-ci.org/signalfuse/maestro-ng)
 
 The original [Maestro](http://github.com/toscanini/maestro) was developed
 as a single-host orchestrator for Docker-based deployments. Given the

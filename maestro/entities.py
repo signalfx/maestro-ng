@@ -34,16 +34,18 @@ class Ship(Entity):
     DEFAULT_DOCKER_VERSION = '1.6'
     DEFAULT_DOCKER_TIMEOUT = 5
 
-    def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT, timeout=None):
+    def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT, timeout=None, bind_to_ip=False):
         """Instantiate a new ship.
 
         Args:
             name (string): the name of the ship.
             ip (string): the IP address of resolvable host name of the host.
             docker_port (int): the port the Docker daemon listens on.
+            bind_to_ip (bool): bind containers to their ship IP or 0.0.0.0
         """
         Entity.__init__(self, name)
         self._ip = ip
+        self._bind_to_ip = bind_to_ip
         self._docker_port = docker_port
 
         self._backend_url = 'http://{:s}:{:d}'.format(ip, docker_port)
@@ -75,7 +77,7 @@ class Service(Entity):
     """A Service is a collection of Containers running on one or more Ships
     that constitutes a logical grouping of containers that make up an
     infrastructure service.
-    
+
     Services may depend on each other. This dependency tree is honored when
     services need to be started.
     """
@@ -269,7 +271,7 @@ class Container(Entity):
         doesn't expose any ports, return the container status instead. If the
         container exposes multiple ports, as soon as one port is active the
         application inside the container is considered to be up and running.
-        
+
         Args:
             retries (int): number of attempts (timeout is 1 second).
         """

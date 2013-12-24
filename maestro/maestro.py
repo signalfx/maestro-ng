@@ -21,7 +21,8 @@ class Conductor:
         self._ships = dict((k, entities.Ship(k, v['ip'],
                                              docker_port=v.get('docker_port',
                                                                entities.Ship.DEFAULT_DOCKER_PORT),
-                                             timeout=v.get('timeout')))
+                                             timeout=v.get('timeout'),
+                                             bind_to_ip=v.get('bind_to_ip')))
             for k, v in self._config['ships'].iteritems())
 
         # Register defined private Docker registries authentications

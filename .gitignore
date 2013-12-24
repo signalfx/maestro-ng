@@ -1,4 +1,5 @@
-build/
-dist/
-maestro.egg-info/
+/build/
+/dist/
+/maestro.egg-info/
 *.pyc
+/.tox

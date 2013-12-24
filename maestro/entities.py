@@ -9,6 +9,7 @@ import time
 
 import exceptions
 
+
 class Entity:
     """Base class for named entities in the orchestrator."""
     def __init__(self, name):
@@ -22,6 +23,7 @@ class Entity:
     def __repr__(self):
         return self._name
 
+
 class Ship(Entity):
     """A Ship that can host and run Containers.
 
@@ -34,7 +36,8 @@ class Ship(Entity):
     DEFAULT_DOCKER_VERSION = '1.6'
     DEFAULT_DOCKER_TIMEOUT = 5
 
-    def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT, timeout=None):
+    def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT,
+                 timeout=None):
         """Instantiate a new ship.
 
         Args:
@@ -47,9 +50,10 @@ class Ship(Entity):
         self._docker_port = docker_port
 
         self._backend_url = 'http://{:s}:{:d}'.format(ip, docker_port)
-        self._backend = docker.Client(base_url=self._backend_url,
-                                      version=Ship.DEFAULT_DOCKER_VERSION,
-                                      timeout=timeout or Ship.DEFAULT_DOCKER_TIMEOUT)
+        self._backend = docker.Client(
+            base_url=self._backend_url,
+            version=Ship.DEFAULT_DOCKER_VERSION,
+            timeout=timeout or Ship.DEFAULT_DOCKER_TIMEOUT)
 
     @property
     def ip(self):
@@ -75,7 +79,7 @@ class Service(Entity):
     """A Service is a collection of Containers running on one or more Ships
     that constitutes a logical grouping of containers that make up an
     infrastructure service.
-    
+
     Services may depend on each other. This dependency tree is honored when
     services need to be started.
     """
@@ -99,7 +103,8 @@ class Service(Entity):
         self._containers = {}
 
     def __repr__(self):
-        return '<service:%s [%d instances]>' % (self.name, len(self._containers))
+        return '<service:%s [%d instances]>' % (self.name,
+                                                len(self._containers))
 
     @property
     def image(self):
@@ -136,7 +141,8 @@ class Service(Entity):
     def containers(self):
         """Return an ordered list of instance containers for this service, by
         instance name."""
-        return map(lambda c: self._containers[c], sorted(self._containers.keys()))
+        return map(lambda c: self._containers[c],
+                   sorted(self._containers.keys()))
 
     def add_dependency(self, service):
         """Declare that this service depends on the passed service."""
@@ -165,6 +171,7 @@ class Service(Entity):
                 return False
         return True
 
+
 class Container(Entity):
     """A Container represents an instance of a particular service that will be
     executed inside a Docker container on its target ship/host."""
@@ -182,7 +189,7 @@ class Container(Entity):
             env_name (string): the name of the Maestro environment.
         """
         Entity.__init__(self, name)
-        self._status = None # The container's status, cached.
+        self._status = None  # The container's status, cached.
         self._ship = ship
         self._service = service
 
@@ -212,8 +219,9 @@ class Container(Entity):
 
         # If no volume source is specified, we assume it's the same path as the
         # destination inside the container.
-        self.volumes = dict((src or dst, dst)
-            for dst, src in config.get('volumes', {}).iteritems())
+        self.volumes = dict(
+            (src or dst, dst) for dst, src in
+            config.get('volumes', {}).iteritems())
 
         # Seed the service name, container name and host address as part of the
         # container's environment.
@@ -260,8 +268,9 @@ class Container(Entity):
                           '_',
                           '{}_{}'.format(self.service.name, self.name)).upper()
         links = {'%s_HOST' % basename: self.ship.ip}
-        links.update(dict(('%s_%s_PORT' % (basename, name.upper()), spec['exposed'])
-            for name, spec in self.ports.iteritems()))
+        links.update(dict(('%s_%s_PORT' % (basename, name.upper()),
+                           spec['exposed'])
+                          for name, spec in self.ports.iteritems()))
         return links
 
     def ping(self, retries=3):
@@ -269,7 +278,7 @@ class Container(Entity):
         doesn't expose any ports, return the container status instead. If the
         container exposes multiple ports, as soon as one port is active the
         application inside the container is considered to be up and running.
-        
+
         Args:
             retries (int): number of attempts (timeout is 1 second).
         """
@@ -292,16 +301,18 @@ class Container(Entity):
             else:
                 # Port(s) exposed, try to ping them.
                 pings = filter(None,
-                    map(lambda port: ping_port(self.ship.ip, port['external']),
-                           self.ports.itervalues()))
-                if pings: return True
+                               map(lambda port: ping_port(self.ship.ip,
+                                                          port['external']),
+                                   self.ports.itervalues()))
+                if pings:
+                    return True
 
             retries -= 1
-            if retries: time.sleep(1)
+            if retries:
+                time.sleep(1)
 
         # If we reach this point, the application is not running.
         return False
-
 
     def __repr__(self):
         return '<container:%s/%s [on %s]>' % \
@@ -309,7 +320,9 @@ class Container(Entity):
 
     def __lt__(self, other):
         return self.name < other.name
+
     def __eq__(self, other):
         return self.name == other.name
+
     def __hash__(self):
         return hash(self.name)

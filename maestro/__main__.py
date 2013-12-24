@@ -11,10 +11,12 @@ import yaml
 
 from . import exceptions, maestro
 
+
 def main(args):
     commands = ['status', 'fullstatus', 'start', 'stop', 'clean', 'logs']
-    parser = argparse.ArgumentParser(prog='maestro',
-                                     description='Docker container orchestrator.')
+    parser = argparse.ArgumentParser(
+        prog='maestro',
+        description='Docker container orchestrator.')
     parser.add_argument('command', nargs='?',
                         choices=commands,
                         default='status',
@@ -22,9 +24,11 @@ def main(args):
     parser.add_argument('things', nargs='*', metavar='thing',
                         help='container(s) or service(s) to act on')
     parser.add_argument('-f', '--file', nargs='?', default='-', metavar='FILE',
-                        help='read environment description from FILE (use - for stdin)')
+                        help=('read environment description from FILE ' +
+                              '(use - for stdin)'))
     parser.add_argument('-c', '--completion', metavar='CMD',
-                        help='list commands, services or containers in environment based on CMD')
+                        help=('list commands, services or containers in ' +
+                              'environment based on CMD'))
     parser.add_argument('-r', '--refresh-images', action='store_const',
                         const=True, default=False,
                         help='force refresh of container images from registry')
@@ -43,24 +47,33 @@ def main(args):
     stream.close()
 
     # Shutup urllib3, wherever it comes from.
-    logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARN)
-    logging.getLogger('urllib3.connectionpool').setLevel(logging.WARN)
+    (logging.getLogger('requests.packages.urllib3.connectionpool')
+            .setLevel(logging.WARN))
+    (logging.getLogger('urllib3.connectionpool')
+            .setLevel(logging.WARN))
 
     c = maestro.Conductor(config)
     if options.completion is not None:
-        args = filter(lambda x: not x.startswith('-'), options.completion.split(' '))
-        if len(args) == 2: prefix = args[1]; choices = commands
-        elif len(args) >= 3: prefix = args[len(args)-1]; choices = c.services + c.containers
-        else: return
+        args = filter(lambda x: not x.startswith('-'),
+                      options.completion.split(' '))
+        if len(args) == 2:
+            prefix = args[1]
+            choices = commands
+        elif len(args) >= 3:
+            prefix = args[len(args)-1]
+            choices = c.services + c.containers
+        else:
+            return 0
+
         print ' '.join(filter(lambda x: x.startswith(prefix), set(choices)))
-        return
+        return 0
 
     try:
         options.things = set(options.things)
         getattr(c, options.command)(**vars(options))
     except exceptions.MaestroException, e:
         sys.stderr.write('{}\n'.format(e))
-        sys.exit(1)
+        return 1
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    sys.exit(main(sys.argv[1:]))

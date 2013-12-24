@@ -6,6 +6,7 @@ import entities
 import exceptions
 import plays
 
+
 class Conductor:
     """The Maestro; the Conductor.
 
@@ -18,18 +19,20 @@ class Conductor:
         self._config = config
 
         # Create container ships.
-        self._ships = dict((k, entities.Ship(k, v['ip'],
-                                             docker_port=v.get('docker_port',
-                                                               entities.Ship.DEFAULT_DOCKER_PORT),
-                                             timeout=v.get('timeout')))
+        self._ships = dict(
+            (k, entities.Ship(
+                k, v['ip'],
+                docker_port=v.get('docker_port',
+                                  entities.Ship.DEFAULT_DOCKER_PORT),
+                timeout=v.get('timeout')))
             for k, v in self._config['ships'].iteritems())
 
         # Register defined private Docker registries authentications
         self._registries = self._config.get('registries', {})
         for name, registry in self._registries.iteritems():
             if 'username' not in registry or 'password' not in registry:
-                raise exceptions.OrchestrationException, \
-                        'Incomplete registry auth data for {}!'.format(name)
+                raise exceptions.OrchestrationException(
+                    'Incomplete registry auth data for {}!'.format(name))
 
         # Build all the entities.
         self._services = {}
@@ -68,7 +71,8 @@ class Conductor:
 
     @property
     def containers(self):
-        """Returns the names of all the containers defined in the environment."""
+        """Returns the names of all the containers defined in the
+        environment."""
         return self._containers.keys()
 
     def _order_dependencies(self, pending=[], ordered=[], forward=True):
@@ -96,14 +100,15 @@ class Conductor:
         # all went to the wait list). This means the dependency tree cannot be
         # resolved and an error should be raised.
         if wait and pending and len(wait) == len(pending):
-            raise exceptions.DependencyException, \
+            raise exceptions.DependencyException(
                 'Cannot resolve dependencies for containers {}!'.format(
-                    map(lambda x: x.name, wait))
+                    map(lambda x: x.name, wait)))
 
         # As long as 'wait' has elements, keep recursing to resolve
         # dependencies. Otherwise, returned the ordered list, which should now
         # be final.
-        return wait and self._order_dependencies(wait, ordered, forward) or ordered
+        return wait and self._order_dependencies(wait, ordered, forward) \
+            or ordered
 
     def _gather_dependencies(self, containers, forward=True):
         """Transitively gather all containers from the dependencies or
@@ -111,7 +116,8 @@ class Conductor:
         that the services the given containers are members of."""
         result = set(containers or self._containers.values())
         for container in result:
-            deps = container.service.requires if forward else container.service.needed_for
+            deps = container.service.requires if forward \
+                else container.service.needed_for
             deps = reduce(lambda x, y: x.union(y),
                           map(lambda s: s.containers, deps),
                           set([]))
@@ -126,8 +132,8 @@ class Conductor:
                 return [self._containers[s]]
             elif s in self._services:
                 return self._services[s].containers
-            raise exceptions.OrchestrationException, \
-                '{} is neither a service nor a container!'.format(s)
+            raise exceptions.OrchestrationException(
+                '{} is neither a service nor a container!'.format(s))
         return reduce(lambda x, y: x+y, map(parse_thing, things), [])
 
     def _ordered_containers(self, things, forward=True):
@@ -139,7 +145,8 @@ class Conductor:
             forward (boolean): controls the direction of the dependency tree.
         """
         return self._order_dependencies(
-            sorted(self._gather_dependencies(self._to_containers(things), forward)),
+            sorted(self._gather_dependencies(self._to_containers(things),
+                                             forward)),
             forward=forward)
 
     def status(self, things=[], only=False, **kwargs):
@@ -151,8 +158,8 @@ class Conductor:
             only (boolean): Whether to only show the status of the specified
                 things, or their dependencies as well.
         """
-        containers = self._ordered_containers(things) if not only \
-                else self._to_containers(things)
+        containers = self._ordered_containers(things) \
+            if not only else self._to_containers(things)
         plays.Status(containers).run()
 
     def fullstatus(self, things=[], only=False, **kwargs):
@@ -164,8 +171,8 @@ class Conductor:
             only (boolean): Whether to only show the status of the specified
                 things, or their dependencies as well.
         """
-        containers = self._ordered_containers(things) if not only \
-                else self._to_containers(things)
+        containers = self._ordered_containers(things) \
+            if not only else self._to_containers(things)
         plays.FullStatus(containers).run()
 
     def start(self, things=[], refresh_images=False, only=False, **kwargs):
@@ -179,10 +186,10 @@ class Conductor:
             only (boolean): Whether to act on only the specified things, or
                 their dependencies as well.
         """
-        containers = self._ordered_containers(things) if not only \
-                else self._to_containers(things)
+        containers = self._ordered_containers(things) \
+            if not only else self._to_containers(things)
         plays.Start(containers, self._registries, refresh_images).run()
- 
+
     def stop(self, things=[], only=False, **kwargs):
         """Stop the given container(s) and service(s).
 
@@ -196,12 +203,12 @@ class Conductor:
             only (boolean): Whether to act on only the specified things, or
                 their dependencies as well.
         """
-        containers = self._ordered_containers(things, False) if not only \
-                else self._to_containers(things)
+        containers = self._ordered_containers(things, False) \
+            if not only else self._to_containers(things)
         plays.Stop(containers).run()
 
     def clean(self, **kwargs):
-        raise NotImplementedError, 'Not yet implemented!'
+        raise NotImplementedError('Not yet implemented!')
 
     def logs(self, things=[], **kwargs):
         """Display the logs of the given container.
@@ -210,8 +217,8 @@ class Conductor:
         """
         containers = self._to_containers(things)
         if len(containers) != 1:
-            raise exceptions.ParameterException, \
-                'Logs can only be shown for a single container!'
+            raise exceptions.ParameterException(
+                'Logs can only be shown for a single container!')
 
         container = containers[0]
 

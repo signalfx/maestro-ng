@@ -2,26 +2,36 @@
 #
 # Docker container orchestration utility.
 
-import docker
 import json
 import sys
 import time
 
 import exceptions
 
+
 # Some utility functions for output.
-def cond_label(cond, t, f):
-    return t if cond else f
 def color(cond):
-    return cond_label(cond, 32, 31)
+    """Returns 32 (green) or 31 (red) depending on the validity of the given
+    condition."""
+    return cond and 32 or 31
+
+
 def up(cond):
-    return cond_label(cond, 'up', 'down')
+    """Returns 'up' or 'down' depending on the validity of the given
+    condition."""
+    return cond and 'up' or 'down'
+
 
 class BaseOrchestrationPlay:
+    """Base class for orchestration plays, holds the ordered list containers to
+    act on."""
+
     def __init__(self, containers=[]):
         self._containers = containers
+
     def run(self):
         raise NotImplementedError
+
 
 class OutputFormatter:
     """Output formatter for nice, progressive terminal output.
@@ -51,6 +61,7 @@ class OutputFormatter:
         print
         sys.stdout.flush()
 
+
 class FullStatus(BaseOrchestrationPlay):
     """A Maestro orchestration play that displays the status of the given
     services and/or instance containers."""
@@ -64,22 +75,29 @@ class FullStatus(BaseOrchestrationPlay):
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} {:<20.20s}'.format(
-                order, container.name, container.service.name, container.ship.name))
+                ('{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} ' +
+                 '{:<20.20s}').format(order,
+                                      container.name,
+                                      container.service.name,
+                                      container.ship.name))
 
             try:
                 o.pending('checking container...')
                 status = container.status()
                 o.commit('\033[{:d};1m{:<15s}\033[;0m'.format(
                     color(status and status['State']['Running']),
-                    (status and status['State']['Running'] and container.id[:7] or 'down')))
+                    (status and status['State']['Running']
+                        and container.id[:7] or 'down')))
 
                 o.pending('checking service...')
-                ping = status and status['State']['Running'] and container.ping(1)
-                o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(color(ping), up(ping)))
+                ping = status and status['State']['Running'] \
+                    and container.ping(1)
+                o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(color(ping),
+                                                              up(ping)))
             except Exception, e:
                 print e
-                o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format('host down', 'down'))
+                o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format(
+                    'host down', 'down'))
             o.end()
 
 
@@ -99,7 +117,7 @@ class Status(BaseOrchestrationPlay):
                 ship.name, ship.ip))
             try:
                 status.update(dict((c['Names'][0][1:], c)
-                    for c in ship.backend.containers()))
+                              for c in ship.backend.containers()))
             except:
                 pass
 
@@ -109,11 +127,15 @@ class Status(BaseOrchestrationPlay):
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} {:<20.20s}'.format(
-                order, container.name, container.service.name,
-                container.ship.name))
-            if container.name in status and status[container.name]['Status'].startswith('Up'):
-                o.commit('\033[32;1m{}\033[;0m'.format(status[container.name]['Id'][:7]))
+                ('{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} ' +
+                 '{:<20.20s}').format(order,
+                                      container.name,
+                                      container.service.name,
+                                      container.ship.name))
+            if container.name in status and \
+                    status[container.name]['Status'].startswith('Up'):
+                o.commit('\033[32;1m{}\033[;0m'.format(
+                    status[container.name]['Id'][:7]))
             else:
                 o.commit('\033[31;1mdown\033[;0m')
             o.end()
@@ -136,9 +158,11 @@ class Start(BaseOrchestrationPlay):
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} {:<20.20s}'.format(
-                order, container.name, container.service.name,
-                container.ship.name))
+                ('{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} ' +
+                 '{:<20.20s}').format(order,
+                                      container.name,
+                                      container.service.name,
+                                      container.ship.name))
 
             error = None
             try:
@@ -149,8 +173,9 @@ class Start(BaseOrchestrationPlay):
                 result = self._start_container(o, container)
                 o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(
                     color(result is not False),
-                    result is None and 'up' or \
-                        result and 'started' or 'service did not start!'))
+                    result is None and 'up' or
+                        (result and 'started' or
+                            'service did not start!')))
                 if result is False:
                     error = container.ship.backend.logs(container.id)
             except Exception, e:
@@ -174,12 +199,13 @@ class Start(BaseOrchestrationPlay):
             last = json.loads(last)
             progress[last['id']] = last['status'] == 'Download complete' \
                 and 100 \
-                or 100.0 * last['progressDetail']['current'] / last['progressDetail']['total']
+                or (100.0 * last['progressDetail']['current'] /
+                    last['progressDetail']['total'])
         except:
             pass
 
         return reduce(lambda x, y: x+y, progress.values()) / len(progress) \
-                if progress else 0
+            if progress else 0
 
     def _wait_for_status(self, container, cond, retries=10):
         while retries >= 0:
@@ -206,8 +232,8 @@ class Start(BaseOrchestrationPlay):
         try:
             container.ship.backend.login(**self._registries[registry])
         except Exception, e:
-            raise exceptions.OrchestrationException, \
-                    'Login to {} failed: {}'.format(registry, e)
+            raise exceptions.OrchestrationException(
+                'Login to {} failed: {}'.format(registry, e))
 
     def _start_container(self, o, container):
         """Start the given container.
@@ -236,7 +262,7 @@ class Start(BaseOrchestrationPlay):
         image = container.service.get_image_details()
         if self._refresh_images or \
                 not filter(lambda i: i['Tag'] == image['tag'],
-                           container.ship.backend.images(name=image['repository'])):
+                           container.ship.backend.images(image['repository'])):
             # First, attempt to login if we can/need to.
             self._login_to_registry(o, container)
             o.pending('pulling image {}...'.format(container.service.image))
@@ -247,8 +273,10 @@ class Start(BaseOrchestrationPlay):
 
         # Create and start the container.
         o.pending('creating container...')
-        ports = container.ports and [(port['exposed'], 'tcp')
-            for port in container.ports.itervalues()] or None
+        ports = container.ports \
+            and [(port['exposed'], 'tcp')
+                 for port in container.ports.itervalues()] \
+            or None
         container.ship.backend.create_container(
             image=container.service.image,
             hostname=container.name,
@@ -258,29 +286,30 @@ class Start(BaseOrchestrationPlay):
 
         o.pending('waiting for container creation...')
         if not self._wait_for_status(container, lambda x: x):
-            raise exceptions.OrchestrationException, \
-                    'Container status could not be obtained after creation!'
+            raise exceptions.OrchestrationException(
+                'Container status could not be obtained after creation!')
         o.commit('\033[32;1m{:<15s}\033[;0m'.format(container.id[:7]))
 
         o.pending('starting container {}...'.format(container.id[:7]))
-        ports = container.ports and dict([
-            (port['exposed'], ('0.0.0.0', port['external']))
-                for port in container.ports.itervalues()]) or None
+        ports = container.ports and dict(
+            [(port['exposed'], ('0.0.0.0', port['external']))
+             for port in container.ports.itervalues()]) or None
         container.ship.backend.start(container.id,
-            binds=container.volumes,
-            port_bindings=ports)
+                                     binds=container.volumes,
+                                     port_bindings=ports)
 
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.
         o.pending('waiting for container initialization...')
         if not self._wait_for_status(container,
                                      lambda x: x and x['State']['Running']):
-            raise exceptions.OrchestrationException, \
-                    'Container status could not be obtained after start!'
+            raise exceptions.OrchestrationException(
+                'Container status could not be obtained after start!')
 
         # Wait up for the container's application to come online.
         o.pending('waiting for service...')
         return container.ping(retries=60)
+
 
 class Stop(BaseOrchestrationPlay):
     """A Maestro orchestration play that will stop and remove the containers of
@@ -296,9 +325,11 @@ class Stop(BaseOrchestrationPlay):
 
         for order, container in enumerate(self._containers):
             o = OutputFormatter(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} {:<20.20s}'.format(
-                len(self._containers) - order, container.name,
-                container.service.name, container.ship.name))
+                ('{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} ' +
+                 '{:<20.20s}').format(len(self._containers) - order,
+                                      container.name,
+                                      container.service.name,
+                                      container.ship.name))
 
             o.pending('checking container...')
             try:
@@ -308,7 +339,8 @@ class Stop(BaseOrchestrationPlay):
                     o.end()
                     continue
             except:
-                o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format('host down', 'down'))
+                o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format(
+                    'host down', 'down'))
                 o.end()
                 continue
 

@@ -19,6 +19,7 @@ ChangeLog
   - with the '-F' flag, logs will be followed
   - the new '-n N' flag will only show the last N lines of the log, but
     it doesn't work with streaming logs
+* Setup for Travis-CI build with flake8 validation
 
 Maestro 0.1.4
 -------------

@@ -28,6 +28,11 @@ def main(args):
     parser.add_argument('-r', '--refresh-images', action='store_const',
                         const=True, default=False,
                         help='force refresh of container images from registry')
+    parser.add_argument('-F', '--follow', action='store_const',
+                        const=True, default=False,
+                        help='follow logs as they are generated')
+    parser.add_argument('-n', metavar='LINES', default=15,
+                        help='Only show the last LINES lines for logs')
     parser.add_argument('-o', '--only', action='store_const',
                         const=True, default=False,
                         help='only affect the selected container or service')

@@ -204,19 +204,33 @@ class Conductor:
         raise NotImplementedError, 'Not yet implemented!'
 
     def logs(self, things=[], **kwargs):
-        """Display the logs of the given container."""
+        """Display the logs of the given container.
+
+        TODO(mpetazzoni): implement last N lines support.
+        """
         containers = self._to_containers(things)
         if len(containers) != 1:
             raise exceptions.ParameterException, \
                 'Logs can only be shown for a single container!'
 
         container = containers[0]
+
+        o = plays.OutputFormatter()
+        o.pending('Inspecting container status...')
         status = container.status()
         if not status:
             return
 
         try:
-            for line in container.ship.backend.logs(container.id, stream=True):
-                print line
+            stream = status['State']['Running'] and kwargs.get('follow')
+            o.pending('Requesting logs for {}...'.format(container.name))
+            logs = container.ship.backend.logs(container.id, stream=stream)
+            if stream:
+                for line in logs:
+                    print line
+            else:
+                logs = logs.split('\n')
+                logs = logs[-kwargs.get('n', len(logs)):]
+                print '\n'.join(logs)
         except:
             pass

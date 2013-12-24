@@ -13,6 +13,12 @@ ChangeLog
   hit ^C to stop
 * Implement registry login before pull, when needed and if possible
 * Renamed 'scores' to 'plays', makes more sense
+* Updates to the 'logs' command:
+  - by default, the 'logs' command now dumps the full log and doesn't
+    stream/follow
+  - with the '-F' flag, logs will be followed
+  - the new '-n N' flag will only show the last N lines of the log, but
+    it doesn't work with streaming logs
 
 Maestro 0.1.4
 -------------

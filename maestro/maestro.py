@@ -237,7 +237,7 @@ class Conductor:
                     print line
             else:
                 logs = logs.split('\n')
-                logs = logs[-kwargs.get('n', len(logs)):]
+                logs = logs[-int(kwargs.get('n', len(logs))):]
                 print '\n'.join(logs)
         except:
             pass

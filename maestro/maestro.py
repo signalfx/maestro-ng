@@ -211,10 +211,7 @@ class Conductor:
         raise NotImplementedError('Not yet implemented!')
 
     def logs(self, things=[], **kwargs):
-        """Display the logs of the given container.
-
-        TODO(mpetazzoni): implement last N lines support.
-        """
+        """Display the logs of the given container."""
         containers = self._to_containers(things)
         if len(containers) != 1:
             raise exceptions.ParameterException(
@@ -230,13 +227,18 @@ class Conductor:
 
         try:
             stream = status['State']['Running'] and kwargs.get('follow')
-            o.pending('Requesting logs for {}...'.format(container.name))
-            logs = container.ship.backend.logs(container.id, stream=stream)
             if stream:
+                o.pending(
+                    'Now streaming logs for {}. New output will appear below.'
+                    .format(container.name))
+                logs = container.ship.backend.attach(container.id, stream=True)
                 for line in logs:
-                    print line
+                    print line.rstrip()
             else:
-                logs = logs.split('\n')
+                o.pending(
+                    'Requesting logs for {}. This may take a while...'
+                    .format(container.name))
+                logs = container.ship.backend.logs(container.id).split('\n')
                 logs = logs[-int(kwargs.get('n', len(logs))):]
                 print '\n'.join(logs)
         except:

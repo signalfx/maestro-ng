@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='maestro',
-    version='0.1.5',
+    version='0.1.6-dev',
     description='Orchestrator for multi-host Docker deployments',
     zip_safe=True,
     packages=find_packages(),

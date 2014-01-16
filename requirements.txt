@@ -1,2 +1,2 @@
-docker-py>=0.2.3
+https://github.com/mpetazzoni/docker-py/archive/next.zip
 pyyaml

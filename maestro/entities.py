@@ -282,15 +282,6 @@ class Container(Entity):
         Args:
             retries (int): number of attempts (timeout is 1 second).
         """
-        def ping_port(ip, port):
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(1)
-                s.connect((ip, port))
-                s.close()
-                return True
-            except:
-                return False
 
         while retries > 0:
             if not self.ports:
@@ -300,10 +291,8 @@ class Container(Entity):
                     return True
             else:
                 # Port(s) exposed, try to ping them.
-                pings = filter(None,
-                               map(lambda port: ping_port(self.ship.ip,
-                                                          port['external']),
-                                   self.ports.itervalues()))
+                pings = filter(None, map(lambda port: self.ping_port(port),
+                                         self.ports.iterkeys()))
                 if pings:
                     return True
 
@@ -313,6 +302,19 @@ class Container(Entity):
 
         # If we reach this point, the application is not running.
         return False
+
+    def ping_port(self, port):
+        """Ping a single port, by its given name in the port mappings. Returns
+        True if the port is opened and accepting connections, False
+        otherwise."""
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1)
+            s.connect((self.ship.ip, self.ports[port]['external']))
+            s.close()
+            return True
+        except:
+            return False
 
     def __repr__(self):
         return '<container:%s/%s [on %s]>' % \

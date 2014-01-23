@@ -272,7 +272,7 @@ class Start(BaseOrchestrationPlay):
                     self._update_pull_progress(progress, dlstatus)))
 
         # Create and start the container.
-        o.pending('creating container...')
+        o.pending('creating container from {}...'.format(container.service.image))
         ports = container.ports \
             and [(port['exposed'], 'tcp')
                  for port in container.ports.itervalues()] \

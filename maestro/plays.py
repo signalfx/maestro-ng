@@ -70,9 +70,8 @@ class FullStatus(BaseOrchestrationPlay):
         BaseOrchestrationPlay.__init__(self, containers)
 
     def run(self):
-        print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s} {:s}'.format(
-            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS',
-            'PORTS')
+        print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
+            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
@@ -93,14 +92,14 @@ class FullStatus(BaseOrchestrationPlay):
                 o.pending('checking service...')
                 ping = status and status['State']['Running'] \
                     and container.ping(1)
-                o.commit('\033[{:d};1m{:<10s}\033[;0m'.format(color(ping),
-                                                              up(ping)))
+                o.commit('\033[{:d};1m{:<4.4s}\033[;0m ->'.format(
+                    color(ping), up(ping)))
 
                 for name, port in container.ports.iteritems():
-                    o.pending('{:s}:{:d}?'.format(name, port['external']))
+                    o.pending('{:5d}:{:s}'.format(port['external'], name))
                     ping = container.ping_port(name)
-                    o.commit('{:s}:\033[{:d};1m{:d}\033[;0m'.format(
-                        name, color(ping), port['external']))
+                    o.commit('\033[{:d};1m{:5d}\033[;0m:{:<10.10s}'.format(
+                        color(ping), port['external'], name))
             except Exception, e:
                 print e
                 o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format(

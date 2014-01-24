@@ -74,6 +74,8 @@ def main(args):
     except exceptions.MaestroException, e:
         sys.stderr.write('{}\n'.format(e))
         return 1
+    except KeyboardInterrupt:
+        return 1
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

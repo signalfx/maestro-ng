@@ -290,21 +290,18 @@ generic way regardless of where the two containers are located. Of
 course, it is up to you to make sure that the hosts in your environment
 can communicate with each other.
 
-Finally, Maestro makes the choice of using one-to-one port mappings from
-the container to the host. This _may_ change in the future, but for now
-this simplifies things:
-
-* it means Maestro doesn't have to do a lot of introspection on the
-  containers to figure out which external port Docker assigned them;
-* it makes it a bit easier for troubleshooting as port numbers are the
-  same inside and outside the containers;
-* some services (Cassandra is one example) assume that all their nodes
-  use the same port(s).
+Note that even though Maestro allows for fully customizable port
+mappings from the container to the host (see Port mapping syntax) above,
+it is usually recommended to use the same port number inside and outside
+the container. It makes it slightly easier for troubleshooting and some
+services (Cassandra is one example) assume that all their nodes use the
+same port(s), so the port they know about inside the container may need
+to be the external port they use to connect to one of their peers.
 
 One of the downsides of this approach is that if you run multiple
 instances of the same service on the same host, you need to manually
-make sure they don't use the same ports, through their configuration.
-
+make sure they don't use the same ports, through their configuration,
+when that's possible.
 
 Finally, Maestro uses _named_ ports, where each port your configure for
 each service instance is named. This name is the name used by the

@@ -22,6 +22,7 @@ class OrchestrationException(MaestroException):
     """Error during the execution of the orchestration score."""
     pass
 
+
 class InvalidPortSpecException(MaestroException):
     "Error thrown when a port spec is in an invalid format."""
     pass

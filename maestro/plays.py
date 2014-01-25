@@ -96,10 +96,10 @@ class FullStatus(BaseOrchestrationPlay):
                     color(ping), up(ping)))
 
                 for name, port in container.ports.iteritems():
-                    o.pending('{:5d}:{:s}'.format(port['external'], name))
+                    o.pending('{:>9.9s}:{:s}'.format(port['external'][1], name))
                     ping = container.ping_port(name)
-                    o.commit('\033[{:d};1m{:5d}\033[;0m:{:<10.10s}'.format(
-                        color(ping), port['external'], name))
+                    o.commit('\033[{:d};1m{:>9.9s}\033[;0m:{:<10.10s}'.format(
+                        color(ping), port['external'][1], name))
             except Exception, e:
                 print e
                 o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format(

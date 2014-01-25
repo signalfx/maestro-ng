@@ -197,22 +197,7 @@ class Container(Entity):
         self._service.register_container(self)
 
         # Parse the port specs.
-        def parse_ports(ports):
-            result = {}
-            for name, spec in ports.iteritems():
-                parts = map(int, str(spec).split(':'))
-                if len(parts) == 1:
-                    # If only one port number is provided, assumed external =
-                    # exposed.
-                    parts.append(parts[0])
-                elif len(parts) > 2:
-                    raise exceptions.InvalidPortSpecException, \
-                        'Invalid port spec {} for port {} of {}!'.format(
-                            spec, name, self)
-                result[name] = {'external': parts[0], 'exposed': parts[1]}
-            return result
-
-        self.ports = parse_ports(config.get('ports', {}))
+        self.ports = self._parse_ports(config.get('ports', {}))
 
         # Get environment variables.
         self.env = config.get('env', {})
@@ -311,14 +296,93 @@ class Container(Entity):
         """Ping a single port, by its given name in the port mappings. Returns
         True if the port is opened and accepting connections, False
         otherwise."""
+        parts = self.ports[port]['external'][1].split('/')
+        if parts[1] == 'udp':
+            return False
+
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(1)
-            s.connect((self.ship.ip, self.ports[port]['external']))
+            s.connect((self.ship.ip, int(parts[0])))
             s.close()
             return True
         except:
             return False
+
+    def _parse_ports(self, ports):
+        """Parse port mapping specifications for this container."""
+
+        def validate_proto(port):
+            parts = str(port).split('/')
+            if len(parts) == 1:
+                return '{:d}/tcp'.format(int(parts[0]))
+            elif len(parts) == 2:
+                try:
+                    int(parts[0])
+                    if parts[1] in ['tcp', 'udp']:
+                        return port
+                except ValueError:
+                    pass
+            raise exceptions.InvalidPortSpecException(
+                ('Invalid port specification {}! ' +
+                 'Expected format is <port> or <port>/{tcp,udp}.').format(
+                    port))
+
+        result = {}
+        for name, spec in ports.iteritems():
+            # Single number, interpreted as being a TCP port number and to be
+            # the same for the exposed port and external port bound on all
+            # interfaces.
+            if type(spec) == int:
+                result[name] = {
+                    'exposed': validate_proto(spec),
+                    'external': ('0.0.0.0', validate_proto(spec)),
+                }
+
+            # Port spec is a string. This means either a protocol was specified
+            # with /tcp or /udp, or that a mapping was provided, with each side
+            # of the mapping optionally specifying the protocol.
+            # External port is assumed to be bound on all interfaces as well.
+            elif type(spec) == str:
+                parts = map(validate_proto, spec.split(':'))
+                if len(parts) == 1:
+                    # If only one port number is provided, assumed external =
+                    # exposed.
+                    parts.append(parts[0])
+                elif len(parts) > 2:
+                    raise exceptions.InvalidPortSpecException(
+                        ('Invalid port spec {} for port {} of {}! ' +
+                         'Format should be "name: external:exposed".').format(
+                            spec, name, self))
+
+                if parts[0][-4:] != parts[1][-4:]:
+                    raise exceptions.InvalidPortSpecException(
+                        'Mismatched protocols between {} and {}!'.format(
+                            parts[0], parts[1]))
+
+                result[name] = {
+                    'exposed': parts[0],
+                    'external': ('0.0.0.0', parts[1]),
+                }
+
+            # Port spec is fully specified.
+            elif type(spec) == dict and \
+                    'exposed' in spec and 'external' in spec:
+                spec['exposed'] = validate_proto(spec['exposed'])
+
+                if type(spec['external']) != list:
+                    spec['external'] = ('0.0.0.0', spec['external'])
+                spec['external'] = (spec['external'][0],
+                                    validate_proto(spec['external'][1]))
+
+                result[name] = spec
+
+            else:
+                raise exceptions.InvalidPortSpecException(
+                    'Invalid port spec {} for port {} of {}!'.format(
+                        spec, name, self))
+
+        return result
 
     def __repr__(self):
         return '<container:%s/%s [on %s]>' % \

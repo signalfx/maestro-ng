@@ -147,7 +147,8 @@ instances will be using, and of course a description of each instance.
 Each service instance must at least define the _ship_ its container will
 be placed on (by name). Additionally, it may define:
 
-  - port mappings, as a map of `<port name>: <port or port mapping spec>`;
+  - port mappings, as a map of `<port name>: <port or port mapping
+    spec>` (see below for port spec syntax);
   - volume mappings, as a map of `<destination in container>: <source from host>`;
   - environment variables, as a map of `<variable name>: <value>`.
 
@@ -176,6 +177,97 @@ services:
         volumes:
           /var/lib/kafka: /data/kafka
 ``` 
+
+Port mapping syntax
+-------------------
+
+Maestro supports several syntaxes for specifying port mappings. Unless
+the syntax supports and/or specifies it, Maestro will make the following
+assumptions:
+
+ * the exposed and external ports are the same (_exposed_ means the port
+   bound to inside the container, _external_ means the port mapped by
+   Docker on the host to the port inside the container);
+ * the protocol is TCP (`/tcp`);
+ * the external port is bound on all host interfaces using the `0.0.0.0`
+   address.
+
+The simplest form is a single numeric value, which maps the given TCP
+port from the container to all interfaces of the host on that same port:
+
+```yaml
+# 25/tcp -> 0.0.0.0:25/tcp
+ports: {smtp: 25}
+```
+
+If you want UDP, you can specify so:
+
+```yaml
+# 53/udp -> 0.0.0.0:53/udp
+ports: {dns: 53/udp}
+```
+
+If you want a different external port, you can specify a mapping by
+separating the two port numbers by a colon:
+
+```yaml
+# 25/tcp -> 0.0.0.0:2525/tcp
+ports: {smtp: "25:2525"}
+```
+
+Similarly, specifying the protocol (they should match!):
+
+```yaml
+# 53/udp -> 0.0.0.0:5353/udp
+ports: {dns: "53/udp:5353/udp"}
+```
+
+You can also use the dictionary form for any of these:
+
+```yaml
+ports:
+  # 25/tcp -> 0.0.0.0:25/tcp
+  smtp:
+    exposed: 25
+    external: 25
+
+  # 53/udp -> 0.0.0.0:5353/udp
+  dns:
+    exposed: 53/udp
+    external: 5353/udp
+```
+
+If you need to bind to a specific interface or IP address on the host,
+you need to use the dictionary form:
+
+```yaml
+# 25/tcp -> 192.168.10.2:25/tcp
+ports:
+  smtp:
+    exposed: 25
+    external: [ 192.168.10.2, 25 ]
+
+
+  # 53/udp -> 192.168.10.2:5353/udp
+  dns:
+    exposed: 53/udp
+    external: [ 192.168.10.2, 5353/udp ]
+```
+
+Note that YAML supports references, which means you don't have to repeat
+your _ship_'s IP address if you do something like this:
+
+```yaml
+ship:
+  demo: {ip: &demoip 192.168.10.2, docker_port: 4243}
+
+services:
+  ...
+    ports:
+      smtp:
+        exposed: 25/tcp
+        external [ *demoip, 25/tcp ]
+```
 
 Port mappings and named ports
 -----------------------------

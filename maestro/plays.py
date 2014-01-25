@@ -282,8 +282,8 @@ class Start(BaseOrchestrationPlay):
         o.pending('creating container from {}...'.format(
             container.service.image))
         ports = container.ports \
-            and [(port['exposed'], 'tcp')
-                 for port in container.ports.itervalues()] \
+            and map(lambda p: tuple(p['exposed'].split('/')),
+                    container.ports.itervalues()) \
             or None
         container.ship.backend.create_container(
             image=container.service.image,
@@ -300,7 +300,9 @@ class Start(BaseOrchestrationPlay):
 
         o.pending('starting container {}...'.format(container.id[:7]))
         ports = container.ports and dict(
-            [(port['exposed'], ('0.0.0.0', port['external']))
+            [(port['exposed'].split('/')[0],
+              (port['external'][0],
+               port['external'][1].split('/')[0]))
              for port in container.ports.itervalues()]) or None
         container.ship.backend.start(container.id,
                                      binds=container.volumes,

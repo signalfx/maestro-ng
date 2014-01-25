@@ -254,7 +254,7 @@ class Container(Entity):
                           '{}_{}'.format(self.service.name, self.name)).upper()
         links = {'%s_HOST' % basename: self.ship.ip}
         links.update(dict(('%s_%s_PORT' % (basename, name.upper()),
-                           spec['exposed'])
+                           spec['exposed'].split('/')[0])
                           for name, spec in self.ports.iteritems()))
         return links
 

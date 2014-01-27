@@ -144,7 +144,7 @@ class Status(BaseOrchestrationPlay):
             if container.name in status and \
                     status[container.name]['Status'].startswith('Up'):
                 o.commit('\033[32;1m{}\033[;0m'.format(
-                    status[container.name]['Id'][:7]))
+                    status[container.name]['ID'][:7]))
             else:
                 o.commit('\033[31;1mdown\033[;0m')
             o.end()

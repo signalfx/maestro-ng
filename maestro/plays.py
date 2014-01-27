@@ -92,10 +92,12 @@ class FullStatus(BaseOrchestrationPlay):
                 o.pending('checking service...')
                 ping = status and status['State']['Running'] \
                     and container.ping(1)
-                o.commit('\033[{:d};1m{:<4.4s}\033[;0m ->'.format(
-                    color(ping), up(ping)))
+                o.commit('\033[{:d};1m{:<4.4s}\033[;0m'.format(color(ping),
+                                                               up(ping)))
 
                 for name, port in container.ports.iteritems():
+                    o.end()
+                    o = OutputFormatter('     >>')
                     o.pending('{:>9.9s}:{:s}'.format(port['external'][1],
                                                      name))
                     ping = container.ping_port(name)

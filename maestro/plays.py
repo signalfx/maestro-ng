@@ -141,10 +141,11 @@ class Status(BaseOrchestrationPlay):
                                       container.name,
                                       container.service.name,
                                       container.ship.name))
-            if container.name in status and \
-                    status[container.name]['Status'].startswith('Up'):
-                o.commit('\033[32;1m{}\033[;0m'.format(
-                    status[container.name]['ID'][:7]))
+
+            s = status.get(container.name)
+            if s and s['Status'].startswith('Up'):
+                cid = s.get('ID', s.get('Id', None))
+                o.commit('\033[32;1m{}\033[;0m'.format(cid[:7]))
             else:
                 o.commit('\033[31;1mdown\033[;0m')
             o.end()

@@ -19,7 +19,7 @@ complex, multi-host environments using Docker containers possible and
 easy to use. Maestro of course supports declared dependencies between
 services and makes sure to honor those during environment bring up.
 
-*[See a demo](http://showterm.io/e20242d059958e09846ba)*
+**[See a demo](http://showterm.io/c275984679f8f148b6403)**
 
 What is Maestro?
 ----------------
@@ -50,26 +50,11 @@ below.
 Installation
 ------------
 
-Maestro provides `setuptools`-style installation. Running this will do
-the trick:
+You can install Maestro via _Pip_:
 
 ```
-$ python setup.py install
+$ pip install --user --upgrade .
 ```
-
-Depending on your setup, you might need to change the permissions of
-Python's `dist-packages` or `site-packages` directories so that your
-user can access this newly installed Python module. For example, on
-MacOS, it would look something like:
-
-```
-$ sudo chmod -R a+rX /Library/Python/2.7/site-packages/
-```
-
-If you don't want to install Maestro system-wide, you can just leave it
-as-is in its Git repository clone. You'll just need to add the path to
-the repository to your `PYTHONPATH` environment variable.
-
 
 Orchestration
 =============
@@ -460,13 +445,13 @@ clone. To run Maestro, simply execute the main Python package:
 
 ```
 $ python -m maestro -h
-usage: maestro [-h] [-f [FILE]] [-c CMD] [-v] [-r] [-o]
-               [{status,start,stop,clean,logs}] [thing [thing ...]]
+usage: maestro [-h] [-f [FILE]] [-c CMD] [-r] [-F] [-n LINES] [-o]
+               [{status,fullstatus,start,stop,clean,logs}] [thing [thing ...]]
 
 Docker container orchestrator.
 
 positional arguments:
-  {status,start,stop,clean,logs}
+  {status,fullstatus,start,stop,clean,logs}
                         orchestration command to execute
   thing                 container(s) or service(s) to act on
 
@@ -478,8 +463,9 @@ optional arguments:
   -c CMD, --completion CMD
                         list commands, services or containers in environment
                         based on CMD
-  -v, --verbose         be verbose; show debugging messages
   -r, --refresh-images  force refresh of container images from registry
+  -F, --follow          follow logs as they are generated
+  -n LINES              Only show the last LINES lines for logs
   -o, --only            only affect the selected container or service
 ```
 

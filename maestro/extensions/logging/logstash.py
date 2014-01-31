@@ -12,7 +12,8 @@ import random
 import signal
 import subprocess
 
-from ...guestutils import *
+from ...guestutils import get_container_name, get_service_name, get_node_list
+
 
 def run_service(cmd, logbase=None, logtarget=None):
     """Wrap the execution of a service with the necessary logging nets.
@@ -28,7 +29,8 @@ def run_service(cmd, logbase=None, logtarget=None):
     The way this is accomplished varied on whether logbase is provided or not,
     and whether Redis nodes are available:
 
-        - if neither, log output flows to stdout and will be captured by Docker;
+        - if neither, log output flows to stdout and will be captured by
+          Docker;
         - if logbase is provided, but no Redis nodes are available, the
           output of the service is directly redirected to the log file;
         - if logbase is not provided, but Redis nodes are available, the
@@ -43,11 +45,15 @@ def run_service(cmd, logbase=None, logtarget=None):
     if type(cmd) == str:
         cmd = cmd.split(' ')
 
-    log = logbase and os.path.join(logbase, '{}.log'.format(get_container_name())) or None
+    log = logbase \
+        and os.path.join(logbase, '{}.log'.format(get_container_name())) \
+        or None
     if logbase and not os.path.exists(logbase):
         os.makedirs(logbase)
 
-    redis = logtarget and get_node_list(logtarget, ports=['redis'], minimum=0) or None
+    redis = logtarget \
+        and get_node_list(logtarget, ports=['redis'], minimum=0) \
+        or None
     stdout = redis and subprocess.PIPE or (log and open(log, 'w+') or None)
 
     # Start the service with the provided command.
@@ -66,11 +72,12 @@ def run_service(cmd, logbase=None, logtarget=None):
             last.stdout.close()
             last = tee
 
-        pipestash = subprocess.Popen(['pipestash', '-t', 'log',
-            '-r', 'redis://{}/0'.format(random.choice(redis)),
-            '-R', 'logstash',
-            '-f', 'service={}'.format(get_service_name()),
-            '-S', get_container_name()],
+        pipestash = subprocess.Popen(
+            ['pipestash', '-t', 'log',
+             '-r', 'redis://{}/0'.format(random.choice(redis)),
+             '-R', 'logstash',
+             '-f', 'service={}'.format(get_service_name()),
+             '-S', get_container_name()],
             stdin=last.stdout)
         last.stdout.close()
         last = pipestash

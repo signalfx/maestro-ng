@@ -15,7 +15,7 @@ import subprocess
 from ...guestutils import get_container_name, get_service_name, get_node_list
 
 
-def run_service(cmd, logbase=None, logtarget=None):
+def run_service(cmd, logtype='log', logbase=None, logtarget=None):
     """Wrap the execution of a service with the necessary logging nets.
 
     If logbase is provided (it is by default), log output will be redirected
@@ -73,7 +73,7 @@ def run_service(cmd, logbase=None, logtarget=None):
             last = tee
 
         pipestash = subprocess.Popen(
-            ['pipestash', '-t', 'log',
+            ['pipestash', '-t', logtype,
              '-r', 'redis://{}/0'.format(random.choice(redis)),
              '-R', 'logstash',
              '-f', 'service={}'.format(get_service_name()),

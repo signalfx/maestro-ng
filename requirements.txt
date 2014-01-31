@@ -1,2 +1,2 @@
-https://github.com/mpetazzoni/docker-py/archive/next.zip
+git+git://github.com/dotcloud/docker-py
 pyyaml

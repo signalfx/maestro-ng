@@ -13,7 +13,7 @@ setup(
     zip_safe=True,
     packages=find_packages(),
     install_requires=['docker-py', 'pyyaml'],
-    dependency_links=['https://github.com/mpetazzoni/docker-py/archive/next.zip#egg=docker-py'],
+    dependency_links=['https://github.com/dotcloud/docker-py/archive/master.zip#egg=docker-py'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',

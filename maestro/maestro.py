@@ -2,9 +2,9 @@
 #
 # Docker container orchestration utility.
 
-import entities
-import exceptions
-import plays
+from . import entities
+from . import exceptions
+from . import plays
 
 
 class Conductor:

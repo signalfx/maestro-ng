@@ -7,7 +7,7 @@
 import os
 import re
 
-import entities
+from . import entities
 
 
 class MaestroEnvironmentError(Exception):

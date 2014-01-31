@@ -6,7 +6,7 @@ import json
 import sys
 import time
 
-import exceptions
+from . import exceptions
 
 
 # Some utility functions for output.

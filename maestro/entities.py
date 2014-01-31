@@ -7,7 +7,7 @@ import re
 import socket
 import time
 
-import exceptions
+from . import exceptions
 
 
 class Entity:
@@ -116,7 +116,7 @@ class Service(Entity):
         """Return a dictionary detailing the image used by this service, with
         its repository name and the requested tag (defaulting to latest if not
         specified)."""
-        p = self._image.split(':')
+        p = self._image.rsplit(':', 1)
         return {'repository': p[0], 'tag': len(p) > 1 and p[1] or 'latest'}
 
     @property

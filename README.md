@@ -44,7 +44,7 @@ You'll also need the following Python modules, although these will be
 automatically installed by `setuptools` if you follow the instructions
 below.
 
-* PyYAML
+* PyYAML (you may need to install this manually, e.g. `apt-get install python-yaml`)
 * A recent [docker-py](http://github.com/dotcloud/docker-py)
 
 Installation

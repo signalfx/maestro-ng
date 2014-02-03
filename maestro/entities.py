@@ -84,7 +84,7 @@ class Service(Entity):
     services need to be started.
     """
 
-    def __init__(self, name, image):
+    def __init__(self, name, image, env=None):
         """Instantiate a new named service/component of the platform using a
         given Docker image.
 
@@ -94,10 +94,13 @@ class Service(Entity):
         Args:
             name (string): the name of this service.
             image (string): the name of the Docker image the instances of this
-            service should use.
+                service should use.
+            env (dict): a dictionary of environment variables to use as the
+                base environment for all instances of this service.
         """
         Entity.__init__(self, name)
         self._image = image
+        self.env = env or {}
         self._requires = set([])
         self._needed_for = set([])
         self._containers = {}
@@ -200,13 +203,14 @@ class Container(Entity):
         self.ports = self._parse_ports(config.get('ports', {}))
 
         # Get environment variables.
-        self.env = config.get('env', {})
+        self.env = dict(service.env)
+        self.env.update(config.get('env', {}))
 
         # If no volume source is specified, we assume it's the same path as the
         # destination inside the container.
         self.volumes = dict(
             (src or dst, dst) for dst, src in
-            config.get('volumes', {}).iteritems())
+            config.get('volumes', {}).items())
 
         # Seed the service name, container name and host address as part of the
         # container's environment.
@@ -329,7 +333,7 @@ class Container(Entity):
                     port))
 
         result = {}
-        for name, spec in ports.iteritems():
+        for name, spec in ports.items():
             # Single number, interpreted as being a TCP port number and to be
             # the same for the exposed port and external port bound on all
             # interfaces.

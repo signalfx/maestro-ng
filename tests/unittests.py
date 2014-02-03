@@ -50,5 +50,20 @@ class ServiceTest(unittest.TestCase):
         self.assertEqual(d['tag'], '8081/foo/bar')
 
 
+class ContainerTest(unittest.TestCase):
+
+    def test_env_propagates_from_service(self):
+        service_env = {'ENV_VAR': 'value'}
+        container_env = {'OTHER_ENV_VAR': 'other-value'}
+        service = entities.Service('foo', 'stackbrew/ubuntu', service_env)
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config={'env': container_env})
+        for k, v in service_env.items():
+            self.assertIn(k, container.env)
+            self.assertEqual(v, container.env[k])
+        for k, v in container_env.items():
+            self.assertIn(k, container.env)
+            self.assertEqual(v, container.env[k])
+
 if __name__ == '__main__':
     unittest.main()

@@ -34,6 +34,8 @@ services:
   kafka:
     image: mpetazzoni/kafka:latest
     requires: [zookeeper]
+    env:
+      KAFKA_CONFIG_ZOOKEEPER_BASE: /local/kafka/central
     instances:
       kafka-broker-1:
         ship: vm1
@@ -42,7 +44,6 @@ services:
           /var/lib/kafka: /home/vagrant/data/kafka
         env:
           KAFKA_CONFIG_BROKER_ID: 0
-          KAFKA_CONFIG_ZOOKEEPER_BASE: /local/kafka/central
       kafka-broker-2:
         ship: vm2
         ports: {broker: "9092/tcp:9092/tcp"}
@@ -50,4 +51,3 @@ services:
           /var/lib/kafka: /home/vagrant/data/kafka
         env:
           KAFKA_CONFIG_BROKER_ID: 1
-          KAFKA_CONFIG_ZOOKEEPER_BASE: /local/kafka/central

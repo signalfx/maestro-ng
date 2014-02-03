@@ -39,7 +39,8 @@ class Conductor:
         self._containers = {}
 
         for kind, service in self._config['services'].iteritems():
-            self._services[kind] = entities.Service(kind, service['image'])
+            self._services[kind] = entities.Service(kind, service['image'],
+                                                    service.get('env', {}))
 
             for name, instance in service['instances'].iteritems():
                 self._containers[name] = \

@@ -205,6 +205,9 @@ class Container(Entity):
         # Get environment variables.
         self.env = dict(service.env)
         self.env.update(config.get('env', {}))
+        for k, v in self.env.items():
+            if type(v) == list:
+                self.env[k] = ' '.join(v)
 
         # If no volume source is specified, we assume it's the same path as the
         # destination inside the container.

@@ -275,12 +275,6 @@ class Container(Entity):
             retries (int): number of attempts (timeout is 1 second).
         """
 
-        # If the container is down, any service that should be inside for sure
-        # won't respond to port ping.
-        status = self.status(refresh=True)
-        if status and not status['State']['Running']:
-            return False
-
         # No ports, return the last known container status.
         if not self.ports:
             status = self.status(refresh=True)
@@ -288,6 +282,12 @@ class Container(Entity):
 
         # Port(s) exposed, try to ping them 'retries' times.
         while retries > 0:
+            # If the container is down, any service that should be inside for sure
+            # won't respond to port ping.
+            status = self.status(refresh=True)
+            if status and not status['State']['Running']:
+                return False
+
             if filter(None, map(lambda port: self.ping_port(port),
                                 self.ports.iterkeys())):
                 return True

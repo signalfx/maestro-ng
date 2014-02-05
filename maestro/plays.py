@@ -271,7 +271,7 @@ class Start(BaseOrchestrationPlay):
         # Check if the image is available, or if we need to pull it down.
         image = container.service.get_image_details()
         if self._refresh_images or \
-                not filter(lambda i: i['Tag'] == image['tag'],
+                not filter(lambda i: container.service.image in i['RepoTags'],
                            container.ship.backend.images(image['repository'])):
             # First, attempt to login if we can/need to.
             self._login_to_registry(o, container)

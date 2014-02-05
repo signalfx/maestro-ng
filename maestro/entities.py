@@ -33,7 +33,7 @@ class Ship(Entity):
     """
 
     DEFAULT_DOCKER_PORT = 4243
-    DEFAULT_DOCKER_VERSION = '1.6'
+    DEFAULT_DOCKER_VERSION = '1.8'
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT,

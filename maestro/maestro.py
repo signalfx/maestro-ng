@@ -76,6 +76,14 @@ class Conductor:
         environment."""
         return self._containers.keys()
 
+    def get_service(self, name):
+        """Returns a service, by name."""
+        return self._services[name]
+
+    def get_container(self, name):
+        """Returns a container, by name."""
+        return self._containers[name]
+
     def _order_dependencies(self, pending=[], ordered=[], forward=True):
         """Order the given set of containers into an order respecting the
         service dependencies in the given direction.

@@ -205,9 +205,14 @@ class Container(Entity):
         # Get environment variables.
         self.env = dict(service.env)
         self.env.update(config.get('env', {}))
+
+        def env_list_expand(elt):
+            return type(elt) != list and elt \
+                or ' '.join(map(env_list_expand, elt))
+
         for k, v in self.env.items():
             if type(v) == list:
-                self.env[k] = ' '.join(v)
+                self.env[k] = env_list_expand(v)
 
         # If no volume source is specified, we assume it's the same path as the
         # destination inside the container.
@@ -282,8 +287,8 @@ class Container(Entity):
 
         # Port(s) exposed, try to ping them 'retries' times.
         while retries > 0:
-            # If the container is down, any service that should be inside for sure
-            # won't respond to port ping.
+            # If the container is down, any service that should be inside for
+            # sure won't respond to port ping.
             status = self.status(refresh=True)
             if status and not status['State']['Running']:
                 return False

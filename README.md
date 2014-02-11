@@ -367,9 +367,10 @@ achieve this by adding the following to your Dockerfile (select the
 version of Maestro that you need):
 
 ```
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update
-RUN apt-get -y install python python-setuptools
-RUN easy_install http://github.com/signalfuse/maestro-ng/archive/master.zip
+RUN apt-get -y install python python-pip git
+RUN pip install git+git://github.com/signalfuse/maestro-ng
 ```
 
 This will install the latest available version of Maestro. Feel free to

@@ -53,9 +53,9 @@ def get_container_internal_address():
 
 
 def get_port(name, default=None):
-    """Return the port number for the given port, or the given default if not
-    found."""
-    return get_specific_port(
+    """Return the exposed (internal) port number for the given port, or the
+    given default if not found."""
+    return get_specific_exposed_port(
         get_service_name(),
         get_container_name(),
         name, default)
@@ -68,9 +68,19 @@ def get_specific_host(service, container):
                                           _to_env_var_name(container))]
 
 
+def get_specific_exposed_port(service, container, port, default=None):
+    """Return the exposed (internal) port number of a specific port of a
+    specific container from a given service."""
+    return int(os.environ.get(
+        '{}_{}_{}_INTERNAL_PORT'.format(_to_env_var_name(service),
+                                        _to_env_var_name(container),
+                                        _to_env_var_name(port)).upper(),
+        default))
+
+
 def get_specific_port(service, container, port, default=None):
-    """Return the port number of a specific port of a specific container from a
-    given service."""
+    """Return the external port number of a specific port of a specific
+    container from a given service."""
     return int(os.environ.get(
         '{}_{}_{}_PORT'.format(_to_env_var_name(service),
                                _to_env_var_name(container),

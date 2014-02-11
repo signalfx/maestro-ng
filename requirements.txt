@@ -1,2 +1,2 @@
-git+git://github.com/dotcloud/docker-py
+git+git://github.com/dotcloud/docker-py#egg=docker-py
 pyyaml

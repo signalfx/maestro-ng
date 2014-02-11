@@ -259,15 +259,21 @@ class Container(Entity):
         """Build and return a dictionary of environment variables providing
         linking information to this container.
 
-        Variables are named '<service_name>_<container_name>_{HOST,PORTS}'.
+        Variables are named
+        '<service_name>_<container_name>_{HOST,PORT,INTERNAL_PORT}'.
         """
         basename = re.sub(r'[^\w]',
                           '_',
                           '{}_{}'.format(self.service.name, self.name)).upper()
-        links = {'%s_HOST' % basename: self.ship.ip}
-        links.update(dict(('%s_%s_PORT' % (basename, name.upper()),
-                           spec['exposed'].split('/')[0])
-                          for name, spec in self.ports.iteritems()))
+
+        port_number = lambda p: p.split('/')[0]
+
+        links = {'{}_HOST'.format(basename): self.ship.ip}
+        for name, spec in self.ports.items():
+            links['{}_{}_PORT'.format(basename, name.upper())] = \
+                port_number(spec['external'][1])
+            links['{}_{}_INTERNAL_PORT'.format(basename, name.upper())] = \
+                port_number(spec['exposed'])
         return links
 
     def ping(self, retries=3):

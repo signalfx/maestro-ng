@@ -53,7 +53,7 @@ Installation
 You can install Maestro via _Pip_:
 
 ```
-$ pip install --user --upgrade .
+$ pip install --user --upgrade git+git://github.com/signalfuse/maestro-ng
 ```
 
 Orchestration
@@ -128,6 +128,8 @@ Services are also named. Their name is used for commands that act on
 specific services instead of the whole environment, and is also used in
 dependency declarations. Each service must define the Docker image its
 instances will be using, and of course a description of each instance.
+It can also define environment variables that will apply to all
+of that service's instances.
 
 Each service instance must at least define the _ship_ its container will
 be placed on (by name). Additionally, it may define:
@@ -161,7 +163,9 @@ services:
         ports: {broker: 9092}
         volumes:
           /var/lib/kafka: /data/kafka
-``` 
+        env:
+          BROKER_ID: 0
+```
 
 Port mapping syntax
 -------------------
@@ -251,7 +255,7 @@ services:
     ports:
       smtp:
         exposed: 25/tcp
-        external [ *demoip, 25/tcp ]
+        external: [ *demoip, 25/tcp ]
 ```
 
 Port mappings and named ports
@@ -328,8 +332,12 @@ a set of environment variables is added:
   host of the container, which is the address the application inside the
   container can be reached with accross the network.
 * For each port declared by the dependent container:
-  `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_PORT`, containing the
-  port number.
+  - `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_PORT`, containing the
+    external, addressable port number.
+  - `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_INTERNAL_PORT`,
+    containing the exposed (internal) port number that is, most likely,
+    only reachable from inside the container and usually the port the
+    application running in the container wants to bind to.
 
 With all this information available in the container's environment, each
 container can then easily know about its surroundings and the other
@@ -388,16 +396,16 @@ your disposal that will make your life much easier:
     advertise itself to some service discovery system.
   - `get_container_internal_address()` returns the IP address assigned
     to the container itself by Docker (its private IP address).
-  - `get_port(name, default)` will return the port number of a given
-    named port for the current container instance. This is useful to set
-    configuration parameters for example.
+  - `get_port(name, default)` will return the exposed (internal) port
+    number of a given named port for the current container instance.
+    This is useful to set configuration parameters for example.
 
 Another very useful function is the `get_node_list` function. It takes
 in a service name and an optional list of port names and returns the
 list of IP addresses/hostname of the containers of that service. For
 each port specified, in order, it will append `:<port number>` to each
-host.  For example, if you want to return the list of ZooKeeper
-endpoints with their client ports:
+host with the external port number. For example, if you want to return
+the list of ZooKeeper endpoints with their client ports:
 
 ```python
 get_node_list('zookeeper', ports=['client']) -> ['c414.ore1.domain.com:2181', 'c415.ore1.domain.com:2181']
@@ -409,7 +417,11 @@ Other functions you might need are:
     the hostname or IP address of a specific container from a given
     service, and
   - `get_specific_port(service, container, port, default)`, to retrieve
-    the port number of a specific named port of a given container.
+    the external port number of a specific named port of a given
+    container.
+  - `get_specific_exposed_port(service, container, port, default)`, to
+    retrieve the exposed (internal) port number of a specific named port
+    of a given container.
 
 Working with image registries
 -----------------------------

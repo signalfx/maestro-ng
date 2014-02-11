@@ -103,8 +103,7 @@ class FullStatus(BaseOrchestrationPlay):
                     ping = container.ping_port(name)
                     o.commit('\033[{:d};1m{:>9.9s}\033[;0m:{:<10.10s}'.format(
                         color(ping), port['external'][1], name))
-            except Exception, e:
-                print e
+            except Exception:
                 o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format(
                     'host down', 'down'))
             o.end()
@@ -187,18 +186,16 @@ class Start(BaseOrchestrationPlay):
                         (result and 'started' or
                             'service did not start!')))
                 if result is False:
-                    error = container.ship.backend.logs(container.id)
-            except Exception, e:
+                    error = [
+                        ('Halting start sequence because {} failed to start!'
+                            .format(container)),
+                        container.ship.backend.logs(container.id)]
+                    raise exceptions.OrchestrationException('\n'.join(error))
+            except Exception:
                 o.commit('\033[31;1mfailed to start container!\033[;0m')
-                error = e
-
-            o.end()
-
-            # Halt the sequence if a container failed to start.
-            if error:
-                raise exceptions.OrchestrationException, \
-                    ('Halting start sequence because {} failed to start!\n{}'
-                        .format(container, error))
+                raise
+            finally:
+                o.end()
 
     def _update_pull_progress(self, progress, last):
         """Update an image pull progress map with latest download progress
@@ -257,7 +254,19 @@ class Start(BaseOrchestrationPlay):
         necessary. We then wait for the application to start and return True or
         False depending on whether the start was successful."""
         o.pending('checking service...')
+        status = container.status(refresh=True)
+
         if container.ping(retries=2):
+            # If the container pinged, but has no status, it's likely that
+            # something else that is not our container is listening on that
+            # part. This could indicate that the environment description
+            # doesn't match what is running, or supposed to be running, on the
+            # target host.
+            if not status:
+                raise exceptions.OrchestrationException(
+                    'Invalid state, other service found running in place of ' +
+                    'container {}.!'.format(container))
+
             o.commit('\033[34;0m{:<15s}\033[;0m'.format(container.id[:7]))
             # We use None as a special marker showing the container and the
             # application were already running.

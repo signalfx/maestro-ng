@@ -159,12 +159,13 @@ class Service(Entity):
         """Register a new instance container as part of this service."""
         self._containers[container.name] = container
 
-    def get_link_variables(self):
+    def get_link_variables(self, add_internal=False):
         """Return the dictionary of all link variables from each container of
         this service."""
-        return dict(reduce(lambda x, y: x+y,
-                           map(lambda c: c.get_link_variables().items(),
-                               self._containers.values())))
+        return dict(reduce(
+            lambda x, y: x+y,
+            map(lambda c: c.get_link_variables(add_internal).items(),
+                self._containers.values())))
 
     def ping(self, retries=1):
         """Check if this service is running, that is if all of its containers
@@ -255,7 +256,7 @@ class Container(Entity):
 
         return self._status
 
-    def get_link_variables(self):
+    def get_link_variables(self, add_internal=False):
         """Build and return a dictionary of environment variables providing
         linking information to this container.
 
@@ -272,8 +273,9 @@ class Container(Entity):
         for name, spec in self.ports.items():
             links['{}_{}_PORT'.format(basename, name.upper())] = \
                 port_number(spec['external'][1])
-            links['{}_{}_INTERNAL_PORT'.format(basename, name.upper())] = \
-                port_number(spec['exposed'])
+            if add_internal:
+                links['{}_{}_INTERNAL_PORT'.format(basename, name.upper())] = \
+                    port_number(spec['exposed'])
         return links
 
     def ping(self, retries=3):

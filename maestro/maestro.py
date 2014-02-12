@@ -60,7 +60,7 @@ class Conductor:
         for service in self._services.itervalues():
             for container in service.containers:
                 # Containers always know about their peers in the same service.
-                container.env.update(service.get_link_variables())
+                container.env.update(service.get_link_variables(True))
                 # Containers also get links from the service's dependencies.
                 for dependency in service.requires:
                     container.env.update(dependency.get_link_variables())

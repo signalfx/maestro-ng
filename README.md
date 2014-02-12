@@ -334,10 +334,15 @@ a set of environment variables is added:
 * For each port declared by the dependent container:
   - `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_PORT`, containing the
     external, addressable port number.
-  - `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_INTERNAL_PORT`,
-    containing the exposed (internal) port number that is, most likely,
-    only reachable from inside the container and usually the port the
-    application running in the container wants to bind to.
+
+Each container of a service also gets these two variables for each
+instance of that service so it knows about its peers. It also gets the
+following variable for each port defined:
+
+* `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_INTERNAL_PORT`,
+  containing the exposed (internal) port number that is, most likely,
+  only reachable from inside the container and usually the port the
+  application running in the container wants to bind to.
 
 With all this information available in the container's environment, each
 container can then easily know about its surroundings and the other

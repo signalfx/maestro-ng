@@ -542,10 +542,11 @@ $ python -m maestro -f demo.yaml
 ```
 
 The first positional argument is a command you want Maestro to execute.
-The available commands are `status`, `start`, `stop` and `clean`. They
-should all be self-explanatory. Service dependency is always honored for
-all commands. Note that if services don't have any dependencies (or have
-the same dependencies), their start order might not always be the same.
+The available commands are `status`, `fullstatus`, `start`, `stop` and
+`logs`. They should all be self-explanatory. Service dependency is
+always honored for all commands. Note that if services don't have any
+dependencies (or have the same dependencies), their start order might
+not always be the same.
 
 You can also pass one or more service names or container names on which
 to execute the command, to restrict the action of the command to just

@@ -452,6 +452,49 @@ that registry.
 If credentials are found, Maestro will login to the registry before
 attempting to pull the image.
 
+Passing extra environment variables
+-----------------------------------
+
+You can pass in or override arbitrary environment variables by providing
+a dictionary of environment variables key/value pairs. This can be done
+both at the service level and the container level; the latter taking
+precedence:
+
+```yaml
+services:
+  myservice:
+    image: ...
+    env:
+      FOO: bar
+    instance-1:
+      ship: host
+      env:
+        FOO: overrides bar
+        FOO_2: bar2
+```
+
+Additionally, Maestro will automatically expand all levels of YAML lists
+in environment variable values. The following are equivalent:
+
+```yaml
+env:
+  FOO: This is a test
+  BAR: [ This, [ is, a ], test ]
+```
+
+This becomes useful when used in conjunction with YAML references to
+build more complex environment variable values:
+
+```yaml
+_globals:
+  DEFAULT_JVM_OPTS: &jvmopts [ '-Xms500m', '-Xmx2g', '-showversion', '-server' ]
+
+...
+
+env:
+  JVM_OPTS: [ *jvmopts, '-XX:+UseConcMarkSweep' ]
+```
+
 Usage
 =====
 

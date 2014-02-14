@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 
+import os
 import unittest
 
-from maestro import entities
+from maestro import entities, __main__
 
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
 
 class EntityTest(unittest.TestCase):
 
@@ -64,6 +69,26 @@ class ContainerTest(unittest.TestCase):
         for k, v in container_env.items():
             self.assertIn(k, container.env)
             self.assertEqual(v, container.env[k])
+
+class configTest(unittest.TestCase):
+
+    def test_yaml_parsing_test1(self):
+        ip_address = '192.168.1.1'
+        os.environ['VM1_IP_ADDRESS'] = ip_address
+
+        config = __main__.load_config(AttrDict({
+            'file': os.path.join(os.path.dirname(__file__),'yaml/test1.yaml')
+        }))
+
+        # Make sure the env variables are working
+        self.assertEqual(ip_address, config['ships']['vm1']['ip'])
+
+        # Ensure this doesn't break yaml references
+        self.assertEqual(ip_address,
+                config['services']['zookeeper']
+                      ['instances']['zk-node-2']['ports']
+                      ['leader_election']['external'][0])
+
 
 if __name__ == '__main__':
     unittest.main()

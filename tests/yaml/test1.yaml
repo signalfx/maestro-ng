@@ -1,0 +1,54 @@
+# This is an example of a Maestro environment description file. It starts up a
+# multi-node ZooKeeper cluster to serve a multi-node Kafka broker cluster than
+# can be used for pub/sub and messaging.
+
+name: demo
+
+ships:
+  # docker_port remains at default 4243 on all our hosts
+  vm1: {ip: &vm1ip {{ env.VM1_IP_ADDRESS }}}
+  vm2: {ip: 192.168.11.2}
+
+services:
+  # 2-node ZooKeeper cluster.
+  zookeeper:
+    image: mpetazzoni/zookeeper:3.4.5
+    instances:
+      zk-node-1:
+        ship: vm1
+        ports: {client: 2181, peer: 2888, leader_election: 3888}
+        volumes:
+          /var/lib/zookeeper: /home/vagrant/data/zookeeper
+      zk-node-2:
+        ship: vm2
+        ports:
+          client: 2181
+          peer: 2888/tcp
+          leader_election:
+            exposed: 3888
+            external: [ *vm1ip, 3888/tcp ]
+        volumes:
+          /var/lib/zookeeper: /home/vagrant/data/zookeeper
+
+  # 2-node Kafka cluster, requires ZooKeeper.
+  kafka:
+    image: mpetazzoni/kafka:latest
+    requires: [zookeeper]
+    env:
+      KAFKA_CONFIG_ZOOKEEPER_BASE: /local/kafka/central
+    instances:
+      kafka-broker-1:
+        ship: vm1
+        ports: {broker: "9092:9092"}
+        volumes:
+          /var/lib/kafka: /home/vagrant/data/kafka
+        env:
+          KAFKA_CONFIG_BROKER_ID: 0
+      kafka-broker-2:
+        ship: vm2
+        ports: {broker: "9092/tcp:9092/tcp"}
+        volumes:
+          /var/lib/kafka: /home/vagrant/data/kafka
+        env:
+          KAFKA_CONFIG_BROKER_ID: 1
+

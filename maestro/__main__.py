@@ -7,10 +7,19 @@
 import argparse
 import logging
 import sys
+import os
+
 import yaml
+from jinja2 import Template
 
 from . import exceptions, maestro
 
+def load_config(options):
+    with (options.file == '-' and sys.stdin or open(options.file)) as f:
+        raw_config = f.read()
+
+        # Preprocess the config file with Jinja2
+        return yaml.load(Template(raw_config).render(env=os.environ))
 
 def main(args):
     commands = ['status', 'fullstatus', 'start', 'stop', 'clean', 'logs']
@@ -42,9 +51,7 @@ def main(args):
                         help='only affect the selected container or service')
     options = parser.parse_args(args)
 
-    stream = options.file == '-' and sys.stdin or open(options.file)
-    config = yaml.load(stream)
-    stream.close()
+    config = load_config(options)
 
     # Shutup urllib3, wherever it comes from.
     (logging.getLogger('requests.packages.urllib3.connectionpool')

@@ -319,7 +319,8 @@ class Start(BaseOrchestrationPlay):
              for port in container.ports.itervalues()]) or None
         container.ship.backend.start(container.id,
                                      binds=container.volumes,
-                                     port_bindings=ports)
+                                     port_bindings=ports,
+                                     privileged=container.privileged)
 
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.

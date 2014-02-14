@@ -221,6 +221,9 @@ class Container(Entity):
             (src or dst, dst) for dst, src in
             config.get('volumes', {}).items())
 
+        # Should this container run with -privileged?
+        self.privileged = config.get('privileged', False)
+
         # Seed the service name, container name and host address as part of the
         # container's environment.
         self.env['MAESTRO_ENVIRONMENT_NAME'] = env_name

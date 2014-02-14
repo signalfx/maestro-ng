@@ -302,6 +302,7 @@ class Start(BaseOrchestrationPlay):
             hostname=container.name,
             name=container.name,
             environment=container.env,
+            volumes=container.volumes.values(),
             ports=ports)
 
         o.pending('waiting for container creation...')

@@ -21,7 +21,7 @@ def load_config(options):
         # Preprocess the config file with Jinja2
         return yaml.load(Template(raw_config).render(env=os.environ))
 
-def main(args):
+def create_parser():
     commands = ['status', 'fullstatus', 'start', 'stop', 'clean', 'logs']
     parser = argparse.ArgumentParser(
         prog='maestro',
@@ -49,8 +49,11 @@ def main(args):
     parser.add_argument('-o', '--only', action='store_const',
                         const=True, default=False,
                         help='only affect the selected container or service')
-    options = parser.parse_args(args)
 
+    return parser
+
+def main(args):
+    options = create_parser().parse_args(args)
     config = load_config(options)
 
     # Shutup urllib3, wherever it comes from.

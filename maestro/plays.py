@@ -47,18 +47,18 @@ class OutputFormatter:
             self._committed = '{} {}'.format(self._committed, s)
         elif not self._committed and s:
             self._committed = s
-        print '{}\033[K\r'.format(self._committed),
+        print('{}\033[K\r'.format(self._committed),)
         sys.stdout.flush()
 
     def pending(self, s):
         if self._committed and s:
-            print '{} {}\033[K\r'.format(self._committed, s),
+            print('{} {}\033[K\r'.format(self._committed, s),)
         elif not self._committed and s:
-            print '{}\033[K\r'.format(s),
+            print('{}\033[K\r'.format(s),)
         sys.stdout.flush()
 
     def end(self):
-        print
+        print()
         sys.stdout.flush()
 
 
@@ -70,8 +70,8 @@ class FullStatus(BaseOrchestrationPlay):
         BaseOrchestrationPlay.__init__(self, containers)
 
     def run(self):
-        print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
-            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
+        print('{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
+            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS'))
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
@@ -162,8 +162,8 @@ class Start(BaseOrchestrationPlay):
         self._refresh_images = refresh_images
 
     def run(self):
-        print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
-            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
+        print('{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
+            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS'))
 
         for order, container in enumerate(self._containers, 1):
             o = OutputFormatter(
@@ -343,8 +343,8 @@ class Stop(BaseOrchestrationPlay):
         BaseOrchestrationPlay.__init__(self, containers)
 
     def run(self):
-        print '{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
-            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS')
+        print('{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s} {:<10s}'.format(
+            '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS'))
 
         for order, container in enumerate(self._containers):
             o = OutputFormatter(

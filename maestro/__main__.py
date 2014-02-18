@@ -75,7 +75,7 @@ def main(args):
         else:
             return 0
 
-        print ' '.join(filter(lambda x: x.startswith(prefix), set(choices)))
+        print(' '.join(filter(lambda x: x.startswith(prefix), set(choices))))
         return 0
 
     try:

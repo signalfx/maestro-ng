@@ -12,7 +12,7 @@ setup(
     description='Orchestrator for multi-host Docker deployments',
     zip_safe=True,
     packages=find_packages(),
-    install_requires=['docker-py', 'pyyaml'],
+    install_requires=['docker-py', 'pyyaml', 'jinja2'],
     dependency_links=['https://github.com/dotcloud/docker-py/archive/master.zip#egg=docker-py'],
     classifiers=[
         'Development Status :: 3 - Alpha',

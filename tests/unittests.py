@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
+import os
 import unittest
 
 from maestro import entities
-
+from maestro.__main__ import load_config, create_parser
 
 class EntityTest(unittest.TestCase):
 
@@ -64,6 +65,21 @@ class ContainerTest(unittest.TestCase):
         for k, v in container_env.items():
             self.assertIn(k, container.env)
             self.assertEqual(v, container.env[k])
+
+class configTest(unittest.TestCase):
+
+    def test_yaml_parsing_test1(self):
+        os.environ['BAR'] = 'bar'
+
+        config = load_config(
+            create_parser().parse_args([
+                '-f',
+                os.path.join(os.path.dirname(__file__),'yaml/test_env.yaml')
+            ])
+        )
+
+        # Make sure the env variables are working
+        self.assertEqual('bar', config['foo'])
 
 if __name__ == '__main__':
     unittest.main()

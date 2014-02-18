@@ -81,7 +81,7 @@ def main(args):
     try:
         options.things = set(options.things)
         getattr(c, options.command)(**vars(options))
-    except exceptions.MaestroException, e:
+    except exceptions.MaestroException as e:
         sys.stderr.write('{}\n'.format(e))
         return 1
     except KeyboardInterrupt:

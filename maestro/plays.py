@@ -238,7 +238,7 @@ class Start(BaseOrchestrationPlay):
         o.pending('logging in to {}...'.format(registry))
         try:
             container.ship.backend.login(**self._registries[registry])
-        except Exception, e:
+        except Exception as e:
             raise exceptions.OrchestrationException(
                 'Login to {} failed: {}'.format(registry, e))
 

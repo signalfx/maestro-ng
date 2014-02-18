@@ -2,6 +2,8 @@
 #
 # Docker container orchestration utility.
 
+from __future__ import print_function
+
 import json
 import sys
 import time
@@ -47,18 +49,18 @@ class OutputFormatter:
             self._committed = '{} {}'.format(self._committed, s)
         elif not self._committed and s:
             self._committed = s
-        print('{}\033[K\r'.format(self._committed),)
+        print('{}\033[K\r'.format(self._committed), end='')
         sys.stdout.flush()
 
     def pending(self, s):
         if self._committed and s:
-            print('{} {}\033[K\r'.format(self._committed, s),)
+            print('{} {}\033[K\r'.format(self._committed, s), end='')
         elif not self._committed and s:
-            print('{}\033[K\r'.format(s),)
+            print('{}\033[K\r'.format(s), end='')
         sys.stdout.flush()
 
     def end(self):
-        print()
+        print('')
         sys.stdout.flush()
 
 

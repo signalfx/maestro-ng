@@ -315,9 +315,8 @@ class Start(BaseOrchestrationPlay):
 
         o.pending('starting container {}...'.format(container.id[:7]))
         ports = container.ports and dict(
-            [(port['exposed'].split('/')[0],
-              (port['external'][0],
-               port['external'][1].split('/')[0]))
+            [(port['exposed'], (port['external'][0],
+                                port['external'][1].split('/')[0]))
              for port in container.ports.itervalues()]) or None
         container.ship.backend.start(container.id,
                                      binds=container.volumes,

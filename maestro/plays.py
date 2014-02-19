@@ -103,7 +103,7 @@ class FullStatus(BaseOrchestrationPlay):
                     o.pending('{:>9.9s}:{:s}'.format(port['external'][1],
                                                      name))
                     ping = container.ping_port(name)
-                    o.commit('\033[{:d};1m{:>9.9s}\033[;0m:{:<10.10s}'.format(
+                    o.commit('\033[{:d};1m{:>9.9s}\033[;0m:{:s}'.format(
                         color(ping), port['external'][1], name))
             except Exception:
                 o.commit('\033[31;1m{:<15s} {:<10s}\033[;0m'.format(

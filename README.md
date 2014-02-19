@@ -138,6 +138,8 @@ be placed on (by name). Additionally, it may define:
     spec>` (see below for port spec syntax);
   - volume mappings, as a map of `<destination in container>: <source from host>`;
   - environment variables, as a map of `<variable name>: <value>`.
+  - whether the container should run in privileged mode, as a boolean
+  `privileged: true | false` (Defaults to false).
 
 ```yaml
 services:
@@ -147,6 +149,7 @@ services:
       zk-1:
         ship: vm1.ore1
         ports: {client: 2181, peer: 2888, leader_election: 3888}
+        privileged: true
         volumes:
           /var/lib/zookeeper: /data/zookeeper
       zk-2:

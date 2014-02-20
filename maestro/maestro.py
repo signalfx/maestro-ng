@@ -241,14 +241,15 @@ class Conductor:
                     'Now streaming logs for {}. New output will appear below.'
                     .format(container.name))
                 logs = container.ship.backend.attach(container.id, stream=True)
-                for line in logs:
-                    print(line.rstrip())
             else:
                 o.pending(
                     'Requesting logs for {}. This may take a while...'
                     .format(container.name))
                 logs = container.ship.backend.logs(container.id).split('\n')
                 logs = logs[-int(kwargs.get('n', len(logs))):]
-                print('\n'.join(logs))
+
+            o.pending('\033[2K')
+            for line in logs:
+                print(line.rstrip())
         except:
             pass

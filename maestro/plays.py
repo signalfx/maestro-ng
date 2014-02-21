@@ -318,8 +318,8 @@ class Start(BaseOrchestrationPlay):
         ports = defaultdict(list) if container.ports else None
         if ports is not None:
             for port in container.ports.itervalues():
-                ports[port['exposed']].append((port['external'][0],
-                                port['external'][1].split('/')[0]))
+                ports[port['exposed']].append(
+                    (port['external'][0], port['external'][1].split('/')[0]))
 
         container.ship.backend.start(container.id,
                                      binds=container.volumes,

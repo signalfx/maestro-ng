@@ -4,6 +4,7 @@
 
 from __future__ import print_function
 
+import collections
 import json
 import sys
 import time
@@ -314,10 +315,11 @@ class Start(BaseOrchestrationPlay):
         o.commit('\033[32;1m{:<15s}\033[;0m'.format(container.id[:7]))
 
         o.pending('starting container {}...'.format(container.id[:7]))
-        ports = container.ports and dict(
-            [(port['exposed'], (port['external'][0],
-                                port['external'][1].split('/')[0]))
-             for port in container.ports.itervalues()]) or None
+        ports = collections.defaultdict(list) if container.ports else None
+        if ports is not None:
+            for port in container.ports.values():
+                ports[port['exposed']].append(
+                    (port['external'][0], port['external'][1].split('/')[0]))
         container.ship.backend.start(container.id,
                                      binds=container.volumes,
                                      port_bindings=ports,

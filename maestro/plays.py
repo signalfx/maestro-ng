@@ -306,7 +306,8 @@ class Start(BaseOrchestrationPlay):
             name=container.name,
             environment=container.env,
             volumes=container.volumes.values(),
-            ports=ports)
+            ports=ports,
+            detach=True)
 
         o.pending('waiting for container creation...')
         if not self._wait_for_status(container, lambda x: x):

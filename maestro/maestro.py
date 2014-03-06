@@ -24,6 +24,7 @@ class Conductor:
                 k, v['ip'],
                 docker_port=v.get('docker_port',
                                   entities.Ship.DEFAULT_DOCKER_PORT),
+                docker_endpoint=v.get('docker_endpoint'),
                 timeout=v.get('timeout')))
             for k, v in self._config['ships'].iteritems())
 

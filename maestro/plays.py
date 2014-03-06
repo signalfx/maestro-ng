@@ -324,6 +324,7 @@ class Start(BaseOrchestrationPlay):
         container.ship.backend.start(container.id,
                                      binds=container.volumes,
                                      port_bindings=ports,
+                                     links=container.links,
                                      privileged=container.privileged)
 
         # Waiting one second and checking container state again to make sure

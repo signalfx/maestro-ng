@@ -126,11 +126,10 @@ class Status(BaseOrchestrationPlay):
         for ship in set([container.ship for container in self._containers]):
             o.pending('Gathering container information from {} ({})...'.format(
                 ship.name, ship.ip))
-            try:
-                status.update(dict((c['Names'][0][1:], c)
-                              for c in ship.backend.containers()))
-            except:
-                pass
+
+            for c in ship.backend.containers():
+                for n in c['Names']:
+                    status[n[1:]] = c
 
         o.commit('{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s}'.format(
             '  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER'))

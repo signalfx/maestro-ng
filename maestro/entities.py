@@ -37,19 +37,22 @@ class Ship(Entity):
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT,
-                 timeout=None):
+                 timeout=None, docker_endpoint=None):
         """Instantiate a new ship.
 
         Args:
             name (string): the name of the ship.
             ip (string): the IP address of resolvable host name of the host.
             docker_port (int): the port the Docker daemon listens on.
+            docker_endpoint (url): endpoint to access the docker api
         """
         Entity.__init__(self, name)
         self._ip = ip
         self._docker_port = docker_port
-
-        self._backend_url = 'http://{:s}:{:d}'.format(ip, docker_port)
+        if docker_endpoint:
+            self._backend_url = docker_endpoint
+        else:
+            self._backend_url = 'http://{:s}:{:d}'.format(ip, docker_port)
         self._backend = docker.Client(
             base_url=self._backend_url,
             version=Ship.DEFAULT_DOCKER_VERSION,

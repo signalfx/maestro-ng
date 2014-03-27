@@ -1,0 +1,12 @@
+name: test-empty-registries
+registries:
+  # Auth credentials for each registry that needs them (see below)
+ships:
+  l: {ip: localhost}
+services:
+  webapp:
+    image: foo
+    instances:
+      w1:
+        ship: l
+        ports: {http: 3344}

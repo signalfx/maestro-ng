@@ -3,7 +3,7 @@
 import os
 import unittest
 
-from maestro import entities
+from maestro import entities, maestro
 from maestro.__main__ import load_config, create_parser
 
 class EntityTest(unittest.TestCase):
@@ -66,19 +66,32 @@ class ContainerTest(unittest.TestCase):
             self.assertIn(k, container.env)
             self.assertEqual(v, container.env[k])
 
-class configTest(unittest.TestCase):
 
-    def test_yaml_parsing_test1(self):
-        os.environ['BAR'] = 'bar'
+class BaseConfigUsingTest(unittest.TestCase):
 
-        config = load_config(
+    def _get_config(self, name):
+        return load_config(
             create_parser().parse_args([
                 '-f',
-                os.path.join(os.path.dirname(__file__),'yaml/test_env.yaml')
+                os.path.join(os.path.dirname(__file__),
+                             'yaml/{}.yaml'.format(name))
             ])
         )
 
-        # Make sure the env variables are working
+class ConductorTest(BaseConfigUsingTest):
+
+    def test_empty_registry_list(self):
+        config = self._get_config('empty_registries')
+        c = maestro.Conductor(config)
+        self.assertIsNot(c.registries, None)
+        self.assertEqual(c.registries, [])
+
+class ConfigTest(BaseConfigUsingTest):
+
+    def test_yaml_parsing_test1(self):
+        """Make sure the env variables are working."""
+        os.environ['BAR'] = 'bar'
+        config = self._get_config('test_env')
         self.assertEqual('bar', config['foo'])
 
 if __name__ == '__main__':

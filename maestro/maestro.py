@@ -26,11 +26,11 @@ class Conductor:
                                   entities.Ship.DEFAULT_DOCKER_PORT),
                 docker_endpoint=v.get('docker_endpoint'),
                 timeout=v.get('timeout')))
-            for k, v in self._config['ships'].iteritems())
+            for k, v in self._config['ships'].items())
 
         # Register defined private Docker registries authentications
-        self._registries = self._config.get('registries', {})
-        for name, registry in self._registries.iteritems():
+        self._registries = self._config.get('registries') or {}
+        for name, registry in self._registries.items():
             if 'username' not in registry or 'password' not in registry:
                 raise exceptions.OrchestrationException(
                     'Incomplete registry auth data for {}!'.format(name))
@@ -39,11 +39,11 @@ class Conductor:
         self._services = {}
         self._containers = {}
 
-        for kind, service in self._config['services'].iteritems():
+        for kind, service in self._config['services'].items():
             self._services[kind] = entities.Service(kind, service['image'],
                                                     service.get('env', {}))
 
-            for name, instance in service['instances'].iteritems():
+            for name, instance in service['instances'].items():
                 self._containers[name] = \
                     entities.Container(name,
                                        self._ships[instance['ship']],
@@ -52,13 +52,13 @@ class Conductor:
                                        self._config['name'])
 
         # Resolve dependencies between services.
-        for kind, service in self._config['services'].iteritems():
+        for kind, service in self._config['services'].items():
             for dependency in service.get('requires', []):
                 self._services[kind].add_dependency(self._services[dependency])
                 self._services[dependency].add_dependent(self._services[kind])
 
         # Provide link environment variables to each container of each service.
-        for service in self._services.itervalues():
+        for service in self._services.values():
             for container in service.containers:
                 # Containers always know about their peers in the same service.
                 container.env.update(service.get_link_variables(True))
@@ -67,15 +67,24 @@ class Conductor:
                     container.env.update(dependency.get_link_variables())
 
     @property
+    def registries(self):
+        """Returns the list of registries known to this conductor."""
+        return list(self._registries.keys())
+
+    @property
     def services(self):
         """Returns the names of all the services defined in the environment."""
-        return self._services.keys()
+        return list(self._services.keys())
 
     @property
     def containers(self):
         """Returns the names of all the containers defined in the
         environment."""
-        return self._containers.keys()
+        return list(self._containers.keys())
+
+    def get_registry(self, name):
+        """Returns a registry, by name."""
+        return self._registries[name]
 
     def get_service(self, name):
         """Returns a service, by name."""

@@ -3,6 +3,7 @@
 # Docker container orchestration utility.
 
 import docker
+import functools
 import re
 import socket
 import time
@@ -165,7 +166,7 @@ class Service(Entity):
     def get_link_variables(self, add_internal=False):
         """Return the dictionary of all link variables from each container of
         this service."""
-        return dict(reduce(
+        return dict(functools.reduce(
             lambda x, y: x+y,
             map(lambda c: c.get_link_variables(add_internal).items(),
                 self._containers.values())))

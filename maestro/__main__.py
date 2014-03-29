@@ -57,7 +57,7 @@ def create_parser():
     return parser
 
 
-def main(args):
+def main(args=None):
     options = create_parser().parse_args(args)
     config = load_config(options)
 
@@ -92,5 +92,6 @@ def main(args):
     except KeyboardInterrupt:
         return 1
 
+
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main())

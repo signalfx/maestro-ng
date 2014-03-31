@@ -323,9 +323,13 @@ class Container(Entity):
         """Ping a single port, by its given name in the port mappings. Returns
         True if the port is opened and accepting connections, False
         otherwise."""
+        host = self.ports[port]['external'][0]
         parts = self.ports[port]['external'][1].split('/')
         if parts[1] == 'udp':
             return False
+
+        if host == '127.0.0.1':
+            return True
 
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

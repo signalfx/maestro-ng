@@ -365,7 +365,8 @@ class Stop(BaseOrchestrationPlay):
 
             try:
                 o.pending('stopping service...')
-                container.ship.backend.stop(container.id)
+                container.ship.backend.stop(container.id,
+                                            timeout=container.stop_timeout)
                 container.check_for_state('stopped')
                 o.commit('\033[32;1mstopped\033[;0m')
             except:

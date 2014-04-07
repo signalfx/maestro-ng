@@ -304,6 +304,17 @@ dependent service can know the address of a remote service, and the
 specific port number of a desired endpoint. For example, service
 depending on ZooKeeper would be looking for its `client` port.
 
+Links
+-----
+For each instance you can define Docker Links, the format is in 
+`name: alias` format. Read more about Docker Links to learn more.
+http://docs.docker.io/en/latest/use/working_with_links_names/
+```yaml
+# name -> alias
+links:
+  mongodb01: db
+```
+
 How Maestro orchestrates and service auto-configuration
 -------------------------------------------------------
 

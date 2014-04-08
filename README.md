@@ -139,9 +139,11 @@ be placed on (by name). Additionally, it may define:
   - lifecycle state checks, which Maestro uses to confirm a service
     correctly started (see Lifecycle checks below);
   - volume mappings, as a map of `<destination in container>: <source from host>`;
-  - environment variables, as a map of `<variable name>: <value>`.
+  - environment variables, as a map of `<variable name>: <value>`;
   - whether the container should run in privileged mode, as a boolean
-  `privileged: true | false` (Defaults to false).
+  `privileged: true | false` (Defaults to false);
+  - stop timeout: number of seconds to try to stop for before
+    killing the container (default is 10).
 
 ```yaml
 services:
@@ -176,6 +178,7 @@ services:
           /var/lib/kafka: /data/kafka
         env:
           BROKER_ID: 0
+        stop_timeout: 2
 ```
 
 Port mapping syntax

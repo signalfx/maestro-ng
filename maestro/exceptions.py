@@ -26,3 +26,8 @@ class OrchestrationException(MaestroException):
 class InvalidPortSpecException(MaestroException):
     "Error thrown when a port spec is in an invalid format."""
     pass
+
+
+class InvalidLifecycleCheckConfigurationException(MaestroException):
+    "Error thrown when a lifecycle check isn't configured properly."""
+    pass

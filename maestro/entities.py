@@ -5,10 +5,9 @@
 import docker
 import functools
 import re
-import socket
-import time
 
 from . import exceptions
+from . import lifecycle
 
 
 class Entity:
@@ -171,14 +170,6 @@ class Service(Entity):
             map(lambda c: c.get_link_variables(add_internal).items(),
                 self._containers.values())))
 
-    def ping(self, retries=1):
-        """Check if this service is running, that is if all of its containers
-        are up and running."""
-        for container in self._containers.itervalues():
-            if not container.ping(retries):
-                return False
-        return True
-
 
 class Container(Entity):
     """A Container represents an instance of a particular service that will be
@@ -235,6 +226,9 @@ class Container(Entity):
         self.env['CONTAINER_NAME'] = self.name
         self.env['CONTAINER_HOST_ADDRESS'] = self.ship.ip
 
+        # With everything defined, build lifecycle state helpers as configured
+        self._lifecycle = self._parse_lifecycle(config.get('lifecycle', {}))
+
     @property
     def ship(self):
         """Returns the Ship this container runs on."""
@@ -285,39 +279,20 @@ class Container(Entity):
                     port_number(spec['exposed'])
         return links
 
-    def ping(self, retries=3):
-        """Check whether this container is alive or not. If the container
-        doesn't expose any ports, return the container status instead. If the
-        container exposes multiple ports, as soon as one port is active the
-        application inside the container is considered to be up and running.
+    def check_for_state(self, state):
+        """Check if a particular lifecycle state has been reached by executing
+        all its defined checks. If not checks are defined, it is assumed the
+        state is reached immediately."""
 
-        Args:
-            retries (int): number of attempts (timeout is 1 second).
-        """
+        if state not in self._lifecycle:
+            # Return None to indicate no checks were performed.
+            return None
 
-        # No ports, return the last known container status.
-        if not self.ports:
-            status = self.status(refresh=True)
-            return status and status['State']['Running']
-
-        # Port(s) exposed, try to ping them 'retries' times.
-        while retries > 0:
-            # If the container is down, any service that should be inside for
-            # sure won't respond to port ping.
-            status = self.status(refresh=True)
-            if status and not status['State']['Running']:
+        for check in self._lifecycle[state]:
+            if not check.test():
                 return False
 
-            if filter(None, map(lambda port: self.ping_port(port),
-                                self.ports.iterkeys())):
-                return True
-
-            retries -= 1
-            if retries:
-                time.sleep(1)
-
-        # If we reach this point, the application is not running.
-        return False
+        return True
 
     def ping_port(self, port):
         """Ping a single port, by its given name in the port mappings. Returns
@@ -327,14 +302,7 @@ class Container(Entity):
         if parts[1] == 'udp':
             return False
 
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(1)
-            s.connect((self.ship.ip, int(parts[0])))
-            s.close()
-            return True
-        except:
-            return False
+        return lifecycle.TCPPortPinger(self.ship.ip, int(parts[0])).test()
 
     def _parse_ports(self, ports):
         """Parse port mapping specifications for this container."""
@@ -408,6 +376,32 @@ class Container(Entity):
                 raise exceptions.InvalidPortSpecException(
                     'Invalid port spec {} for port {} of {}!'.format(
                         spec, name, self))
+
+        return result
+
+    def _parse_lifecycle(self, lifecycles):
+        """Parse the lifecycle checks configured for this container and
+        instantiate the corresponding check helpers, as configured."""
+        result = {}
+
+        for state, checks in lifecycles.items():
+            helpers = []
+            for check in checks:
+                if check['type'] == 'tcp':
+                    parts = self.ports[check['port']]['external'][1].split('/')
+                    if parts[1] == 'udp':
+                        raise (exceptions
+                               .InvalidLifecycleCheckConfigurationException(
+                                   'Requested checked port {} is not TCP!'
+                                   .format(check['port'])))
+                    helpers.append(lifecycle.TCPPortPinger(
+                        self.ship.ip, int(parts[0]),
+                        attempts=check.get('max_wait', 60)))
+
+            if not helpers:
+                raise exceptions.InvalidLifecycleCheckConfigurationException(
+                    'No checks defined for lifecycle state {}'.format(state))
+            result[state] = helpers
 
         return result
 

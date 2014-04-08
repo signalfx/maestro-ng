@@ -136,6 +136,8 @@ be placed on (by name). Additionally, it may define:
 
   - port mappings, as a map of `<port name>: <port or port mapping
     spec>` (see below for port spec syntax);
+  - lifecycle state checks, which Maestro uses to confirm a service
+    correctly started (see Lifecycle checks below);
   - volume mappings, as a map of `<destination in container>: <source from host>`;
   - environment variables, as a map of `<variable name>: <value>`.
   - whether the container should run in privileged mode, as a boolean
@@ -149,12 +151,16 @@ services:
       zk-1:
         ship: vm1.ore1
         ports: {client: 2181, peer: 2888, leader_election: 3888}
+        lifecycle:
+          running: [{type: tcp, port: client}]
         privileged: true
         volumes:
           /var/lib/zookeeper: /data/zookeeper
       zk-2:
         ship: vm2.ore1
         ports: {client: 2181, peer: 2888, leader_election: 3888}
+        lifecycle:
+          running: [{type: tcp, port: client}]
         volumes:
           /var/lib/zookeeper: /data/zookeeper
   kafka:
@@ -164,6 +170,8 @@ services:
       kafka-broker:
         ship: vm2.ore1
         ports: {broker: 9092}
+        lifecycle:
+          running: [{type: tcp, port: broker}]
         volumes:
           /var/lib/kafka: /data/kafka
         env:
@@ -303,6 +311,46 @@ exposed through environment variables to other containers. This way, a
 dependent service can know the address of a remote service, and the
 specific port number of a desired endpoint. For example, service
 depending on ZooKeeper would be looking for its `client` port.
+
+Lifecycle checks
+----------------
+
+When controlling containers (your service instances), Maestro can
+perform additional checks to confirm that the service reached the
+desired lifecycle state, in addition to looking at the state of the
+container itself. A common use-case for example is to check for a given
+service port to become available to confirm that the application
+correctly started and is accepting connections.
+
+When starting containers, Maestro will execute all the lifecycle checks
+for the `running` target state; all must pass for the instance to be
+considered correctly up and running. Similarly, after stopping a
+container, Maestro will execute all `stopped` target state checks.
+
+Checks are defined via the `lifecycle` dictionary for each defined
+instance. For now, only one type of test exists: TCP port pinging, which
+accepts the name of one of the defined ports, and an optional `max_wait`
+parameter that control how longs the test will try for, in seconds. If
+not specified, Maestro will wait up to 60 seconds. Maestro will ping the
+port every second until it succeeds, or `max_wait` seconds is reached.
+
+Assuming your instance declares a `client` named port, you can make
+Maestro wait up to 10 seconds for this port to become available by doing
+the following:
+
+```yaml
+services:
+  zookeeper:
+    image: zookeeper:3.4.5
+    ports: {client: 2181}
+    lifecycle:
+      running:
+        - {type: tcp, port: client, max_wait: 10}
+```
+
+Keep in mind that if no `running` lifecycle checks are defined, Maestro
+considers the service up as soon as the container is up and will keep
+going with the orchestration play immediately.
 
 How Maestro orchestrates and service auto-configuration
 -------------------------------------------------------

@@ -93,10 +93,9 @@ class FullStatus(BaseOrchestrationPlay):
                         and container.id[:7] or 'down')))
 
                 o.pending('checking service...')
-                ping = status and status['State']['Running'] \
-                    and container.ping(1)
-                o.commit('\033[{:d};1m{:<4.4s}\033[;0m'.format(color(ping),
-                                                               up(ping)))
+                running = status and status['State']['Running']
+                o.commit('\033[{:d};1m{:<4.4s}\033[;0m'.format(color(running),
+                                                               up(running)))
 
                 for name, port in container.ports.iteritems():
                     o.end()
@@ -259,17 +258,7 @@ class Start(BaseOrchestrationPlay):
         o.pending('checking service...')
         status = container.status(refresh=True)
 
-        if container.ping(retries=2):
-            # If the container pinged, but has no status, it's likely that
-            # something else that is not our container is listening on that
-            # part. This could indicate that the environment description
-            # doesn't match what is running, or supposed to be running, on the
-            # target host.
-            if not status:
-                raise exceptions.OrchestrationException(
-                    'Invalid state, other service found running in place of ' +
-                    'container {}.!'.format(container))
-
+        if status and status['State']['Running']:
             o.commit('\033[34;0m{:<15s}\033[;0m'.format(container.id[:7]))
             # We use None as a special marker showing the container and the
             # application were already running.
@@ -336,7 +325,7 @@ class Start(BaseOrchestrationPlay):
 
         # Wait up for the container's application to come online.
         o.pending('waiting for service...')
-        return container.ping(retries=60)
+        return container.check_for_state('running') is not False
 
 
 class Stop(BaseOrchestrationPlay):
@@ -377,6 +366,7 @@ class Stop(BaseOrchestrationPlay):
             try:
                 o.pending('stopping service...')
                 container.ship.backend.stop(container.id)
+                container.check_for_state('stopped')
                 o.commit('\033[32;1mstopped\033[;0m')
             except:
                 o.commit('\033[31;1mfail!\033[;0m')

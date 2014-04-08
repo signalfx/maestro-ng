@@ -4,6 +4,7 @@
 
 import docker
 import functools
+import multiprocessing.dummy as multiprocessing
 import re
 
 from . import exceptions
@@ -291,11 +292,10 @@ class Container(Entity):
             # Return None to indicate no checks were performed.
             return None
 
-        for check in self._lifecycle[state]:
-            if not check.test():
-                return False
-
-        return True
+        pool = multiprocessing.Pool(len(self._lifecycle[state]))
+        return reduce(lambda x, y: x and y,
+                      pool.map(lambda check: check.test(),
+                               self._lifecycle[state]))
 
     def ping_port(self, port):
         """Ping a single port, by its given name in the port mappings. Returns
@@ -342,7 +342,7 @@ class Container(Entity):
             # of the mapping optionally specifying the protocol.
             # External port is assumed to be bound on all interfaces as well.
             elif type(spec) == str:
-                parts = map(validate_proto, spec.split(':'))
+                parts = list(map(validate_proto, spec.split(':')))
                 if len(parts) == 1:
                     # If only one port number is provided, assumed external =
                     # exposed.
@@ -385,28 +385,11 @@ class Container(Entity):
     def _parse_lifecycle(self, lifecycles):
         """Parse the lifecycle checks configured for this container and
         instantiate the corresponding check helpers, as configured."""
-        result = {}
-
-        for state, checks in lifecycles.items():
-            helpers = []
-            for check in checks:
-                if check['type'] == 'tcp':
-                    parts = self.ports[check['port']]['external'][1].split('/')
-                    if parts[1] == 'udp':
-                        raise (exceptions
-                               .InvalidLifecycleCheckConfigurationException(
-                                   'Requested checked port {} is not TCP!'
-                                   .format(check['port'])))
-                    helpers.append(lifecycle.TCPPortPinger(
-                        self.ship.ip, int(parts[0]),
-                        attempts=check.get('max_wait', 60)))
-
-            if not helpers:
-                raise exceptions.InvalidLifecycleCheckConfigurationException(
-                    'No checks defined for lifecycle state {}'.format(state))
-            result[state] = helpers
-
-        return result
+        return dict([
+            (state, map(
+                lambda c: (lifecycle.LifecycleHelperFactory
+                           .from_config(self, c)),
+                checks)) for state, checks in lifecycles.items()])
 
     def __repr__(self):
         return '<container:%s/%s [on %s]>' % \

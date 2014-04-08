@@ -331,11 +331,15 @@ considered correctly up and running. Similarly, after stopping a
 container, Maestro will execute all `stopped` target state checks.
 
 Checks are defined via the `lifecycle` dictionary for each defined
-instance. For now, only one type of test exists: TCP port pinging, which
-accepts the name of one of the defined ports, and an optional `max_wait`
-parameter that control how longs the test will try for, in seconds. If
-not specified, Maestro will wait up to 60 seconds. Maestro will ping the
-port every second until it succeeds, or `max_wait` seconds is reached.
+instance. The following checks are available: TCP port pinging, and
+script execution (using the return code). Keep in mind that if no
+`running` lifecycle checks are defined, Maestro considers the service up
+as soon as the container is up and will keep going with the
+orchestration play immediately.
+
+**TCP port pinging** makes Maestro attempt to connect to the configured
+port (by name), once per second until it succeeds or the `max_wait`
+value is reached (defaults to 60 seconds).
 
 Assuming your instance declares a `client` named port, you can make
 Maestro wait up to 10 seconds for this port to become available by doing
@@ -351,9 +355,14 @@ services:
         - {type: tcp, port: client, max_wait: 10}
 ```
 
-Keep in mind that if no `running` lifecycle checks are defined, Maestro
-considers the service up as soon as the container is up and will keep
-going with the orchestration play immediately.
+**Script execution** makes Maestro execute the given command, using the
+return code to denote the success or failure of the test (a return code
+of zero indicates success, as per the Unix convention). For example:
+
+```yaml
+type: exec
+command: "python my_cool_script.py"
+```
 
 How Maestro orchestrates and service auto-configuration
 -------------------------------------------------------

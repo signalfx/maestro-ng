@@ -6,10 +6,14 @@
 import os
 from setuptools import setup, find_packages
 
+with open('README.md') as readme:
+    long_description = readme.read()
+
 setup(
     name='maestro',
-    version='0.1.7-dev',
+    version='0.1.7',
     description='Orchestrator for multi-host Docker deployments',
+    long_description=long_description,
     zip_safe=True,
     packages=find_packages(),
     install_requires=['docker-py>=0.3.0', 'pyyaml', 'jinja2'],

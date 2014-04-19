@@ -295,6 +295,8 @@ class Start(BaseOrchestrationPlay):
             name=container.name,
             environment=container.env,
             volumes=container.volumes.values(),
+            mem_limit=container.mem_limit,
+            cpu_shares=container.cpu_shares,
             ports=ports,
             detach=True)
 

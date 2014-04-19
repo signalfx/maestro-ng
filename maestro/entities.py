@@ -6,6 +6,7 @@ import docker
 import functools
 import multiprocessing.dummy as multiprocessing
 import re
+import six
 
 from . import exceptions
 from . import lifecycle
@@ -222,6 +223,20 @@ class Container(Entity):
 
         # Stop timeout
         self.stop_timeout = config.get('stop_timeout', 10)
+
+        # Get limits
+        limits = config.get('limits', {})
+        self.cpu_shares = limits.get('cpu')
+        self.mem_limit = limits.get('memory')
+        if isinstance(self.mem_limit, six.string_types):
+            units = {'k': 1024,
+                     'm': 1024*1024,
+                     'g': 1024*1024*1024}
+            suffix = self.mem_limit[-1].lower()
+            if suffix in units.keys():
+                self.mem_limit = int(self.mem_limit[:-1]) * units[suffix]
+        # TODO: add swap limit support when it will be available in docker-py
+        # self.swap_limit = limits.get('swap')
 
         # Seed the service name, container name and host address as part of the
         # container's environment.

@@ -143,7 +143,9 @@ be placed on (by name). Additionally, it may define:
   - whether the container should run in privileged mode, as a boolean
   `privileged: true | false` (Defaults to false);
   - stop timeout: number of seconds to try to stop for before
-    killing the container (default is 10).
+    killing the container (default is 10);
+  - memory limit;
+  - cpu shares (relative weight).
 
 ```yaml
 services:
@@ -158,6 +160,9 @@ services:
         privileged: true
         volumes:
           /var/lib/zookeeper: /data/zookeeper
+        limits:
+          memory: 1g
+          cpu: 2
       zk-2:
         ship: vm2.ore1
         ports: {client: 2181, peer: 2888, leader_election: 3888}
@@ -165,6 +170,9 @@ services:
           running: [{type: tcp, port: client}]
         volumes:
           /var/lib/zookeeper: /data/zookeeper
+        limits:
+          memory: 1g
+          cpu: 2
   kafka:
     image: kafka:latest
     requires: [ zookeeper ]
@@ -179,6 +187,9 @@ services:
         env:
           BROKER_ID: 0
         stop_timeout: 2
+        limits:
+          memory: 5G
+          cpu: 10
 ```
 
 Port mapping syntax

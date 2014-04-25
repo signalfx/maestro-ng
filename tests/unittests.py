@@ -41,14 +41,11 @@ class ServiceTest(unittest.TestCase):
         self.assertEqual(d['repository'], 'quay.io:8081/foo/bar')
         self.assertEqual(d['tag'], '13.10')
 
-    def test_get_image_details_custom_port_notag_invalid(self):
-        # If the registry as a non-standard port, the tag must be specified.
-        # This test case validates that it is still parsed correctly, and
-        # yielded the invalid result.
+    def test_get_image_details_custom_port_notag(self):
         service = entities.Service('foo', 'quay.io:8081/foo/bar')
         d = service.get_image_details()
-        self.assertEqual(d['repository'], 'quay.io')
-        self.assertEqual(d['tag'], '8081/foo/bar')
+        self.assertEqual(d['repository'], 'quay.io:8081/foo/bar')
+        self.assertEqual(d['tag'], 'latest')
 
 
 class ContainerTest(unittest.TestCase):

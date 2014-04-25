@@ -125,6 +125,9 @@ class Service(Entity):
         its repository name and the requested tag (defaulting to latest if not
         specified)."""
         p = self._image.rsplit(':', 1)
+        if len(p) > 1 and '/' in p[1]:
+            p[0] = self._image
+            p.pop()
         return {'repository': p[0], 'tag': len(p) > 1 and p[1] or 'latest'}
 
     @property

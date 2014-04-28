@@ -5,12 +5,11 @@
 # Docker container orchestration utility.
 
 import argparse
+import jinja2
 import logging
 import sys
 import os
-
 import yaml
-from jinja2 import Template
 
 from . import exceptions, maestro
 
@@ -19,11 +18,17 @@ ACCEPTED_COMMANDS = ['status', 'fullstatus', 'start', 'stop', 'clean', 'logs']
 
 
 def load_config(options):
-    with (options.file == '-' and sys.stdin or open(options.file)) as f:
-        raw_config = f.read()
+    """Preprocess the input config file through Jinja2 before loading it as
+    JSON."""
+    if options.file == '-':
+        template = jinja2.Template(sys.stdin.read())
+    else:
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(os.path.dirname(options.file)),
+            extensions=['jinja2.ext.with_'])
+        template = env.get_template(os.path.basename(options.file))
 
-        # Preprocess the config file with Jinja2
-        return yaml.load(Template(raw_config).render(env=os.environ))
+    return yaml.load(template.render(env=os.environ))
 
 
 def create_parser():

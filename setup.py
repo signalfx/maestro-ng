@@ -11,7 +11,7 @@ with open('README.md') as readme:
 
 setup(
     name='maestro',
-    version='0.1.7',
+    version='0.1.7.1',
     description='Orchestrator for multi-host Docker deployments',
     long_description=long_description,
     zip_safe=True,

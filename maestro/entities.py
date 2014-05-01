@@ -200,6 +200,9 @@ class Container(Entity):
         # Register this instance container as being part of its parent service.
         self._service.register_container(self)
 
+        # Get command
+        self.cmd = config.get('cmd', None)
+
         # Parse the port specs.
         self.ports = self._parse_ports(config.get('ports', {}))
 

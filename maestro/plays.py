@@ -298,7 +298,8 @@ class Start(BaseOrchestrationPlay):
             mem_limit=container.mem_limit,
             cpu_shares=container.cpu_shares,
             ports=ports,
-            detach=True)
+            detach=True,
+            command=container.cmd)
 
         o.pending('waiting for container creation...')
         if not self._wait_for_status(container, lambda x: x):

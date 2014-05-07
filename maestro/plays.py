@@ -298,9 +298,10 @@ class Start(BaseOrchestrationPlay):
             volumes=container.volumes.values(),
             mem_limit=container.mem_limit,
             cpu_shares=container.cpu_shares,
+            stdin_open=container.stdin_open,
+            tty=container.tty,
             ports=ports,
-            detach=True,
-            stdin_open=container.stdin_open
+            detach=True
             )
 
         o.pending('waiting for container creation...')

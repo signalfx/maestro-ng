@@ -24,6 +24,12 @@ class Conductor:
                 k, v['ip'],
                 docker_port=v.get('docker_port',
                                   entities.Ship.DEFAULT_DOCKER_PORT),
+                tls=v.get('tls', False),
+                tls_cert=v.get('tls_cert', None),
+                tls_key=v.get('tls_key', None),
+                tls_verify=v.get('tls_verify', False),
+                tls_ca_cert=v.get('tls_ca_cert', None),
+                ssl_version=v.get('ssl_version', None),
                 docker_endpoint=v.get('docker_endpoint'),
                 timeout=v.get('timeout')))
             for k, v in self._config['ships'].items())

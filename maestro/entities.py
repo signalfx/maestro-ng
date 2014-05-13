@@ -39,6 +39,7 @@ class Ship(Entity):
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT,
+                 tls=None, tls_verify=False, tls_ca_cert=None, tls_cert=None, tls_key=None, ssl_version=None,
                  timeout=None, docker_endpoint=None):
         """Instantiate a new ship.
 
@@ -47,18 +48,34 @@ class Ship(Entity):
             ip (string): the IP address of resolvable host name of the host.
             docker_port (int): the port the Docker daemon listens on.
             docker_endpoint (url): endpoint to access the docker api
+            tls_* and ssl_version map to the changes at https://github.com/dotcloud/docker-py/pull/226
         """
         Entity.__init__(self, name)
         self._ip = ip
         self._docker_port = docker_port
+        self._tls = tls
+        self._tls_verify = tls_verify
+        self._tls_ca_cert = tls_ca_cert
+        self._tls_cert = tls_cert
+        self._tls_key = tls_key
+        self._ssl_version = ssl_version
         if docker_endpoint:
             self._backend_url = docker_endpoint
+        elif (tls or tls_verify):
+            self._backend_url = 'https://{:s}:{:d}'.format(ip, docker_port)
         else:
             self._backend_url = 'http://{:s}:{:d}'.format(ip, docker_port)
+
         self._backend = docker.Client(
             base_url=self._backend_url,
             version=Ship.DEFAULT_DOCKER_VERSION,
-            timeout=timeout or Ship.DEFAULT_DOCKER_TIMEOUT)
+            timeout=timeout or Ship.DEFAULT_DOCKER_TIMEOUT,
+            tls=self._tls,
+            tls_cert=self._tls_cert,
+            tls_key=self._tls_key,
+            tls_verify=self._tls_verify,
+            tls_ca_cert=self._tls_ca_cert,
+            ssl_version=self._ssl_version)
 
     @property
     def ip(self):

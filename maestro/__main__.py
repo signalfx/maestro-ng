@@ -14,7 +14,8 @@ import yaml
 from . import exceptions, maestro
 
 # Define the commands
-ACCEPTED_COMMANDS = ['status', 'fullstatus', 'start', 'stop', 'clean', 'logs']
+ACCEPTED_COMMANDS = ['status', 'fullstatus', 'start', 'stop', 'restart',
+                     'logs']
 
 
 def load_config(options):

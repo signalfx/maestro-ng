@@ -209,6 +209,22 @@ class Conductor:
             if not only else self._to_containers(things)
         plays.Start(containers, self._registries, refresh_images).run()
 
+    def restart(self, things=[], refresh_images=False, only=False, **kwargs):
+        """Restart the given container(s) and services(s). Dependencies of the
+        requested containers and services are started first.
+
+        Args:
+            things (set<string>): The list of things to start.
+            refresh_images (boolean): Whether to force an image pull for each
+                container or not before starting it.
+            only (boolean): Whether to act on only the specified things, or
+                their dependencies as well.
+        """
+        containers = self._ordered_containers(things) \
+            if not only else self._to_containers(things)
+        plays.Stop(containers).run()
+        plays.Start(containers, self._registries, refresh_images).run()
+
     def stop(self, things=[], only=False, **kwargs):
         """Stop the given container(s) and service(s).
 
@@ -225,9 +241,6 @@ class Conductor:
         containers = self._ordered_containers(things, False) \
             if not only else self._to_containers(things)
         plays.Stop(containers).run()
-
-    def clean(self, **kwargs):
-        raise NotImplementedError('Not yet implemented!')
 
     def logs(self, things=[], **kwargs):
         """Display the logs of the given container."""

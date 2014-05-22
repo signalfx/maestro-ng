@@ -107,6 +107,7 @@ class Service(Entity):
         self._image = image
         self.env = env or {}
         self._requires = set([])
+        self._wants_info = set([])
         self._needed_for = set([])
         self._containers = {}
 
@@ -140,6 +141,12 @@ class Service(Entity):
         return dependencies
 
     @property
+    def wants_info(self):
+        """Returns the full set of "soft" dependencies this service wants
+        information about through link environment variables."""
+        return self._wants_info
+
+    @property
     def needed_for(self):
         """Returns the full set of direct and indirect dependents (aka services
         that depend on this service)."""
@@ -162,6 +169,11 @@ class Service(Entity):
     def add_dependent(self, service):
         """Declare that the passed service depends on this service."""
         self._needed_for.add(service)
+
+    def add_wants_info(self, service):
+        """Declare that this service wants information about the passed service
+        via link environment variables."""
+        self._wants_info.add(service)
 
     def register_container(self, container):
         """Register a new instance container as part of this service."""

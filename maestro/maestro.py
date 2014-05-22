@@ -56,14 +56,17 @@ class Conductor:
             for dependency in service.get('requires', []):
                 self._services[kind].add_dependency(self._services[dependency])
                 self._services[dependency].add_dependent(self._services[kind])
+            for wants_info in service.get('wants_info', []):
+                self._services[kind].add_wants_info(self._services[wants_info])
 
-        # Provide link environment variables to each container of each service.
+        # Provide link environment variables to each container of each service
+        # that requires it or wants it.
         for service in self._services.values():
             for container in service.containers:
                 # Containers always know about their peers in the same service.
                 container.env.update(service.get_link_variables(True))
                 # Containers also get links from the service's dependencies.
-                for dependency in service.requires:
+                for dependency in service.requires.union(service.wants_info):
                     container.env.update(dependency.get_link_variables())
 
     @property

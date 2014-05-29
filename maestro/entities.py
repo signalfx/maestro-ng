@@ -3,7 +3,6 @@
 # Docker container orchestration utility.
 
 import docker
-import functools
 import multiprocessing.dummy as multiprocessing
 import re
 import six
@@ -181,11 +180,16 @@ class Service(Entity):
 
     def get_link_variables(self, add_internal=False):
         """Return the dictionary of all link variables from each container of
-        this service."""
-        return dict(functools.reduce(
-            lambda x, y: x+y,
-            map(lambda c: c.get_link_variables(add_internal).items(),
-                self._containers.values())))
+        this service. An additional variable, named '<service_name>_INSTANCES',
+        contain the list of container/instance names of the service."""
+        basename = re.sub(r'[^\w]', '_', self.name).upper()
+        links = {}
+        for c in self._containers.values():
+            for name, value in c.get_link_variables(add_internal).items():
+                links['{}_{}'.format(basename, name)] = value
+        links['{}_INSTANCES'.format(basename)] = \
+            ','.join(self._containers.keys())
+        return links
 
 
 class Container(Entity):
@@ -301,9 +305,7 @@ class Container(Entity):
         Variables are named
         '<service_name>_<container_name>_{HOST,PORT,INTERNAL_PORT}'.
         """
-        basename = re.sub(r'[^\w]',
-                          '_',
-                          '{}_{}'.format(self.service.name, self.name)).upper()
+        basename = re.sub(r'[^\w]', '_', self.name).upper()
 
         port_number = lambda p: p.split('/')[0]
 

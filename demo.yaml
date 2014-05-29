@@ -7,7 +7,7 @@ name: demo
 ships:
   # docker_port remains at default 4243 on all our hosts
   vm1: {ip: &vm1ip 192.168.10.2}
-  vm2: {ip: 192.168.11.2}
+  vm2: {ip: 192.168.11.2, timeout: 1}
 
 services:
   # 2-node ZooKeeper cluster.
@@ -59,3 +59,13 @@ services:
           /var/lib/kafka: /home/vagrant/data/kafka
         env:
           KAFKA_CONFIG_BROKER_ID: 1
+
+  envtest:
+    image: stackbrew/ubuntu
+    wants_info: [ zookeeper, kafka ]
+    instances:
+      envtest:
+        ship: vm1
+        env:
+          FOO: "bar test"
+        cmd: env

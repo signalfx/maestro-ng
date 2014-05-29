@@ -131,7 +131,7 @@ def _to_env_var_name(s):
 
 def _get_service_instance_names(service):
     """Return the list of container/instance names for the given service."""
-    def extract_name(var):
-        m = re.match(r'^{}_(\w+)_HOST$'.format(_to_env_var_name(service)), var)
-        return m and m.group(1) or None
-    return filter(None, map(extract_name, sorted(os.environ.keys())))
+    key = '{}_INSTANCES'.format(_to_env_var_name(service))
+    if key not in os.environ:
+        return []
+    return os.environ[key].split(',')

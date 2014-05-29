@@ -9,9 +9,12 @@ from setuptools import setup, find_packages
 with open('README.md') as readme:
     long_description = readme.read()
 
+with open('maestro/version.py') as f:
+    exec(f.read())
+
 setup(
-    name='maestro',
-    version='0.1.7.1',
+    name=name,
+    version=version,
     description='Orchestrator for multi-host Docker deployments',
     long_description=long_description,
     zip_safe=True,

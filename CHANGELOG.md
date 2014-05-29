@@ -1,6 +1,66 @@
 ChangeLog
 =========
 
+Maestro 0.1.8
+-------------
+
+_May 28th, 2014_
+
+* Support for custom image command
+* Implement restart Maestro command
+* Add support for "soft" dependencies through `wants_info`. Containers
+  get the link environment variable, but the dependency has no impact on
+  the start/stop orders
+* Improve guestutils service matching by including a list of each
+  service's instances as a `<service_name>_INSTANCES` environment
+  variable
+
+Maestro 0.1.7.1
+---------------
+
+_April 28th, 2014_
+
+* Support for memory and cpu shares limits
+* Fix image:tag parsing when custom registries are involved
+* Improve Jinja2 setup to include filesystem loader and with extension
+  for more flexible and complex Jinja2 templating capabalities
+
+Maestro 0.1.7
+-------------
+
+_April 9th, 2014_
+
+* Use `docker-py` 0.3.x
+* Deep expend of environment variables list values
+* Pre-processing of the YAML environment description through Jinja2
+  templating
+* Correctly pass-in specified volumes to create_container() in case the
+  image's Dockerfile didn't define them
+* Support service-level environment variables that trickle down to all
+  instances of the service
+* Documentation improvements, flake8 and unit-test fixes
+* Support for privileged containers
+* Support for timeout on container stop
+
+
+Maestro 0.1.6
+-------------
+
+_January 30th, 2014_
+
+* Fullstatus output now shows port numbers
+* Improved port specification syntax for more precise control about
+  internal and exposed ports and interfaces
+* Maestro extension for logstash-based logging scaffolding
+* Docker and `docker-py` compatibility fixes (Id/ID, `docker-py` API
+  tweaks)
+* Show image being pulled when creating a container
+
+Maestro 0.1.5
+-------------
+
+_January 16th, 2014_
+
 * Fix download indicator for compatibility with Docker 0.7.x
 * Renamed 'status' command to 'fullstatus', and implemented new, faster
   'status' command that only looks at the state of the containers, not

@@ -6,6 +6,7 @@ import docker
 import multiprocessing.dummy as multiprocessing
 import re
 import six
+import bgtunnel
 
 from . import exceptions
 from . import lifecycle
@@ -38,7 +39,7 @@ class Ship(Entity):
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT,
-                 timeout=None, docker_endpoint=None):
+                 timeout=None, docker_endpoint=None, ssh_tunnel_config={}):
         """Instantiate a new ship.
 
         Args:
@@ -52,6 +53,9 @@ class Ship(Entity):
         self._docker_port = docker_port
         if docker_endpoint:
             self._backend_url = docker_endpoint
+        elif ssh_tunnel_config:
+            tunnel = bgtunnel.open(ssh_address=ip, host_port=docker_port, **ssh_tunnel_config)
+            self._backend_url = 'http://{:s}:{:d}'.format('127.0.0.1', tunnel.bind_port)
         else:
             self._backend_url = 'http://{:s}:{:d}'.format(ip, docker_port)
         self._backend = docker.Client(

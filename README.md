@@ -46,6 +46,7 @@ below.
 
 * PyYAML (you may need to install this manually, e.g. `apt-get install python-yaml`)
 * A recent [docker-py](http://github.com/dotcloud/docker-py)
+* [bgtunnel](https://github.com/jmagnusson/bgtunnel)
 
 Installation
 ------------
@@ -85,12 +86,17 @@ images for the defined _services_ from their registries, the _ships_,
 hosts that will execute the Docker containers, and the _services_, which
 define what service make up the environment, the dependencies between
 these services and the instances of each of these services that need to
-run. Here's the outline:
+run. In addition, there is an option section called _ssh_tunnel_config_
+that specifies credentials to connect to Docker through an SSH tunnel.
+Here's the outline:
 
 ```yaml
 name: demo
 registries:
   # Auth credentials for each registry that needs them (see below)
+ssh_tunnel_config:
+  # Optional section.
+  # If defined, maestro will tunnel connection to Docker through SSH (see below)
 ships:
   # Ships definitions (see below)
 services:
@@ -110,6 +116,29 @@ registries:
     username: maestro
     password: secret
     email: maestro-robot@domain.com
+```
+
+The _ssh_tunnel_config_ section contains credentials to connect to SSH.
+Maestro-ng uses [bgtunnel](https://github.com/jmagnusson/bgtunnel) to
+establish an SSH connection to the _ships_.  The options under this section
+match the ones accepted by
+[bgtunnel](https://github.com/jmagnusson/bgtunnel/blob/master/bgtunnel.py#L214).
+For example,
+
+```yaml
+ssh_tunnel_config:
+  ssh_user: vagrant # Defaults to the user running maestro
+  ssh_port: 22 # Defaults to 22
+  identify_file: "/path/to/id_rsa"
+  silent: True # Defaults to False
+```
+
+If you are using an SSH tunnel, the docker daemon in individual ships need
+to listen only on the loopback interface. One way is to set _DOCKER_OPTS_
+within _/etc/default/docker/_
+
+```shell
+DOCKER_OPTS="-H tcp://127.0.0.1:4243 -H unix:///var/run/docker.sock"
 ```
 
 The _ships_ are simple to define. They are named (but that name doesn't

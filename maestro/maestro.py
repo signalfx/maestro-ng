@@ -18,6 +18,8 @@ class Conductor:
     def __init__(self, config):
         self._config = config
 
+        ssh_tunnel_config = self._config.get('ssh_tunnel_config', {})
+
         # Create container ships.
         self._ships = dict(
             (k, entities.Ship(
@@ -25,7 +27,8 @@ class Conductor:
                 docker_port=v.get('docker_port',
                                   entities.Ship.DEFAULT_DOCKER_PORT),
                 docker_endpoint=v.get('docker_endpoint'),
-                timeout=v.get('timeout')))
+                timeout=v.get('timeout'),
+                ssh_tunnel_config=ssh_tunnel_config if v.get('ssh_tunnel', True) else {}))
             for k, v in self._config['ships'].items())
 
         # Register defined private Docker registries authentications

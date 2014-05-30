@@ -134,8 +134,8 @@ ssh_tunnel_config:
 ```
 
 If you are using an SSH tunnel, the docker daemon in individual ships need
-to listen only on the loopback interface. One way is to set _DOCKER_OPTS_
-within _/etc/default/docker/_
+to listen only on the loopback interface. One way is to set `DOCKER_OPTS`
+within `/etc/default/docker/`
 
 ```shell
 DOCKER_OPTS="-H tcp://127.0.0.1:4243 -H unix:///var/run/docker.sock"

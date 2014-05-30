@@ -305,16 +305,19 @@ class Container(Entity):
         Variables are named
         '<service_name>_<container_name>_{HOST,PORT,INTERNAL_PORT}'.
         """
-        basename = re.sub(r'[^\w]', '_', self.name).upper()
+        def _to_env_var_name(n):
+            return re.sub(r'[^\w]', '_', n).upper()
 
+        basename = _to_env_var_name(self.name)
         port_number = lambda p: p.split('/')[0]
 
         links = {'{}_HOST'.format(basename): self.ship.ip}
         for name, spec in self.ports.items():
-            links['{}_{}_PORT'.format(basename, name.upper())] = \
+            links['{}_{}_PORT'.format(basename, _to_env_var_name(name))] = \
                 port_number(spec['external'][1])
             if add_internal:
-                links['{}_{}_INTERNAL_PORT'.format(basename, name.upper())] = \
+                links['{}_{}_INTERNAL_PORT'.format(
+                    basename, _to_env_var_name(name))] = \
                     port_number(spec['exposed'])
         return links
 

@@ -54,8 +54,11 @@ class Ship(Entity):
         if docker_endpoint:
             self._backend_url = docker_endpoint
         elif ssh_tunnel_config:
-            tunnel = bgtunnel.open(ssh_address=ip, host_port=docker_port, **ssh_tunnel_config)
-            self._backend_url = 'http://{:s}:{:d}'.format('127.0.0.1', tunnel.bind_port)
+            tunnel = bgtunnel.open(ssh_address=ip,
+                                   host_port=docker_port,
+                                   **ssh_tunnel_config)
+            self._backend_url = 'http://{:s}:{:d}'.format('127.0.0.1',
+                                                          tunnel.bind_port)
         else:
             self._backend_url = 'http://{:s}:{:d}'.format(ip, docker_port)
         self._backend = docker.Client(

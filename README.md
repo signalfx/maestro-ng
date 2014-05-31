@@ -86,17 +86,12 @@ images for the defined _services_ from their registries, the _ships_,
 hosts that will execute the Docker containers, and the _services_, which
 define what service make up the environment, the dependencies between
 these services and the instances of each of these services that need to
-run. In addition, there is an option section called _ssh_tunnel_config_
-that specifies credentials to connect to Docker through an SSH tunnel.
-Here's the outline:
+run.  Here's the outline:
 
 ```yaml
 name: demo
 registries:
   # Auth credentials for each registry that needs them (see below)
-ssh_tunnel_config:
-  # Optional section.
-  # If defined, maestro will tunnel connection to Docker through SSH (see below)
 ships:
   # Ships definitions (see below)
 services:
@@ -118,19 +113,38 @@ registries:
     email: maestro-robot@domain.com
 ```
 
-The _ssh_tunnel_config_ section contains credentials to connect to SSH.
-Maestro-ng uses [bgtunnel](https://github.com/jmagnusson/bgtunnel) to
-establish an SSH connection to the _ships_.  The options under this section
-match the ones accepted by
-[bgtunnel](https://github.com/jmagnusson/bgtunnel/blob/master/bgtunnel.py#L214).
 For example,
 
 ```yaml
 ssh_tunnel_config:
-  ssh_user: vagrant # Defaults to the user running maestro
-  ssh_port: 22 # Defaults to 22
-  identify_file: "/path/to/id_rsa"
-  silent: True # Defaults to False
+```
+
+
+The _ships_ are simple to define. They are named (but that name doesn't
+need to match their DNS resolvable host name), and need an `ip`
+address/hostname. If the Docker daemon doesn't listen its default port of
+4243, the `docker_port` can be overriden.
+
+In addition, a ship's definition can contain an `ssh_tunnel_config` that
+specifies credentials to connect to Docker through an SSH tunnel. You can
+use YAML references to reuse credentials for different ships.  The
+`ssh_tunnel_config` section contains credentials to connect to SSH.
+Maestro-ng uses [bgtunnel](https://github.com/jmagnusson/bgtunnel) to
+establish an SSH connection to the _ships_.  The options under this section
+match the ones accepted by
+[bgtunnel](https://github.com/jmagnusson/bgtunnel/blob/master/bgtunnel.py#L214).
+
+```yaml
+ships:
+  vm1.ore1:
+    ip: c414.ore1.domain.com
+    ssh_tunnel_config: &ssh-auth
+      ssh_user: vagrant # Defaults to the user running maestro
+      ssh_port: 22 # Defaults to 22
+      identify_file: "/path/to/id_rsa"
+      silent: True # Defaults to False
+  vm2.ore2:   {ip: c415.ore1.domain.com, docker_port: 4244}
+  controller: {ip: 42.42.42.1, ssh_tunnel_config: *ssh-auth}
 ```
 
 If you are using an SSH tunnel, the docker daemon in individual ships need
@@ -139,18 +153,6 @@ within `/etc/default/docker/`
 
 ```shell
 DOCKER_OPTS="-H tcp://127.0.0.1:4243 -H unix:///var/run/docker.sock"
-```
-
-The _ships_ are simple to define. They are named (but that name doesn't
-need to match their DNS resolvable host name), and need an `ip`
-address/hostname. If the Docker daemon doesn't listen its default port
-of 4243, the `docker_port` can be overriden:
-
-```yaml
-ships:
-  vm1.ore1:   {ip: c414.ore1.domain.com}
-  vm2.ore2:   {ip: c415.ore1.domain.com, docker_port: 4244}
-  controller: {ip: 42.42.42.1}
 ```
 
 Services are also named. Their name is used for commands that act on

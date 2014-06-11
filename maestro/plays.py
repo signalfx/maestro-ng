@@ -117,16 +117,20 @@ class BaseOrchestrationPlay:
 
     def _gather_dependencies(self, container):
         """Transitively gather all containers from the dependencies or
-        dependents (depending on the value of the forward parameter) services
-        that the services the given containers are members of."""
+        dependent (depending on the value of the forward parameter) services
+        of the service the given container is a member of. This set is limited
+        to the containers involved in the orchestration play."""
+        containers = set(self._containers)
         result = set([container])
+
         for container in result:
             deps = container.service.requires if self._forward \
                 else container.service.needed_for
             deps = reduce(lambda x, y: x.union(y),
                           map(lambda s: s.containers, deps),
                           set([]))
-            result = result.union(deps)
+            result = result.union(deps.intersection(containers))
+
         result.remove(container)
         return result
 

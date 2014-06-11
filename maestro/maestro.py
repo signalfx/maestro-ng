@@ -5,6 +5,7 @@
 from . import entities
 from . import exceptions
 from . import plays
+from . import termoutput
 
 
 class Conductor:
@@ -254,7 +255,7 @@ class Conductor:
 
         container = containers[0]
 
-        o = plays.OutputFormatter()
+        o = termoutput.OutputFormatter()
         o.pending('Inspecting container status...')
         status = container.status()
         if not status:

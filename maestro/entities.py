@@ -3,6 +3,12 @@
 # Docker container orchestration utility.
 
 import docker
+try:
+    from docker.errors import APIError
+except ImportError:
+    # Fall back to <= 0.3.1 location
+    from docker.client import APIError
+
 import multiprocessing.dummy as multiprocessing
 import re
 import six
@@ -285,7 +291,7 @@ class Container(Entity):
         """Returns the ID of this container given by the Docker daemon, or None
         if the container doesn't exist."""
         status = self.status()
-        return status and status['ID'] or None
+        return status and status.get('ID', status.get('Id', None))
 
     def status(self, refresh=False):
         """Retrieve the details about this container from the Docker daemon, or
@@ -293,7 +299,7 @@ class Container(Entity):
         if refresh or not self._status:
             try:
                 self._status = self.ship.backend.inspect_container(self.name)
-            except docker.client.APIError:
+            except APIError:
                 pass
 
         return self._status

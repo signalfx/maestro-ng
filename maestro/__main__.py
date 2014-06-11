@@ -16,6 +16,7 @@ from . import exceptions, maestro
 # Define the commands
 ACCEPTED_COMMANDS = ['status', 'fullstatus', 'start', 'stop', 'restart',
                      'logs']
+DEFAULT_MAESTRO_FILE = 'maestro.yaml'
 
 
 def load_config(options):
@@ -42,7 +43,8 @@ def create_parser():
                         help='orchestration command to execute')
     parser.add_argument('things', nargs='*', metavar='thing',
                         help='container(s) or service(s) to act on')
-    parser.add_argument('-f', '--file', nargs='?', default='-', metavar='FILE',
+    parser.add_argument('-f', '--file', nargs='?', metavar='FILE',
+                        default=DEFAULT_MAESTRO_FILE,
                         help=('read environment description from FILE ' +
                               '(use - for stdin)'))
     parser.add_argument('-c', '--completion', metavar='CMD',
@@ -65,7 +67,16 @@ def create_parser():
 
 def main(args=None):
     options = create_parser().parse_args(args)
-    config = load_config(options)
+    try:
+        config = load_config(options)
+    except jinja2.exceptions.TemplateNotFound:
+        logging.error('Environment description file %s not found!',
+                      options.file)
+        sys.exit(1)
+    except:
+        logging.error('Error reading environment description file %s!',
+                      options.file)
+        sys.exit(1)
 
     # Shutup urllib3, wherever it comes from.
     (logging.getLogger('requests.packages.urllib3.connectionpool')

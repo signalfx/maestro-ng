@@ -1,6 +1,17 @@
 ChangeLog
 =========
 
+* Compatibility improvements with docker-py mainline and Docker versions
+* Parallelization of orchestration plays, respecting dependency and
+  execution order but doing as much work as possible in parallel
+
+Maestro 0.1.8.1
+---------------
+
+_May 30th, 2014_
+
+* Fixed link variable naming for port names containing dashes
+
 Maestro 0.1.8
 -------------
 

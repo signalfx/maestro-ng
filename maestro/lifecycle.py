@@ -23,7 +23,7 @@ class TCPPortPinger(BaseLifecycleHelper):
     Lifecycle state helper that "pings" a particular TCP port.
     """
 
-    DEFAULT_MAX_WAIT = 60
+    DEFAULT_MAX_WAIT = 300
 
     def __init__(self, host, port, attempts=1):
         """Create a new TCP port pinger for the given host and port. The given

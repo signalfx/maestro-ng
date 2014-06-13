@@ -35,12 +35,15 @@ class BaseOrchestrationPlay:
     order direction.
     """
 
-    def __init__(self, containers=[], forward=True):
+    def __init__(self, containers=[], forward=True, respect_dependencies=True):
         self._containers = containers
         self._forward = forward
 
-        self._dependencies = dict((c.name, self._gather_dependencies(c))
-                                  for c in containers)
+        self._dependencies = dict(
+            (c.name, respect_dependencies and
+                self._gather_dependencies(c) or set())
+            for c in containers)
+
         self._om = termoutput.OutputManager(len(containers))
         self._threads = set([])
         self._done = set([])
@@ -193,7 +196,8 @@ class Status(BaseOrchestrationPlay):
     bulk-polled from each ship's Docker daemon."""
 
     def __init__(self, containers=[]):
-        BaseOrchestrationPlay.__init__(self, containers)
+        BaseOrchestrationPlay.__init__(self, containers,
+                                       respect_dependencies=False)
 
     def run(self):
         print('{:>3s}  {:<20s} {:<15s} {:<20s} {:<15s}'.format(

@@ -94,6 +94,7 @@ class BaseOrchestrationPlay:
                 self._cv.release()
 
         t = threading.Thread(target=act, args=(target, container, o))
+        t.daemon = True
         t.start()
         self._threads.add(t)
 
@@ -102,7 +103,7 @@ class BaseOrchestrationPlay:
         complete."""
         for t in self._threads:
             try:
-                while t.isAlive():
+                while not self._error and t.isAlive():
                     t.join(1)
             except KeyboardInterrupt:
                 self._error = 'Manual abort.'

@@ -9,7 +9,7 @@ except ImportError:
     # Fall back to <= 0.3.1 location
     from docker.client import APIError
 
-import multiprocessing.dummy as multiprocessing
+import multiprocessing.pool
 import re
 import six
 
@@ -336,10 +336,9 @@ class Container(Entity):
             # Return None to indicate no checks were performed.
             return None
 
-        pool = multiprocessing.Pool(len(self._lifecycle[state]))
-        return reduce(lambda x, y: x and y,
-                      pool.map(lambda check: check.test(),
-                               self._lifecycle[state]))
+        pool = multiprocessing.pool.ThreadPool()
+        result = pool.map(lambda check: check.test(), self._lifecycle[state])
+        return reduce(lambda x, y: x and y, result)
 
     def ping_port(self, port):
         """Ping a single port, by its given name in the port mappings. Returns

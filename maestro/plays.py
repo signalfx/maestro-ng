@@ -107,6 +107,9 @@ class BaseOrchestrationPlay:
                     t.join(1)
             except KeyboardInterrupt:
                 self._error = 'Manual abort.'
+            except Exception as e:
+                self._error = e
+            finally:
                 self._cv.acquire()
                 self._cv.notifyAll()
                 self._cv.release()
@@ -296,8 +299,9 @@ class Start(BaseOrchestrationPlay):
             status = container.status(refresh=True)
             if cond(status):
                 return True
-            time.sleep(0.5)
             retries -= 1
+            if retries >= 0:
+                time.sleep(0.5)
         return False
 
     def _login_to_registry(self, o, container):
@@ -396,14 +400,19 @@ class Start(BaseOrchestrationPlay):
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.
         o.pending('waiting for container initialization...')
-        if not self._wait_for_status(container,
-                                     lambda x: x and x['State']['Running']):
+        check_running = lambda x: x and x['State']['Running']
+        if not self._wait_for_status(container, check_running):
             raise exceptions.OrchestrationException(
                 'Container status could not be obtained after start!')
 
         # Wait up for the container's application to come online.
         o.pending('waiting for service...')
-        return container.check_for_state('running') is not False
+        checks = container.check_for_state('running')
+        while not checks.ready():
+            checks.wait(.25)
+            if not self._wait_for_status(container, check_running):
+                return False
+        return reduce(lambda x, y: x and y, checks.get()) is not False
 
 
 class Stop(BaseOrchestrationPlay):
@@ -447,7 +456,10 @@ class Stop(BaseOrchestrationPlay):
             o.pending('stopping service...')
             container.ship.backend.stop(container.id,
                                         timeout=container.stop_timeout)
-            container.check_for_state('stopped')
+            checks = container.check_for_state('stopped')
+            checks.wait()
+            if reduce(lambda x, y: x and y, checks.get()) is False:
+                raise Exception
             o.commit('\033[32;1mstopped\033[;0m')
         except:
             # Stop failures are non-fatal, usually it's just the container

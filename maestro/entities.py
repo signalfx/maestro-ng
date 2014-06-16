@@ -337,8 +337,8 @@ class Container(Entity):
             return None
 
         pool = multiprocessing.pool.ThreadPool()
-        result = pool.map(lambda check: check.test(), self._lifecycle[state])
-        return reduce(lambda x, y: x and y, result)
+        return pool.map_async(lambda check: check.test(),
+                              self._lifecycle[state])
 
     def ping_port(self, port):
         """Ping a single port, by its given name in the port mappings. Returns

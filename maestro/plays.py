@@ -141,6 +141,17 @@ class BaseOrchestrationPlay:
         result.remove(container)
         return result
 
+    def _wait_for_status(self, container, cond, retries=10):
+        """Wait for a container's status to comply to the given condition."""
+        while retries >= 0:
+            status = container.status(refresh=True)
+            if cond(status):
+                return True
+            retries -= 1
+            if retries >= 0:
+                time.sleep(0.5)
+        return False
+
     def _satisfied(self, container):
         """Returns True if all the dependencies of a given container have been
         satisfied by what's been executed so far."""
@@ -294,15 +305,6 @@ class Start(BaseOrchestrationPlay):
         return reduce(lambda x, y: x+y, progress.values()) / len(progress) \
             if progress else 0
 
-    def _wait_for_status(self, container, cond, retries=10):
-        while retries >= 0:
-            status = container.status(refresh=True)
-            if cond(status):
-                return True
-            retries -= 1
-            if retries >= 0:
-                time.sleep(0.5)
-        return False
 
     def _login_to_registry(self, o, container):
         """Extract the registry name from the image needed for the container,
@@ -408,11 +410,14 @@ class Start(BaseOrchestrationPlay):
         # Wait up for the container's application to come online.
         o.pending('waiting for service...')
         checks = container.check_for_state('running')
+        if not checks:
+            return self._wait_for_status(container, check_running)
+
         while not checks.ready():
-            checks.wait(.25)
-            if not self._wait_for_status(container, check_running):
+            checks.wait(1)
+            if not self._wait_for_status(container, check_running, retries=1):
                 return False
-        return reduce(lambda x, y: x and y, checks.get()) is not False
+            return reduce(lambda x, y: x and y, checks.get())
 
 
 class Stop(BaseOrchestrationPlay):
@@ -457,11 +462,11 @@ class Stop(BaseOrchestrationPlay):
             container.ship.backend.stop(container.id,
                                         timeout=container.stop_timeout)
             checks = container.check_for_state('stopped')
-            checks.wait()
-            if reduce(lambda x, y: x and y, checks.get()) is False:
-                raise Exception
+            if checks:
+                if reduce(lambda x, y: x and y, checks.get()) is False:
+                    raise Exception('failed stopped lifecycle checks')
             o.commit('\033[32;1mstopped\033[;0m')
-        except:
+        except Exception as e:
             # Stop failures are non-fatal, usually it's just the container
             # taking more time to stop than the timeout allows.
-            o.commit('\033[31;1mfail!\033[;0m')
+            o.commit('\033[31;1mfail ({})!\033[;0m'.format(e))

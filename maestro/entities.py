@@ -327,7 +327,7 @@ class Container(Entity):
                     port_number(spec['exposed'])
         return links
 
-    def check_for_state(self, state):
+    def start_lifecycle_checks(self, state):
         """Check if a particular lifecycle state has been reached by executing
         all its defined checks. If not checks are defined, it is assumed the
         state is reached immediately."""

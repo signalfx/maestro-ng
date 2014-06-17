@@ -152,6 +152,29 @@ class BaseOrchestrationPlay:
                 time.sleep(0.5)
         return False
 
+    def _check_for_state(self, container, state, cond):
+        """Wait for a container to reach the given lifecycle state by executing
+        the corresponding, configured lifecycle checks, taking into account the
+        container state (through _wait_for_status) while the checks wait for
+        the target status to be reached.
+
+        Args:
+            container (entities.Container): the container being acted on.
+            state (string): the target lifecycle state.
+            cond (lambda): a lambda function that takes in the container's
+                status (from inspection) and returns True if it conforms to the
+                target desired lifecycle state.
+        """
+        checks = container.start_lifecycle_checks(state)
+        if not checks:
+            return self._wait_for_status(container, cond)
+
+        while not checks.ready():
+            checks.wait(1)
+            if not self._wait_for_status(container, cond, retries=1):
+                return False
+            return reduce(lambda x, y: x and y, checks.get())
+
     def _satisfied(self, container):
         """Returns True if all the dependencies of a given container have been
         satisfied by what's been executed so far."""
@@ -305,7 +328,6 @@ class Start(BaseOrchestrationPlay):
         return reduce(lambda x, y: x+y, progress.values()) / len(progress) \
             if progress else 0
 
-
     def _login_to_registry(self, o, container):
         """Extract the registry name from the image needed for the container,
         and if authentication data is provided for that registry, login to it
@@ -409,15 +431,7 @@ class Start(BaseOrchestrationPlay):
 
         # Wait up for the container's application to come online.
         o.pending('waiting for service...')
-        checks = container.check_for_state('running')
-        if not checks:
-            return self._wait_for_status(container, check_running)
-
-        while not checks.ready():
-            checks.wait(1)
-            if not self._wait_for_status(container, check_running, retries=1):
-                return False
-            return reduce(lambda x, y: x and y, checks.get())
+        return self._check_for_state(container, 'running', check_running)
 
 
 class Stop(BaseOrchestrationPlay):
@@ -461,10 +475,11 @@ class Stop(BaseOrchestrationPlay):
             o.pending('stopping service...')
             container.ship.backend.stop(container.id,
                                         timeout=container.stop_timeout)
-            checks = container.check_for_state('stopped')
-            if checks:
-                if reduce(lambda x, y: x and y, checks.get()) is False:
-                    raise Exception('failed stopped lifecycle checks')
+
+            if not self._check_for_state(container, 'stopped',
+                                         lambda x: not x or
+                                         (x and not x['State']['Running'])):
+                raise Exception('failed stopped lifecycle checks')
             o.commit('\033[32;1mstopped\033[;0m')
         except Exception as e:
             # Stop failures are non-fatal, usually it's just the container

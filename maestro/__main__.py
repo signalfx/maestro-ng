@@ -12,6 +12,7 @@ import os
 import yaml
 
 from . import exceptions, maestro
+from . import name, version
 
 # Define the commands
 ACCEPTED_COMMANDS = ['status', 'fullstatus', 'start', 'stop', 'restart',
@@ -34,9 +35,9 @@ def load_config(options):
 
 
 def create_parser():
-    parser = argparse.ArgumentParser(
-        prog='maestro',
-        description='Docker container orchestrator.')
+    parser = argparse.ArgumentParser(prog=name, description=(
+        '{} v{}, Docker container orchestrator.'.format(
+            name.title(), version)))
     parser.add_argument('command', nargs='?',
                         choices=ACCEPTED_COMMANDS,
                         default='status',
@@ -61,12 +62,20 @@ def create_parser():
     parser.add_argument('-o', '--only', action='store_const',
                         const=True, default=False,
                         help='only affect the selected container or service')
-
+    parser.add_argument('-v', '--version', action='store_const',
+                        const=True, default=False,
+                        help='show program version and exit')
     return parser
 
 
 def main(args=None):
     options = create_parser().parse_args(args)
+
+    # If the version is requested, show it and exit right away.
+    if options.version:
+        print('{}-{}'.format(name, version))
+        return 0
+
     try:
         config = load_config(options)
     except jinja2.exceptions.TemplateNotFound:

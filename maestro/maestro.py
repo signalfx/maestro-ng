@@ -224,7 +224,7 @@ class Conductor:
             only (boolean): Whether to act on only the specified things, or
                 their dependencies as well.
         """
-        containers = self._ordered_containers(things) \
+        containers = self._ordered_containers(things, False) \
             if not only else self._to_containers(things)
         plays.Stop(containers).run()
         plays.Start(containers, self._registries, refresh_images).run()

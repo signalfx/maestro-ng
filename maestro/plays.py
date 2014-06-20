@@ -173,7 +173,7 @@ class BaseOrchestrationPlay:
             checks.wait(1)
             if not self._wait_for_status(container, cond, retries=1):
                 return False
-            return reduce(lambda x, y: x and y, checks.get())
+        return reduce(lambda x, y: x and y, checks.get())
 
     def _satisfied(self, container):
         """Returns True if all the dependencies of a given container have been

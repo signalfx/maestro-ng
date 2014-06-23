@@ -254,12 +254,15 @@ class Status(BaseOrchestrationPlay):
 
     def _get_container_status(self, container, o):
         o.pending('checking...')
-        s = container.status(refresh=True)
-        if s and s['State']['Running']:
-            cid = container.id
-            o.commit('\033[32;1m{}\033[;0m'.format(cid[:7]))
-        else:
-            o.commit('\033[31;1mdown\033[;0m')
+        try:
+            s = container.status(refresh=True)
+            if s and s['State']['Running']:
+                cid = container.id
+                o.commit('\033[32;1m{}\033[;0m'.format(cid[:7]))
+            else:
+                o.commit('\033[31;1mdown\033[;0m')
+        except:
+            o.commit('\033[31;1mhost down\033[;0m')
 
 
 class Start(BaseOrchestrationPlay):

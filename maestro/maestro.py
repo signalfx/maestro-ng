@@ -26,7 +26,8 @@ class Conductor:
                 docker_port=v.get('docker_port',
                                   entities.Ship.DEFAULT_DOCKER_PORT),
                 docker_endpoint=v.get('docker_endpoint'),
-                timeout=v.get('timeout')))
+                timeout=v.get('timeout'),
+                ssh_tunnel_config=v.get('ssh_tunnel_config', {})))
             for k, v in self._config['ships'].items())
 
         # Register defined private Docker registries authentications

@@ -1,13 +1,27 @@
 # This is an example of a Maestro environment description file. It starts up a
-# multi-node ZooKeeper cluster to serve a multi-node Kafka broker cluster than
+# multi-node ZooKeeper cluster to serve a multi-node Kafka broker cluster that
 # can be used for pub/sub and messaging.
 
 name: demo
 
 ships:
   # docker_port remains at default 4243 on all our hosts
-  vm1: {ip: &vm1ip 192.168.10.2}
-  vm2: {ip: 192.168.11.2, timeout: 1}
+  vm1:
+    ip: &vm1ip 192.168.10.2
+    ssh_tunnel_config: &sshopts
+      # By using an SSH tunnel to connect to your docker port, you can make
+      # docker listen only the localhost loopback interface.  For example,
+      # by the following setting in /etc/default/docker
+      # DOCKER_OPTS="-H tcp://127.0.0.1:4243 -H unix:///var/run/docker.sock"
+      #
+      # Specify the parameters to connect to the SSH server here. These
+      # options match the ones accepted by
+      # https://github.com/jmagnusson/bgtunnel/blob/master/bgtunnel.py#L214
+      ssh_user: vagrant # Defaults to the user running maestro
+      ssh_port: 22 # Defaults to 22
+      identify_file: "/path/to/id_rsa"
+      silent: True # Defaults to False
+  vm2: {ip: 192.168.11.2, timeout: 1, ssh_tunnel_config: *sshopts}
 
 services:
   # 2-node ZooKeeper cluster.

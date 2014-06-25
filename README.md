@@ -53,7 +53,7 @@ Installation
 You can install Maestro via _Pip_:
 
 ```
-$ pip install --user --upgrade git+git://github.com/signalfuse/maestro-ng
+$ pip install --user --prefix= --upgrade git+git://github.com/signalfuse/maestro-ng
 ```
 
 Orchestration

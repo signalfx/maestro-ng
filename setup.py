@@ -19,7 +19,7 @@ setup(
     long_description=long_description,
     zip_safe=True,
     packages=find_packages(),
-    install_requires=['docker-py>=0.3.0', 'pyyaml', 'jinja2'],
+    install_requires=['docker-py>=0.3.0', 'pyyaml', 'jinja2', 'six', 'bgtunnel'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',

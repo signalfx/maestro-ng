@@ -2,13 +2,13 @@
 #
 # Docker container orchestration utility.
 
+import bgtunnel
 import docker
 try:
     from docker.errors import APIError
 except ImportError:
     # Fall back to <= 0.3.1 location
     from docker.client import APIError
-
 import multiprocessing.pool
 import re
 import six
@@ -44,22 +44,43 @@ class Ship(Entity):
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT,
-                 timeout=None, docker_endpoint=None):
+                 timeout=None, ssh_tunnel=None):
         """Instantiate a new ship.
 
         Args:
             name (string): the name of the ship.
             ip (string): the IP address of resolvable host name of the host.
             docker_port (int): the port the Docker daemon listens on.
-            docker_endpoint (url): endpoint to access the docker api
+            ssh_tunnel (dict): configuration for SSH tunneling to the remote
+                Docker daemon.
         """
         Entity.__init__(self, name)
         self._ip = ip
         self._docker_port = docker_port
-        if docker_endpoint:
-            self._backend_url = docker_endpoint
+        self._tunnel = None
+
+        if ssh_tunnel:
+            if 'user' not in ssh_tunnel:
+                raise exceptions.EnvironmentConfigurationException(
+                    'Missing SSH user for ship {} tunnel configuration'.format(
+                        self.name))
+            if 'key' not in ssh_tunnel:
+                raise exceptions.EnvironmentConfigurationException(
+                    'Missing SSH key for ship {} tunnel configuration'.format(
+                        self.name))
+
+            self._tunnel = bgtunnel.open(
+                ssh_address=ip,
+                ssh_user=ssh_tunnel['user'],
+                ssh_port=int(ssh_tunnel.get('port', 22)),
+                host_port=docker_port,
+                silent=True,
+                identity_file=ssh_tunnel['key'])
+            self._backend_url = 'http://localhost:{}'.format(
+                self._tunnel.bind_port)
         else:
             self._backend_url = 'http://{:s}:{:d}'.format(ip, docker_port)
+
         self._backend = docker.Client(
             base_url=self._backend_url,
             version=Ship.DEFAULT_DOCKER_VERSION,
@@ -77,12 +98,18 @@ class Ship(Entity):
         return self._backend
 
     @property
-    def docker_endpoint(self):
-        """Returns the Docker daemon endpoint location on that ship."""
-        return 'tcp://%s:%d' % (self._ip, self._docker_port)
+    def address(self):
+        if self._tunnel:
+            return '{} (ssh:{})'.format(self.name, self._tunnel.bind_port)
+        return self.name
 
     def __repr__(self):
-        return '<ship:%s [%s:%d]>' % (self.name, self._ip, self._docker_port)
+        if self._tunnel:
+            return '<ship:{} ssh://{}@{}:{}->{}>'.format(
+                self.name, self._tunnel.ssh_user, self._ip,
+                self._tunnel.bind_port, self._docker_port)
+        return '<ship:{} http://{}:{}>'.format(
+            self.name, self._ip, self._docker_port)
 
 
 class Service(Entity):

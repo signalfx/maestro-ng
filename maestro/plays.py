@@ -199,7 +199,7 @@ class FullStatus(BaseOrchestrationPlay):
                 '{:<20.20s}').format(order,
                                      container.name,
                                      container.service.name,
-                                     container.ship.name))
+                                     container.ship.address))
 
             try:
                 o.pending('checking container...')
@@ -248,7 +248,7 @@ class Status(BaseOrchestrationPlay):
                 '{:<20.20s}').format(order + 1,
                                      container.name,
                                      container.service.name,
-                                     container.ship.name))
+                                     container.ship.address))
             self.register(self._get_container_status, container, o)
         self.end()
 
@@ -287,7 +287,7 @@ class Start(BaseOrchestrationPlay):
                 '{:<20.20s}').format(order + 1,
                                      container.name,
                                      container.service.name,
-                                     container.ship.name))
+                                     container.ship.address))
             self.register(self._start_container, container, o)
         self.end()
 
@@ -456,7 +456,7 @@ class Stop(BaseOrchestrationPlay):
                 '{:<20.20s}').format(len(self._containers) - order,
                                      container.name,
                                      container.service.name,
-                                     container.ship.name))
+                                     container.ship.address))
             self.register(self._stop_container, container, o)
         self.end()
 

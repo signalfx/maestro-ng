@@ -25,7 +25,7 @@ class Conductor:
                 k, v['ip'],
                 docker_port=v.get('docker_port',
                                   entities.Ship.DEFAULT_DOCKER_PORT),
-                docker_endpoint=v.get('docker_endpoint'),
+                ssh_tunnel=v.get('ssh_tunnel'),
                 timeout=v.get('timeout')))
             for k, v in self._config['ships'].items())
 

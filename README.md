@@ -115,13 +115,22 @@ registries:
 The _ships_ are simple to define. They are named (but that name doesn't
 need to match their DNS resolvable host name), and need an `ip`
 address/hostname. If the Docker daemon doesn't listen its default port
-of 4243, the `docker_port` can be overriden:
+of 2375, the `docker_port` can be overriden. You can also use an SSH
+tunnel to secure the communication with the target Docker daemon
+(especially if you don't want to Docker daemon to listen on anything
+else than localhost, and rely on SSH key-based authentication instead).
 
 ```yaml
 ships:
-  vm1.ore1:   {ip: c414.ore1.domain.com}
-  vm2.ore2:   {ip: c415.ore1.domain.com, docker_port: 4244}
-  controller: {ip: 42.42.42.1}
+  vm1.ore1: {ip: c414.ore1.domain.com}
+  vm2.ore2: {ip: c415.ore2.domain.com, docker_port: 4243}
+  vm3.ore3:
+    ip: c416.ore3.domain.com
+    docker_port: 4243
+    ssh_tunnel:
+      user: ops
+      key: {{ env.HOME }}/.ssh/id_dsa
+      port: 22 # That's the default
 ```
 
 Services are also named. Their name is used for commands that act on

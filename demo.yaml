@@ -8,6 +8,12 @@ ships:
   # docker_port remains at default 4243 on all our hosts
   vm1: {ip: &vm1ip 192.168.10.2}
   vm2: {ip: 192.168.11.2, timeout: 1}
+  vm-ssh:
+    ip: 192.168.10.2
+    docker_port: 4243
+    ssh_tunnel:
+      user: vagrant
+      key: {{ env.HOME }}/.vagrant.d/insecure_private_key
 
 services:
   # 2-node ZooKeeper cluster.
@@ -65,7 +71,7 @@ services:
     wants_info: [ zookeeper, kafka ]
     instances:
       envtest:
-        ship: vm1
+        ship: vm-ssh
         env:
           FOO: "bar test"
         cmd: env

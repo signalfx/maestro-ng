@@ -18,6 +18,11 @@ class ParameterException(MaestroException):
     pass
 
 
+class EnvironmentConfigurationException(MaestroException):
+    """Error in the Maestro environment description file."""
+    pass
+
+
 class OrchestrationException(MaestroException):
     """Error during the execution of the orchestration score."""
     pass

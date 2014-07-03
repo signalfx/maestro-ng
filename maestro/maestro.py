@@ -2,6 +2,8 @@
 #
 # Docker container orchestration utility.
 
+from __future__ import print_function
+
 from . import entities
 from . import exceptions
 from . import plays
@@ -159,6 +161,18 @@ class Conductor:
                 '{} is neither a service nor a container!'.format(s))
         return reduce(lambda x, y: x+y, map(parse_thing, things), [])
 
+    def _to_services(self, things):
+        """Transform a list of "things", container names or service names, to a
+        list of Service objects with no duplicates."""
+        def parse_thing(s):
+            if s in self._containers:
+                return self._containers[s].service
+            if s in self._services:
+                return self._services[s]
+            raise exceptions.OrchestrationException(
+                '{} is neither a service nor a container!'.format(s))
+        return list(set(map(parse_thing, things)))
+
     def _ordered_containers(self, things, forward=True):
         """Return the ordered list of containers from the list of names passed
         to it (either container names or service names).
@@ -280,3 +294,25 @@ class Conductor:
                 print(line.rstrip())
         except:
             pass
+
+    def deptree(self, things=[], **kwargs):
+        """Display the dependency tree of the given services."""
+        only = kwargs['only']
+
+        def treehelper(service, indent, shown):
+            deps = sorted(service.dependencies.difference(shown)) \
+                if only else sorted(service.dependencies)
+            shown.update(deps)
+            for i, dep in enumerate(deps, 1):
+                last = i == len(deps)
+                print('{}{} {}'.format(indent,
+                                       last and '\\-' or '+-',
+                                       dep.name))
+                treehelper(dep, indent + (last and '  ' or '|  '), shown)
+
+        services = self._to_services(things or sorted(self._services))
+        for i, service in enumerate(services, 1):
+            print(service.name)
+            treehelper(service, ' ', set([]))
+            if i < len(services):
+                print()

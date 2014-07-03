@@ -4,6 +4,8 @@
 #
 # Docker container orchestration utility.
 
+from __future__ import print_function
+
 import argparse
 import jinja2
 import logging
@@ -16,7 +18,7 @@ from . import name, version
 
 # Define the commands
 ACCEPTED_COMMANDS = ['status', 'fullstatus', 'start', 'stop', 'restart',
-                     'logs']
+                     'logs', 'deptree']
 DEFAULT_MAESTRO_FILE = 'maestro.yaml'
 
 

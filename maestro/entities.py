@@ -164,6 +164,10 @@ class Service(Entity):
         return {'repository': p[0], 'tag': len(p) > 1 and p[1] or 'latest'}
 
     @property
+    def dependencies(self):
+        return self._requires
+
+    @property
     def requires(self):
         """Returns the full set of direct and indirect dependencies of this
         service."""

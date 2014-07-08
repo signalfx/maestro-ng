@@ -64,19 +64,14 @@ def create_parser():
     parser.add_argument('-o', '--only', action='store_const',
                         const=True, default=False,
                         help='only affect the selected container or service')
-    parser.add_argument('-v', '--version', action='store_const',
-                        const=True, default=False,
+    parser.add_argument('-v', '--version', action='version',
+                        version='{}-{}'.format(name, version),
                         help='show program version and exit')
     return parser
 
 
 def main(args=None):
     options = create_parser().parse_args(args)
-
-    # If the version is requested, show it and exit right away.
-    if options.version:
-        print('{}-{}'.format(name, version))
-        return 0
 
     try:
         config = load_config(options)

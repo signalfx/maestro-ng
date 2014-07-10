@@ -254,7 +254,13 @@ class Container(Entity):
         self._service.register_container(self)
 
         # Get command
-        self.cmd = config.get('cmd', None)
+        self.command = config.get('command', None)
+
+        # Get stdin flag
+        self.stdin_open = bool(config.get('stdin_open', False))
+      
+        # Get tty flag
+        self.tty = bool(config.get('tty', False)) 
 
         # Parse the port specs.
         self.ports = self._parse_ports(config.get('ports', {}))

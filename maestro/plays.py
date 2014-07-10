@@ -397,15 +397,18 @@ class Start(BaseOrchestrationPlay):
             or None
         container.ship.backend.create_container(
             image=container.service.image,
+            command=container.command,
             hostname=container.name,
             name=container.name,
             environment=container.env,
             volumes=container.volumes.values(),
             mem_limit=container.mem_limit,
             cpu_shares=container.cpu_shares,
+            stdin_open=container.stdin_open,
+            tty=container.tty,
             ports=ports,
-            detach=True,
-            command=container.cmd)
+            detach=True
+            )
 
         o.pending('waiting for container creation...')
         if not self._wait_for_status(container, lambda x: x):

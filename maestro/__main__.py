@@ -22,16 +22,32 @@ ACCEPTED_COMMANDS = ['status', 'fullstatus', 'start', 'stop', 'restart',
 DEFAULT_MAESTRO_FILE = 'maestro.yaml'
 
 
-def load_config(options):
-    """Preprocess the input config file through Jinja2 before loading it as
-    JSON."""
-    if options.file == '-':
+def load_config_from_file(filename):
+    """Load a config from a string.
+
+    Args:
+        filename: A string filename of a yaml maestro config. A '-' means
+            stdin.
+
+    Returns:
+        A python data structure corresponding to the yaml string. A proper
+        maestro config will likely return a dict.
+    """
+    if filename == '-':
         template = jinja2.Template(sys.stdin.read())
     else:
         env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(os.path.dirname(options.file)),
+            loader=jinja2.FileSystemLoader(os.path.dirname(filename)),
             extensions=['jinja2.ext.with_'])
-        template = env.get_template(os.path.basename(options.file))
+        try:
+            template = env.get_template(os.path.basename(filename))
+        except jinja2.exceptions.TemplateNotFound:
+            raise exceptions.MaestroException(
+                'Environment description file {} not found!'.format(filename))
+        except:
+            raise exceptions.MaestroException(
+                'Error reading environment description file {}!'.format(
+                    filename))
 
     return yaml.load(template.render(env=os.environ))
 
@@ -70,19 +86,11 @@ def create_parser():
     return parser
 
 
-def main(args=None):
+def main(args=None, config=None):
     options = create_parser().parse_args(args)
 
-    try:
-        config = load_config(options)
-    except jinja2.exceptions.TemplateNotFound:
-        logging.error('Environment description file %s not found!',
-                      options.file)
-        sys.exit(1)
-    except:
-        logging.error('Error reading environment description file %s!',
-                      options.file)
-        sys.exit(1)
+    if config is None:
+        config = load_config_from_file(options.file)
 
     # Shutup urllib3, wherever it comes from.
     (logging.getLogger('requests.packages.urllib3.connectionpool')

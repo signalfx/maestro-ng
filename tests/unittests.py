@@ -63,6 +63,13 @@ class ContainerTest(unittest.TestCase):
             self.assertIn(k, container.env)
             self.assertEqual(v, container.env[k])
 
+    def test_dns_option(self):
+        service_env = {'ENV_VAR': 'value'}
+        container_env = {'OTHER_ENV_VAR': 'other-value'}
+        service = entities.Service('foo', 'stackbrew/ubuntu', service_env)
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config={'env': container_env, 'dns': '8.8.8.8'})
+        self.assertEqual('8.8.8.8', container.dns)
 
 class BaseConfigUsingTest(unittest.TestCase):
 

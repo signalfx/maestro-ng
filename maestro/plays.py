@@ -405,6 +405,7 @@ class Start(BaseOrchestrationPlay):
             cpu_shares=container.cpu_shares,
             ports=ports,
             detach=True,
+            dns=container.dns,
             command=container.cmd)
 
         o.pending('waiting for container creation...')

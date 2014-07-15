@@ -4,12 +4,14 @@ import os
 import unittest
 
 from maestro import entities, exceptions, maestro, lifecycle
-from maestro.__main__ import load_config, create_parser
+from maestro.__main__ import load_config_from_file, create_parser
+
 
 class EntityTest(unittest.TestCase):
 
     def test_get_name(self):
         self.assertEqual(entities.Entity('foo').name, 'foo')
+
 
 class ServiceTest(unittest.TestCase):
 
@@ -64,19 +66,18 @@ class ContainerTest(unittest.TestCase):
             self.assertEqual(v, container.env[k])
 
 
-class BaseConfigUsingTest(unittest.TestCase):
+class BaseConfigFileUsingTest(unittest.TestCase):
 
     def _get_config(self, name):
-        return load_config(
-            create_parser().parse_args([
-                '-f',
-                os.path.join(os.path.dirname(__file__),
-                             'yaml/{}.yaml'.format(name))
-            ])
-        )
+        options = create_parser().parse_args([
+            '-f',
+            os.path.join(os.path.dirname(__file__),
+                         'yaml/{}.yaml'.format(name))
+        ])
+        return load_config_from_file(options.file)
 
 
-class ConductorTest(BaseConfigUsingTest):
+class ConductorTest(BaseConfigFileUsingTest):
 
     def test_empty_registry_list(self):
         config = self._get_config('empty_registries')
@@ -85,7 +86,7 @@ class ConductorTest(BaseConfigUsingTest):
         self.assertEqual(c.registries, [])
 
 
-class ConfigTest(BaseConfigUsingTest):
+class ConfigTest(BaseConfigFileUsingTest):
 
     def test_yaml_parsing_test1(self):
         """Make sure the env variables are working."""

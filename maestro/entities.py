@@ -254,7 +254,8 @@ class Container(Entity):
         self._service.register_container(self)
 
         # Get command
-        self.cmd = config.get('cmd', None)
+        # TODO(mpetazzoni): remove deprecated 'cmd' support
+        self.command = config.get('command', config.get('cmd'))
 
         # Parse the port specs.
         self.ports = self._parse_ports(config.get('ports', {}))

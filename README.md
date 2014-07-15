@@ -143,18 +143,27 @@ of that service's instances.
 Each service instance must at least define the _ship_ its container will
 be placed on (by name). Additionally, it may define:
 
-  - port mappings, as a map of `<port name>: <port or port mapping
-    spec>` (see below for port spec syntax);
-  - lifecycle state checks, which Maestro uses to confirm a service
-    correctly started (see Lifecycle checks below);
-  - volume mappings, as a map of `<destination in container>: <source from host>`;
-  - environment variables, as a map of `<variable name>: <value>`;
-  - whether the container should run in privileged mode, as a boolean
-  `privileged: true | false` (Defaults to false);
-  - stop timeout: number of seconds to try to stop for before
-    killing the container (default is 10);
-  - memory limit;
-  - cpu shares (relative weight).
+  - `ports`, a dictionary of port mappings, as a map of `<port name>:
+    <port or port mapping spec>` (see below for port spec syntax);
+  - `lifecycle`, for lifecycle state checks, which Maestro uses to
+    confirm a service correctly started or stopped (see Lifecycle checks
+    below);
+  - `volume`, for container volume mappings, as a map of `<destination
+    in container>: <source from host>`;
+  - `env`, for environment variables, as a map of `<variable name>:
+    <value>` (variables defined at the instance level override variables
+    defined at the service level);
+  - `privileged`, a boolean specifying whether the container should run
+    in privileged mode or not (defaults to `false`);
+  - `stop_timeout`, the number of seconds Docker will wait between
+    sending `SIGTERM` and `SIGKILL` (defaults to 10);
+  - `limits`:
+    - `memory`, the memory limit of the container (`k`, `m` and `g`
+      limits accepted, also valid in uppercase);
+    - `cpu`, the number of CPU shares (relative weight) allocated to the
+      container;
+  - `command`, to specify or override the command executed by the
+    container.
 
 ```yaml
 services:

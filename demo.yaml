@@ -74,4 +74,4 @@ services:
         ship: vm-ssh
         env:
           FOO: "bar test"
-        cmd: env
+        command: env

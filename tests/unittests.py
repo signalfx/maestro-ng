@@ -69,12 +69,9 @@ class ContainerTest(unittest.TestCase):
 class BaseConfigFileUsingTest(unittest.TestCase):
 
     def _get_config(self, name):
-        options = create_parser().parse_args([
-            '-f',
-            os.path.join(os.path.dirname(__file__),
-                         'yaml/{}.yaml'.format(name))
-        ])
-        return load_config_from_file(options.file)
+        path = os.path.join(os.path.dirname(__file__),
+                            'yaml/{}.yaml'.format(name))
+        return load_config_from_file(path)
 
 
 class ConductorTest(BaseConfigFileUsingTest):
@@ -83,7 +80,7 @@ class ConductorTest(BaseConfigFileUsingTest):
         config = self._get_config('empty_registries')
         c = maestro.Conductor(config)
         self.assertIsNot(c.registries, None)
-        self.assertEqual(c.registries, [])
+        self.assertEqual(c.registries, {})
 
 
 class ConfigTest(BaseConfigFileUsingTest):

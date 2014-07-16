@@ -19,8 +19,6 @@ complex, multi-host environments using Docker containers possible and
 easy to use. Maestro of course supports declared dependencies between
 services and makes sure to honor those during environment bring up.
 
-**[See a demo](http://showterm.io/c275984679f8f148b6403)**
-
 What is Maestro?
 ----------------
 
@@ -646,66 +644,78 @@ Usage
 =====
 
 Once installed, Maestro is available both as a library through the
-`maestro` package and as an executable. Note that if you didn't install
-Maestro system-wide, you can still run it with the same commands as long
-as your `PYTHONPATH` contains the path to your `maestro-ng` repository
-clone. To run Maestro, simply execute the main Python package:
+`maestro` package and as an executable. To run Maestro, simply execute
+`maestro`. Note that if you didn't install Maestro system-wide, you can
+still run it with the same commands as long as your `PYTHONPATH`
+contains the path to your `maestro-ng` repository clone and using
+`python -m maestro ...`.
 
 ```
-$ python -m maestro -h
-usage: maestro [-h] [-f [FILE]] [-c CMD] [-r] [-F] [-n LINES] [-o]
-               [{status,fullstatus,start,stop,clean,logs}] [thing [thing ...]]
+$ maestro -h
+usage: maestro [-h] [-f FILE] [-v]
+               {status,start,stop,restart,logs,deptree} ...
 
-Docker container orchestrator.
+Maestro v0.1.8.2, Docker container orchestrator.
 
 positional arguments:
-  {status,fullstatus,start,stop,clean,logs}
-                        orchestration command to execute
-  thing                 container(s) or service(s) to act on
+  {status,start,stop,restart,logs,deptree}
+    status              display container status
+    start               start services and containers
+    stop                stop services and containers
+    restart             restart services and containers
+    logs                show logs from a container
+    deptree             show the dependency tree
+    complete            shell auto-completion helper
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f [FILE], --file [FILE]
-                        read environment description from FILE (use - for
-                        stdin)
-  -c CMD, --completion CMD
-                        list commands, services or containers in environment
-                        based on CMD
+  -f FILE, --file FILE  read environment description from FILE (use - for
+                        stdin, defaults to ./maestro.yaml)
+  -v, --version         show program version and exit
+```
+
+You can then get help on each individual command with:
+
+```
+$ maestro start -h
+usage: maestro start [-h] [-d] [-r] [thing [thing ...]]
+
+Start services and containers
+
+positional arguments:
+  thing                 container(s) or service(s) to display
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d, --with-deps       include dependencies
   -r, --refresh-images  force refresh of container images from registry
-  -F, --follow          follow logs as they are generated
-  -n LINES              Only show the last LINES lines for logs
-  -o, --only            only affect the selected container or service
 ```
 
-By default, Maestro will read the environment description from the
-standard input so if you run Maestro without arguments it will appear to
-not do anything and just be "stuck". You can also use the `-f` flag to
-specify the path to the environment file. The two following commands are
-identical:
+By default, Maestro will read the environment description configuration
+from the `maestro.yaml` file in the current directory. You can override
+this with the `-f` flag to specify the path to the environment
+configuration file. Additionally, you can use `-` to read the
+configuration from `stdin`. The following commands are identical:
 
 ```
-$ python -m maestro < demo.yaml
-$ python -m maestro -f demo.yaml
+$ maestro status
+$ maestro -f maestro.yaml status
+$ maestro -f - status < maestro.yaml
 ```
 
 The first positional argument is a command you want Maestro to execute.
-The available commands are `status`, `fullstatus`, `start`, `stop` and
-`logs`. They should all be self-explanatory. Service dependency is
-always honored for all commands. Note that if services don't have any
-dependencies (or have the same dependencies), their start order might
-not always be the same.
+The available commands are `status`, `start`, `stop`, `restart`, `logs`
+and `deptree`. They should all be self-explanatory. Service dependency
+is by default not considered, but for commands where it makes sense, the
+`-d | --with-deps` flag will make Maestro honor service dependency
+order. Note that if services don't have any dependencies (or have the
+same dependencies), their start/stop order might not always be the same.
 
 You can also pass one or more service names or container names on which
 to execute the command, to restrict the action of the command to just
 these services or containers (or any combination of both).  Note that
 Maestro will do its best to examine the state of the system and not
 perform any action unless it's really necessary.
-
-You can force Maestro to operate only on the containers and services
-that were explicitely given on the command-line by using the `-o` flag.
-
-Finally, if started without any arguments, default to the `status`
-command on all containers, thus showing the state of the environment.
 
 Examples of Docker images with Maestro orchestration
 ====================================================

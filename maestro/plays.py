@@ -5,6 +5,7 @@
 from __future__ import print_function
 
 import collections
+import functools
 import json
 import threading
 import time
@@ -133,9 +134,9 @@ class BaseOrchestrationPlay:
         for container in result:
             deps = container.service.requires if self._forward \
                 else container.service.needed_for
-            deps = reduce(lambda x, y: x.union(y),
-                          map(lambda s: s.containers, deps),
-                          set([]))
+            deps = functools.reduce(lambda x, y: x.union(y),
+                                    [s.containers for s in deps],
+                                    set([]))
             result = result.union(deps.intersection(containers))
 
         result.remove(container)
@@ -169,11 +170,18 @@ class BaseOrchestrationPlay:
         if not checks:
             return self._wait_for_status(container, cond)
 
+        # Wait for all checks to complete
         while not checks.ready():
             checks.wait(1)
             if not self._wait_for_status(container, cond, retries=1):
                 return False
-        return reduce(lambda x, y: x and y, checks.get())
+
+        # Check results
+        for check in checks.get():
+            if not check:
+                return False
+
+        return True
 
     def _satisfied(self, container):
         """Returns True if all the dependencies of a given container have been
@@ -214,7 +222,7 @@ class FullStatus(BaseOrchestrationPlay):
                 o.commit('\033[{:d};1m{:<4.4s}\033[;0m'.format(color(running),
                                                                up(running)))
 
-                for name, port in container.ports.iteritems():
+                for name, port in container.ports.items():
                     o.commit('\n')
                     o = termoutput.OutputFormatter(prefix='     >>')
                     o.pending('{:>9.9s}:{:s}'.format(port['external'][1],
@@ -328,8 +336,12 @@ class Start(BaseOrchestrationPlay):
         except:
             pass
 
-        return reduce(lambda x, y: x+y, progress.values()) / len(progress) \
-            if progress else 0
+        total = 0
+        if progress:
+            for downloaded in progress.values():
+                total += downloaded
+            total /= len(progress)
+        return total
 
     def _login_to_registry(self, o, container):
         """Extract the registry name from the image needed for the container,
@@ -393,7 +405,7 @@ class Start(BaseOrchestrationPlay):
             container.service.image))
         ports = container.ports \
             and map(lambda p: tuple(p['exposed'].split('/')),
-                    container.ports.itervalues()) \
+                    container.ports.values()) \
             or None
         container.ship.backend.create_container(
             image=container.service.image,

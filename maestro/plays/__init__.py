@@ -21,18 +21,19 @@ class BaseOrchestrationPlay:
     order direction.
     """
 
-    HEADER_FMT = '{:>3s}  {:<20s} {:<15s} {:<20s} ' + \
-                 tasks.TASK_RESULT_HEADER_FMT
+    HEADER_FMT = '{:>3s}  {:<20s} {:<20s} {:<20s} ' + \
+                 tasks.CONTAINER_STATUS_FMT + ' ' + tasks.TASK_RESULT_FMT
     HEADERS = ['  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS']
 
-    def __init__(self, containers=[], forward=True, respect_dependencies=True):
+    def __init__(self, containers=[], forward=True, ignore_dependencies=False,
+                 concurrency=None):
         self._containers = containers
         self._forward = forward
+        self._ignore_dependencies = ignore_dependencies
+        self._concurrency = threading.Semaphore(concurrency or len(containers))
 
         self._dependencies = dict(
-            (c.name, respect_dependencies and
-                self._gather_dependencies(c) or set())
-            for c in containers)
+            (c.name, self._gather_dependencies(c)) for c in containers)
 
         self._om = termoutput.OutputManager(len(containers))
         self._threads = set([])
@@ -73,7 +74,9 @@ class BaseOrchestrationPlay:
                 return
 
             try:
+                self._concurrency.acquire(blocking=True)
                 task.run()
+                self._concurrency.release()
                 self._done.add(task.container)
             except Exception as e:
                 self._error = e
@@ -106,7 +109,7 @@ class BaseOrchestrationPlay:
 
         # Display any error that occurred
         if self._error:
-            sys.stderr.write('{}\n'.format(self._error))
+            sys.stderr.write('Error: {}\n'.format(self._error))
 
     def run(self):
         raise NotImplementedError
@@ -132,7 +135,10 @@ class BaseOrchestrationPlay:
 
     def _satisfied(self, container):
         """Returns True if all the dependencies of a given container have been
-        satisfied by what's been executed so far."""
+        satisfied by what's been executed so far (or if it was explicitely
+        requested to ignore dependencies)."""
+        if self._ignore_dependencies:
+            return True
         missing = self._dependencies[container.name].difference(self._done)
         return len(missing) == 0
 
@@ -189,15 +195,16 @@ class Status(BaseOrchestrationPlay):
     """A less advanced, but faster (concurrent) status display orchestration
     play that only looks at the presence and status of the containers."""
 
-    def __init__(self, containers=[]):
-        BaseOrchestrationPlay.__init__(self, containers,
-                                       respect_dependencies=False)
+    def __init__(self, containers=[], concurrency=None):
+        BaseOrchestrationPlay.__init__(
+            self, containers, ignore_dependencies=False,
+            concurrency=concurrency)
 
     def run(self):
         self.start()
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} ' +
+                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
                 '{:<20.20s}').format(order + 1,
                                      container.name,
                                      container.service.name,
@@ -212,8 +219,12 @@ class Start(BaseOrchestrationPlay):
     services, in the given start order, waiting for each container's
     application to become available before moving to the next one."""
 
-    def __init__(self, containers=[], registries={}, refresh_images=False):
-        BaseOrchestrationPlay.__init__(self, containers)
+    def __init__(self, containers=[], registries={}, refresh_images=False,
+                 ignore_dependencies=True, concurrency=None):
+        BaseOrchestrationPlay.__init__(
+            self, containers, ignore_dependencies=ignore_dependencies,
+            concurrency=concurrency)
+
         self._registries = registries
         self._refresh_images = refresh_images
 
@@ -221,12 +232,13 @@ class Start(BaseOrchestrationPlay):
         self.start()
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} ' +
+                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
                 '{:<20.20s}').format(order + 1,
                                      container.name,
                                      container.service.name,
                                      container.ship.address))
-            self.register(tasks.StartTask(o, container))
+            self.register(tasks.StartTask(o, container, self._registries,
+                                          self._refresh_images))
         self.end()
 
 
@@ -235,14 +247,18 @@ class Stop(BaseOrchestrationPlay):
     requested services. The list of containers should be provided reversed so
     that dependent services are stopped first."""
 
-    def __init__(self, containers=[]):
-        BaseOrchestrationPlay.__init__(self, containers, forward=False)
+    def __init__(self, containers=[], ignore_dependencies=True,
+                 concurrency=None):
+        BaseOrchestrationPlay.__init__(
+            self, containers, forward=False,
+            ignore_dependencies=ignore_dependencies,
+            concurrency=concurrency)
 
     def run(self):
         self.start()
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} ' +
+                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
                 '{:<20.20s}').format(len(self._containers) - order,
                                      container.name,
                                      container.service.name,
@@ -251,14 +267,38 @@ class Stop(BaseOrchestrationPlay):
         self.end()
 
 
+class Clean(BaseOrchestrationPlay):
+    """A Maestro orchestration play that will remove stopped containers from
+    Docker."""
+
+    def __init__(self, containers=[], concurrency=None):
+        BaseOrchestrationPlay.__init__(
+            self, containers, ignore_dependencies=False,
+            concurrency=concurrency)
+
+    def run(self):
+        self.start()
+        for order, container in enumerate(self._containers):
+            o = self._om.get_formatter(order, prefix=(
+                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
+                '{:<20.20s}').format(order + 1,
+                                     container.name,
+                                     container.service.name,
+                                     container.ship.address))
+            self.register(tasks.RemoveTask(o, container))
+        self.end()
+
+
 class Restart(BaseOrchestrationPlay):
 
     def __init__(self, containers=[], registries={}, refresh_images=False,
-                 concurrency=None):
-        BaseOrchestrationPlay.__init__(self, containers)
+                 ignore_dependencies=True, concurrency=None):
+        BaseOrchestrationPlay.__init__(
+            self, containers, ignore_dependencies=ignore_dependencies,
+            concurrency=concurrency)
+
         self._registries = registries
         self._refresh_images = refresh_images
-        self._concurrency = concurrency
 
     def run(self):
         self.start()

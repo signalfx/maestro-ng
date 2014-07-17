@@ -12,7 +12,7 @@ from . import plays
 from . import termoutput
 
 AVAILABLE_MAESTRO_COMMANDS = ['status', 'start', 'stop', 'restart',
-                              'logs', 'deptree']
+                              'clean', 'logs', 'deptree']
 
 
 class Conductor:
@@ -138,7 +138,7 @@ class Conductor:
         result = []
         for thing in things:
             result += parse_thing(thing)
-        return result
+        return sorted(set(result))
 
     def _to_services(self, things):
         """Transform a list of "things", container names or service names, to a
@@ -150,7 +150,7 @@ class Conductor:
                 return self.services[s]
             raise exceptions.OrchestrationException(
                 '{} is neither a service nor a container!'.format(s))
-        return list(set(map(parse_thing, things)))
+        return sorted(set(map(parse_thing, things)))
 
     def _ordered_containers(self, things, forward=True):
         """Return the ordered list of containers from the list of names passed
@@ -191,7 +191,8 @@ class Conductor:
 
         print(' '.join(filter(lambda x: x.startswith(prefix), set(choices))))
 
-    def status(self, things, full, with_deps, **kwargs):
+    def status(self, things, full=False, with_dependencies=False,
+               concurrency=None, **kwargs):
         """Display the status of the given services and containers, but only
         looking at the container's state, not the application availability.
 
@@ -199,18 +200,21 @@ class Conductor:
             things (set<string>): The list of things to start.
             full (boolean): Whether to display the full detailed status, with
                 port states, for each container.
-            with_deps (boolean): Whether to act on only the specified things,
-                or their dependencies as well.
+            with_dependencies (boolean): Whether to act on only the specified
+                things, or their dependencies as well.
+            concurrency (int): The maximum number of instances that can be
+                acted on at the same time.
         """
         containers = self._ordered_containers(things) \
-            if with_deps else self._to_containers(things)
+            if with_dependencies else self._to_containers(things)
 
         if full:
             plays.FullStatus(containers).run()
         else:
-            plays.Status(containers).run()
+            plays.Status(containers, concurrency).run()
 
-    def start(self, things, refresh_images, with_deps, **kwargs):
+    def start(self, things, refresh_images=False, with_dependencies=False,
+              ignore_dependencies=False, concurrency=None, **kwargs):
         """Start the given container(s) and services(s). Dependencies of the
         requested containers and services are started first.
 
@@ -218,15 +222,20 @@ class Conductor:
             things (set<string>): The list of things to start.
             refresh_images (boolean): Whether to force an image pull for each
                 container or not.
-            with_deps (boolean): Whether to act on only the specified things,
-                or their dependencies as well.
+            with_dependencies (boolean): Whether to act on only the specified
+                things, or their dependencies as well.
+            ignore_dependencies (boolean): Whether dependency order should be
+                respected.
+            concurrency (int): The maximum number of instances that can be
+                acted on at the same time.
         """
         containers = self._ordered_containers(things) \
-            if with_deps else self._to_containers(things)
-        plays.Start(containers, self.registries, refresh_images).run()
+            if with_dependencies else self._to_containers(things)
+        plays.Start(containers, self.registries, refresh_images,
+                    ignore_dependencies, concurrency).run()
 
-    def restart(self, things, refresh_images, with_deps, concurrency,
-                **kwargs):
+    def restart(self, things, refresh_images=False, with_dependencies=False,
+                ignore_dependencies=False, concurrency=None, **kwargs):
         """Restart the given container(s) and services(s). Dependencies of the
         requested containers and services are started first.
 
@@ -234,18 +243,20 @@ class Conductor:
             things (set<string>): The list of things to start.
             refresh_images (boolean): Whether to force an image pull for each
                 container or not before starting it.
-            with_deps (boolean): Whether to act on only the specified things,
-                or their dependencies as well.
-            concurrency (int): The maximum number of instances of the same
-                service to have down at the same time.
+            with_dependencies (boolean): Whether to act on only the specified
+                things, or their dependencies as well.
+            ignore_dependencies (boolean): Whether dependency order should be
+                respected.
+            concurrency (int): The maximum number of instances that can be
+                acted on at the same time.
         """
         containers = self._ordered_containers(things, False) \
-            if with_deps else self._to_containers(things)
-
+            if with_dependencies else self._to_containers(things)
         plays.RollingRestart(containers, self.registries, refresh_images,
-                             concurrency).run()
+                             ignore_dependencies, concurrency).run()
 
-    def stop(self, things, with_deps, **kwargs):
+    def stop(self, things, with_dependencies=False, ignore_dependencies=False,
+             concurrency=None, **kwargs):
         """Stop the given container(s) and service(s).
 
         This one is a bit more tricky because we don't want to look at the
@@ -255,12 +266,31 @@ class Conductor:
 
         Args:
             things (set<string>): The list of things to stop.
-            with_deps (boolean): Whether to act on only the specified things,
-                or their dependencies as well.
+            with_dependencies (boolean): Whether to act on only the specified
+                things, or their dependencies as well.
+            ignore_dependencies (boolean): Whether dependency order should be
+                respected.
+            concurrency (int): The maximum number of instances that can be
+                acted on at the same time.
         """
         containers = self._ordered_containers(things, False) \
-            if with_deps else self._to_containers(things)
-        plays.Stop(containers).run()
+            if with_dependencies else self._to_containers(things)
+        plays.Stop(containers, ignore_dependencies, concurrency).run()
+
+    def clean(self, things, with_dependencies=False, concurrency=None,
+              **kwargs):
+        """Remove the given stopped Docker containers.
+
+        Args:
+            things (set<string>): The list of things to stop.
+            with_dependencies (boolean): Whether to act on only the specified
+                things, or their dependencies as well.
+            concurrency (int): The maximum number of instances that can be
+                acted on at the same time.
+        """
+        containers = self._ordered_containers(things) \
+            if with_dependencies else self._to_containers(things)
+        plays.Clean(containers, concurrency).run()
 
     def logs(self, things, follow, n, **kwargs):
         """Display the logs of the given container.

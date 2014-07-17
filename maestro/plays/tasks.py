@@ -12,7 +12,8 @@ from .. import exceptions
 from ..termoutput import green, blue, red
 
 
-TASK_RESULT_HEADER_FMT = '{:<15s} {:10s}'
+CONTAINER_STATUS_FMT = '{:<10s} '
+TASK_RESULT_FMT = '{:<10s}'
 
 
 class Task:
@@ -84,17 +85,19 @@ class StatusTask(Task):
         Task.__init__(self, o, container)
 
     def run(self):
+        self.o.reset()
         self.o.pending('checking...')
         try:
             s = self.container.status(refresh=True)
             if s and s['State']['Running']:
-                self.o.commit(green(TASK_RESULT_HEADER_FMT
-                                    .format(self.cid, 'running')))
+                self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
+                self.o.commit(green(TASK_RESULT_FMT.format('running')))
             else:
-                self.o.commit(TASK_RESULT_HEADER_FMT
-                              .format(self.cid, red('down')))
+                self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
+                self.o.commit(red(TASK_RESULT_FMT.format('down')))
         except:
-            self.o.commit(red('host down'))
+            self.o.commit(CONTAINER_STATUS_FMT.format('-'))
+            self.o.commit(red(TASK_RESULT_FMT.format('host down')))
 
 
 class StopTask(Task):
@@ -104,19 +107,20 @@ class StopTask(Task):
         Task.__init__(self, o, container)
 
     def run(self):
+        self.o.reset()
         self.o.pending('checking container...')
         try:
             status = self.container.status(refresh=True)
             if not status or not status['State']['Running']:
-                self.o.commit(TASK_RESULT_HEADER_FMT
-                              .format(self.cid, blue('down')))
+                self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
+                self.o.commit(blue(TASK_RESULT_FMT.format('down')))
                 return
         except:
-            self.o.commit(TASK_RESULT_HEADER_FMT
-                          .format('-', red('host down')))
+            self.o.commit(CONTAINER_STATUS_FMT.format('-'))
+            self.o.commit(red(TASK_RESULT_FMT.format('host down')))
             return
 
-        self.o.commit(green('{:<15s}'.format(self.cid)))
+        self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
 
         try:
             self.o.pending('stopping service...')
@@ -127,7 +131,7 @@ class StopTask(Task):
                                          lambda x: not x or
                                          (x and not x['State']['Running'])):
                 raise Exception('failed stopped lifecycle checks')
-            self.o.commit(green('stopped'))
+            self.o.commit(green(TASK_RESULT_FMT.format('stopped')))
         except Exception as e:
             # Stop failures are non-fatal, usually it's just the container
             # taking more time to stop than the timeout allows.
@@ -143,6 +147,7 @@ class StartTask(Task):
         self._refresh = refresh
 
     def run(self):
+        self.o.reset()
         error = None
         try:
             # TODO: None is used to indicate that no action was performed
@@ -178,15 +183,13 @@ class StartTask(Task):
         status = self.container.status(refresh=True)
 
         if status and status['State']['Running']:
-            self.o.commit('\033[34;0m{:<15s}\033[;0m'.format(self.cid))
+            self.o.commit(blue(CONTAINER_STATUS_FMT.format(self.cid)))
             # We use None as a special marker showing the container and the
             # application were already running.
             return None
 
         # Otherwise we need to start it.
-        if self.container.id:
-            self.o.pending('removing old container {}...'.format(self.cid))
-            self.container.ship.backend.remove_container(self.container.id)
+        RemoveTask(self.o, self.container, standalone=False).run()
 
         # Check if the image is available, or if we need to pull it down.
         image = self.container.service.get_image_details()
@@ -222,7 +225,7 @@ class StartTask(Task):
         if not self._wait_for_status(lambda x: x):
             raise exceptions.OrchestrationException(
                 'Container status could not be obtained after creation!')
-        self.o.commit(green('{:<15s}'.format(self.container.id[:7])))
+        self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
 
         ports = collections.defaultdict(list) if self.container.ports else None
         if ports is not None:
@@ -272,6 +275,7 @@ class LoginTask(Task):
         if registry not in self._registries:
             return
 
+        self.o.reset()
         self.o.pending('logging in to {}...'.format(registry))
         try:
             self.container.ship.backend.login(**self._registries[registry])
@@ -288,6 +292,7 @@ class PullTask(Task):
         self._progress = {}
 
     def run(self):
+        self.o.reset()
         self.o.pending('pulling image {}...'
                        .format(self.container.service.image))
         image = self.container.service.get_image_details()
@@ -315,3 +320,32 @@ class PullTask(Task):
                 total += downloaded
             total /= len(self._progress)
         return total
+
+
+class RemoveTask(Task):
+    """Remove a container from Docker if it exists."""
+
+    def __init__(self, o, container, standalone=True):
+        Task.__init__(self, o, container)
+        self._standalone = standalone
+
+    def run(self):
+        self.o.reset()
+        status = self.container.status()
+        if not status:
+            if self._standalone:
+                self.o.commit(CONTAINER_STATUS_FMT.format('-'))
+                self.o.commit(blue(TASK_RESULT_FMT.format('absent')))
+            return
+
+        if status['State']['Running']:
+            self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
+            self.o.commit(red(TASK_RESULT_FMT.format('skipped')))
+            return
+
+        self.o.pending('removing old container {}...'.format(self.cid))
+        self.container.ship.backend.remove_container(self.container.id)
+
+        if self._standalone:
+            self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
+            self.o.commit(green(TASK_RESULT_FMT.format('removed')))

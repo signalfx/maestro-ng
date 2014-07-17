@@ -83,9 +83,12 @@ class OutputFormatter:
 
     def __init__(self, printer=_default_printer, prefix=None):
         self._printer = printer
+        self._prefix = prefix
         self._committed = prefix
 
     def commit(self, s=None):
+        """Output, and commit, a string at the end of the currently committed
+        line."""
         if self._committed and s:
             self._committed = '{} {}'.format(self._committed, s)
         elif not self._committed and s:
@@ -93,7 +96,14 @@ class OutputFormatter:
         self._printer(self._committed)
 
     def pending(self, s):
+        """Output a temporary message at the end of the currently committed
+        line."""
         if self._committed and s:
             self._printer('{} {}'.format(self._committed, s))
         if not self._committed and s:
             self._printer(s)
+
+    def reset(self):
+        """Reset the line to its base, saved prefix."""
+        self._committed = self._prefix
+        self.commit()

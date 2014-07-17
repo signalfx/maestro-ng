@@ -73,10 +73,16 @@ def create_parser():
         'things', nargs='*', metavar='thing',
         help='container(s) or service(s) to display')
 
-    with_deps = argparse.ArgumentParser(add_help=False)
-    with_deps.add_argument(
-        '-d', '--with-deps', action='store_true',
-        help='include dependencies')
+    concurrent = argparse.ArgumentParser(add_help=False)
+    concurrent.add_argument(
+        '-c', '--concurrency', metavar='LIMIT', type=int, default=None,
+        help='limit how many containers can be down at the same time to LIMIT')
+    concurrent.add_argument(
+        '-d', '--with-dependencies', action='store_true',
+        help='respect dependencies')
+    concurrent.add_argument(
+        '-i', '--ignore-dependencies', action='store_true',
+        help='ignore dependencies (overrides -d)')
 
     with_refresh = argparse.ArgumentParser(add_help=False)
     with_refresh.add_argument(
@@ -85,7 +91,7 @@ def create_parser():
 
     # status
     subparser = subparsers.add_parser(
-        parents=[common, with_deps],
+        parents=[common, concurrent],
         name='status',
         description='Display container status',
         help='display container status')
@@ -95,27 +101,31 @@ def create_parser():
 
     # start
     subparser = subparsers.add_parser(
-        parents=[common, with_deps, with_refresh],
+        parents=[common, concurrent, with_refresh],
         name='start',
         description='Start services and containers',
         help='start services and containers')
 
     # stop
     subparser = subparsers.add_parser(
-        parents=[common, with_deps],
+        parents=[common, concurrent],
         name='stop',
         description='Stop services and containers',
         help='stop services and containers')
 
     # restart
     subparser = subparsers.add_parser(
-        parents=[common, with_deps, with_refresh],
+        parents=[common, concurrent, with_refresh],
         name='restart',
         description='Restart services and containers',
         help='restart services and containers')
-    subparser.add_argument(
-        '-c', '--concurrency', metavar='LIMIT', default=None,
-        help='limit how many containers can be down at the same time to LIMIT')
+
+    # clean
+    subparser = subparsers.add_parser(
+        parents=[common, concurrent],
+        name='clean',
+        description='Cleanup and remove stopped containers',
+        help='remove stopped containers')
 
     # logs
     subparser = subparsers.add_parser(
@@ -127,7 +137,7 @@ def create_parser():
         '-F', '--follow', action='store_true',
         help='follow logs as they are generated')
     subparser.add_argument(
-        '-n', metavar='LINES',
+        '-n', metavar='LINES', type=int,
         help='Only show the last LINES lines for logs')
 
     # deptree
@@ -172,7 +182,7 @@ def main(args=None, config=None):
         c = maestro.Conductor(config)
         if options.command != 'complete' and not options.things:
             options.things = c.services.keys()
-            options.with_deps = True
+            options.with_dependencies = not options.ignore_dependencies
         getattr(c, options.command)(**vars(options))
     except exceptions.MaestroException as e:
         sys.stderr.write('{}\n'.format(e))

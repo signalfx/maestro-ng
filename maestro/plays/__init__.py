@@ -10,7 +10,7 @@ import sys
 
 from . import tasks
 from .. import termoutput
-from ..termoutput import color, red, up
+from ..termoutput import color, green, red
 
 
 class BaseOrchestrationPlay:
@@ -158,7 +158,7 @@ class FullStatus(BaseOrchestrationPlay):
         self.start()
         for order, container in enumerate(self._containers, 1):
             o = termoutput.OutputFormatter(prefix=(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<15.15s} ' +
+                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
                 '{:<20.20s}').format(order,
                                      container.name,
                                      container.service.name,
@@ -167,15 +167,20 @@ class FullStatus(BaseOrchestrationPlay):
             try:
                 o.pending('checking container...')
                 status = container.status()
-                o.commit('\033[{:d};1m{:<15s}\033[;0m'.format(
-                    color(status and status['State']['Running']),
-                    (status and status['State']['Running']
-                        and container.id[:7] or 'down')))
+
+                if status and status['State']['Running']:
+                    o.commit(green(tasks.CONTAINER_STATUS_FMT
+                                   .format(container.id[:7])))
+                else:
+                    o.commit(red(tasks.CONTAINER_STATUS_FMT
+                                 .format('down')))
 
                 o.pending('checking service...')
                 running = status and status['State']['Running']
-                o.commit('\033[{:d};1m{:<4.4s}\033[;0m'.format(color(running),
-                                                               up(running)))
+                if running:
+                    o.commit(green(tasks.TASK_RESULT_FMT.format('up')))
+                else:
+                    o.commit(red(tasks.TASK_RESULT_FMT.format('down')))
 
                 for name, port in container.ports.items():
                     o.commit('\n')
@@ -186,7 +191,8 @@ class FullStatus(BaseOrchestrationPlay):
                     o.commit('\033[{:d};1m{:>9.9s}\033[;0m:{:s}'.format(
                         color(ping), port['external'][1], name))
             except Exception:
-                o.commit(red('{:<15s} {:<10s}'.format('host down', 'down')))
+                o.commit(tasks.CONTAINER_STATUS_FMT.format('-'))
+                o.commit(red('host down'))
             o.commit('\n')
         self.end()
 

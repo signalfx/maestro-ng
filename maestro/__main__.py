@@ -76,7 +76,7 @@ def create_parser():
     concurrent = argparse.ArgumentParser(add_help=False)
     concurrent.add_argument(
         '-c', '--concurrency', metavar='LIMIT', type=int, default=None,
-        help='limit how many containers can be acted on at the same time to LIMIT')
+        help='limit how many containers can be acted on at the same time')
     concurrent.add_argument(
         '-d', '--with-dependencies', action='store_true',
         help='include dependencies')

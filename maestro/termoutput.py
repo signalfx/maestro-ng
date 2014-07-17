@@ -24,12 +24,6 @@ def red(s):
     return '\033[31;1m{}\033[;0m'.format(s)
 
 
-def up(cond):
-    """Returns 'up' or 'down' depending on the validity of the given
-    condition."""
-    return cond and 'up' or 'down'
-
-
 def _default_printer(s):
     sys.stdout.write(s)
     sys.stdout.write('\033[K\r')

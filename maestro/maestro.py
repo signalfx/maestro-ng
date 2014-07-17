@@ -242,10 +242,8 @@ class Conductor:
         containers = self._ordered_containers(things, False) \
             if with_deps else self._to_containers(things)
 
-        # TODO(mpetazzoni): build the Restart play that implements rolling
-        # restarts with concurrency limit support.
-        plays.Stop(containers).run()
-        plays.Start(containers, self.registries, refresh_images).run()
+        plays.RollingRestart(containers, self.registries, refresh_images,
+                             concurrency).run()
 
     def stop(self, things, with_deps, **kwargs):
         """Stop the given container(s) and service(s).

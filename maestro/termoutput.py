@@ -6,6 +6,30 @@ import threading
 import sys
 
 
+def color(cond):
+    """Returns 32 (green) or 31 (red) depending on the validity of the given
+    condition."""
+    return cond and 32 or 31
+
+
+def green(s):
+    return '\033[32;1m{}\033[;0m'.format(s)
+
+
+def blue(s):
+    return '\033[34;m{}\033[;0m'.format(s)
+
+
+def red(s):
+    return '\033[31;1m{}\033[;0m'.format(s)
+
+
+def up(cond):
+    """Returns 'up' or 'down' depending on the validity of the given
+    condition."""
+    return cond and 'up' or 'down'
+
+
 def _default_printer(s):
     sys.stdout.write(s)
     sys.stdout.write('\033[K\r')

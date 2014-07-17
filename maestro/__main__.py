@@ -155,6 +155,10 @@ def create_parser():
 def main(args=None, config=None):
     options = create_parser().parse_args(args)
 
+    # Only helps with Python3
+    if not options.command:
+        options.command = 'status'
+
     if config is None:
         config = load_config_from_file(options.file)
 

@@ -290,16 +290,34 @@ class Clean(BaseOrchestrationPlay):
 
 
 class Restart(BaseOrchestrationPlay):
+    """A Maestro orchestration play that restarts containers.
+
+    By setting an appropriate concurrency level one can achieve "rolling
+    restart" type orchestration."""
 
     def __init__(self, containers=[], registries={}, refresh_images=False,
-                 ignore_dependencies=True, concurrency=None):
+                 ignore_dependencies=True, concurrency=None, step_delay=0,
+                 stop_start_delay=0):
         BaseOrchestrationPlay.__init__(
-            self, containers, ignore_dependencies=ignore_dependencies,
+            self, containers, forward=False,
+            ignore_dependencies=ignore_dependencies,
             concurrency=concurrency)
 
         self._registries = registries
         self._refresh_images = refresh_images
+        self._step_delay = step_delay
+        self._stop_start_delay = stop_start_delay
 
     def run(self):
         self.start()
+        for order, container in enumerate(self._containers):
+            o = self._om.get_formatter(order, prefix=(
+                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
+                '{:<20.20s}').format(order + 1,
+                                     container.name,
+                                     container.service.name,
+                                     container.ship.address))
+            self.register(tasks.RestartTask(
+                o, container, self._registries, self._refresh_images,
+                self._step_delay if order > 0 else 0, self._stop_start_delay))
         self.end()

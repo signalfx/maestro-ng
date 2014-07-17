@@ -678,7 +678,7 @@ You can then get help on each individual command with:
 
 ```
 $ maestro start -h
-usage: maestro start [-h] [-d] [-r] [thing [thing ...]]
+usage: maestro start [-h] [-c LIMIT] [-d] [-i] [-r] [thing [thing ...]]
 
 Start services and containers
 
@@ -687,7 +687,13 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -d, --with-deps       include dependencies
+  -c LIMIT, --concurrency LIMIT
+                        limit how many containers can be acted on at the same
+                        time to LIMIT
+  -d, --with-dependencies
+                        include dependencies
+  -i, --ignore-dependencies
+                        ignore dependency order
   -r, --refresh-images  force refresh of container images from registry
 ```
 

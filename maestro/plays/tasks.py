@@ -100,44 +100,6 @@ class StatusTask(Task):
             self.o.commit(red(TASK_RESULT_FMT.format('host down')))
 
 
-class StopTask(Task):
-    """Stop a container."""
-
-    def __init__(self, o, container):
-        Task.__init__(self, o, container)
-
-    def run(self):
-        self.o.reset()
-        self.o.pending('checking container...')
-        try:
-            status = self.container.status(refresh=True)
-            if not status or not status['State']['Running']:
-                self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
-                self.o.commit(blue(TASK_RESULT_FMT.format('down')))
-                return
-        except:
-            self.o.commit(CONTAINER_STATUS_FMT.format('-'))
-            self.o.commit(red(TASK_RESULT_FMT.format('host down')))
-            return
-
-        self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
-
-        try:
-            self.o.pending('stopping service...')
-            self.container.ship.backend.stop(
-                self.container.id, timeout=self.container.stop_timeout)
-
-            if not self._check_for_state('stopped',
-                                         lambda x: not x or
-                                         (x and not x['State']['Running'])):
-                raise Exception('failed stopped lifecycle checks')
-            self.o.commit(green(TASK_RESULT_FMT.format('stopped')))
-        except Exception as e:
-            # Stop failures are non-fatal, usually it's just the container
-            # taking more time to stop than the timeout allows.
-            self.o.commit(red('failed: {}'.format(e)))
-
-
 class StartTask(Task):
     """Start a container, refreshing the image if requested."""
 
@@ -252,6 +214,73 @@ class StartTask(Task):
         # Wait up for the container's application to come online.
         self.o.pending('waiting for service...')
         return self._check_for_state('running', check_running)
+
+
+class StopTask(Task):
+    """Stop a container."""
+
+    def __init__(self, o, container):
+        Task.__init__(self, o, container)
+
+    def run(self):
+        self.o.reset()
+        self.o.pending('checking container...')
+        try:
+            status = self.container.status(refresh=True)
+            if not status or not status['State']['Running']:
+                self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
+                self.o.commit(blue(TASK_RESULT_FMT.format('down')))
+                return
+        except:
+            self.o.commit(CONTAINER_STATUS_FMT.format('-'))
+            self.o.commit(red(TASK_RESULT_FMT.format('host down')))
+            return
+
+        self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
+
+        try:
+            self.o.pending('stopping service...')
+            self.container.ship.backend.stop(
+                self.container.id, timeout=self.container.stop_timeout)
+
+            if not self._check_for_state('stopped',
+                                         lambda x: not x or
+                                         (x and not x['State']['Running'])):
+                raise Exception('failed stopped lifecycle checks')
+            self.o.commit(green(TASK_RESULT_FMT.format('stopped')))
+        except Exception as e:
+            # Stop failures are non-fatal, usually it's just the container
+            # taking more time to stop than the timeout allows.
+            self.o.commit(red('failed: {}'.format(e)))
+
+
+class RestartTask(Task):
+    """Task that restarts a container."""
+
+    def __init__(self, o, container, registries={}, refresh=False,
+                 step_delay=0, stop_start_delay=0):
+        Task.__init__(self, o, container)
+        self._registries = registries
+        self._refresh = refresh
+        self._step_delay = step_delay
+        self._stop_start_delay = stop_start_delay
+
+    def run(self):
+        self.o.reset()
+        if self._step_delay:
+            self.o.pending('waiting {}s before restart...'
+                           .format(self._step_delay))
+            time.sleep(self._step_delay)
+
+        StopTask(self.o, self.container).run()
+
+        self.o.reset()
+        if self._stop_start_delay:
+            self.o.pending('waiting {}s before starting...'
+                           .format(self._stop_start_delay))
+            time.sleep(self._stop_start_delay)
+
+        StartTask(self.o, self.container).run()
 
 
 class LoginTask(Task):

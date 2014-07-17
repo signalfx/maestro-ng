@@ -76,13 +76,13 @@ def create_parser():
     concurrent = argparse.ArgumentParser(add_help=False)
     concurrent.add_argument(
         '-c', '--concurrency', metavar='LIMIT', type=int, default=None,
-        help='limit how many containers can be down at the same time to LIMIT')
+        help='limit how many containers can be acted on at the same time to LIMIT')
     concurrent.add_argument(
         '-d', '--with-dependencies', action='store_true',
-        help='respect dependencies')
+        help='include dependencies')
     concurrent.add_argument(
         '-i', '--ignore-dependencies', action='store_true',
-        help='ignore dependencies (overrides -d)')
+        help='ignore dependency order')
 
     with_refresh = argparse.ArgumentParser(add_help=False)
     with_refresh.add_argument(
@@ -97,7 +97,7 @@ def create_parser():
         help='display container status')
     subparser.add_argument(
         '-F', '--full', action='store_true',
-        help='Show full status with port state')
+        help='show full status with port state')
 
     # start
     subparser = subparsers.add_parser(
@@ -119,6 +119,12 @@ def create_parser():
         name='restart',
         description='Restart services and containers',
         help='restart services and containers')
+    subparser.add_argument(
+        '--step-delay', type=int, default=0,
+        help='delay, in seconds, between each container')
+    subparser.add_argument(
+        '--stop-start-delay', type=int, default=0,
+        help='delay, in seconds, between stopping and starting each container')
 
     # clean
     subparser = subparsers.add_parser(

@@ -235,7 +235,8 @@ class Conductor:
                     ignore_dependencies, concurrency).run()
 
     def restart(self, things, refresh_images=False, with_dependencies=False,
-                ignore_dependencies=False, concurrency=None, **kwargs):
+                ignore_dependencies=False, concurrency=None, step_delay=0,
+                stop_start_delay=0, **kwargs):
         """Restart the given container(s) and services(s). Dependencies of the
         requested containers and services are started first.
 
@@ -249,11 +250,16 @@ class Conductor:
                 respected.
             concurrency (int): The maximum number of instances that can be
                 acted on at the same time.
+            step_delay (int): Time, in seconds, to wait before restarting the
+                next container.
+            stop_start_delay (int): Time, in seconds, to wait between stopping
+                and starting each container.
         """
         containers = self._ordered_containers(things, False) \
             if with_dependencies else self._to_containers(things)
-        plays.RollingRestart(containers, self.registries, refresh_images,
-                             ignore_dependencies, concurrency).run()
+        plays.Restart(containers, self.registries, refresh_images,
+                      ignore_dependencies, concurrency, step_delay,
+                      stop_start_delay).run()
 
     def stop(self, things, with_dependencies=False, ignore_dependencies=False,
              concurrency=None, **kwargs):

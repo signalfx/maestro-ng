@@ -280,7 +280,8 @@ class RestartTask(Task):
                            .format(self._stop_start_delay))
             time.sleep(self._stop_start_delay)
 
-        StartTask(self.o, self.container).run()
+        StartTask(self.o, self.container, self._registries,
+                  self._refresh).run()
 
 
 class LoginTask(Task):

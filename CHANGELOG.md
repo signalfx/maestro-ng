@@ -1,11 +1,49 @@
 ChangeLog
 =========
 
+Maestro 0.2.0
+-------------
+
+_July 21st, 2014_
+
+This release warrants jumping to the 0.2.x series as the extent of the
+changes is significant and it contains some potentially breaking changes
+in usage (not in the YAML format though).
+
+* Major rework of the argument parser; each command now has its own
+  subparser with appropriate arguments; one downside is that Maestro can
+  now longer default to the 'status' command when no command is
+  specified
+* Maestro no longer assumes dependencies should be included in an
+  orchestration play. Use `-d` or `--with-dependencies` to automatically
+  include the dependencies of the given services/containers (#50)
+* It is now possible to ignore the dependency order during an
+  orchestration play by passing `-i` or `--ignore-dependencies` to the
+  start, stop or restart commands
+* Orchestration plays can now execute container operations in parallel,
+  respecting the dependency order as needed and/or as requested.
+  Additionally, a maximum concurrency limit can be specified with `-c`
+  or `--concurrency-limit` to restrict the number of containers that can
+  be acted upon at the same time. This can be used to implement rolling
+  restarts for example
+* Add `-v` / `--version` flag to show Maestro version
+* New `deptree` commands that shows the dependency tree of each provided
+  service or container (supports `-r` / `--recursive` to include
+  duplicate indirect dependencies)
+* Removed `fullstatus` command, replaced with `status -F`.
 * Compatibility improvements with docker-py mainline and Docker versions
-* Parallelization of orchestration plays, respecting dependency and
-  execution order but doing as much work as possible in parallel
 * Dropped support for `docker_endpoint` in ship configuration
-* SSH tunneling support via `bgtunnel` on-demand SSH tunnels
+* SSH tunneling support via `bgtunnel` on-demand SSH tunnels (#35, #44)
+* Maestro now reads a maestro.yaml file from the current working
+  directory instead of stdin by default. `-f -` can still be used to
+  read from stdin (#47)
+* Include workaround for Python multiprocessing bug in Python < 2.7.5
+  (#48)
+* Implement simple 'sleep' lifecycle check that simply sleeps for the
+  given amount of time
+* Changed `cmd` to `command` in YAML instance spec. `cmd` is still
+  accepted but deprecated and will be removed in the next release (part
+  of #39)
 
 Maestro 0.1.8.1
 ---------------

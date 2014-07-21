@@ -655,7 +655,7 @@ $ maestro -h
 usage: maestro [-h] [-f FILE] [-v]
                {status,start,stop,restart,logs,deptree} ...
 
-Maestro v0.1.8.2, Docker container orchestrator.
+Maestro v0.2.0, Docker container orchestrator.
 
 positional arguments:
   {status,start,stop,restart,logs,deptree}

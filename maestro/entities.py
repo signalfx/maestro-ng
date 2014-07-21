@@ -13,6 +13,10 @@ import multiprocessing.pool
 import re
 import six
 
+# For Python bug workaround
+import threading
+import weakref
+
 from . import exceptions
 from . import lifecycle
 
@@ -367,6 +371,12 @@ class Container(Entity):
         if state not in self._lifecycle:
             # Return None to indicate no checks were performed.
             return None
+
+        # HACK: Workaround for Python bug #10015 (also #14881). Fixed in
+        # Python >= 2.7.5 and >= 3.3.2.
+        thread = threading.current_thread()
+        if not hasattr(thread, "_children"):
+            thread._children = weakref.WeakKeyDictionary()
 
         pool = multiprocessing.pool.ThreadPool()
         return pool.map_async(lambda check: check.test(),

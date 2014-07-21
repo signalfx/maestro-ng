@@ -17,7 +17,7 @@ def green(s):
 
 
 def blue(s):
-    return '\033[34;m{}\033[;0m'.format(s)
+    return '\033[36;m{}\033[;0m'.format(s)
 
 
 def red(s):

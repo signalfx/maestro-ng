@@ -711,17 +711,44 @@ $ maestro -f - status < maestro.yaml
 
 The first positional argument is a command you want Maestro to execute.
 The available commands are `status`, `start`, `stop`, `restart`, `logs`
-and `deptree`. They should all be self-explanatory. Service dependency
-is by default not considered, but for commands where it makes sense, the
-`-d | --with-deps` flag will make Maestro honor service dependency
-order. Note that if services don't have any dependencies (or have the
-same dependencies), their start/stop order might not always be the same.
+and `deptree`. They should all be self-explanatory.
 
-You can also pass one or more service names or container names on which
-to execute the command, to restrict the action of the command to just
-these services or containers (or any combination of both).  Note that
-Maestro will do its best to examine the state of the system and not
-perform any action unless it's really necessary.
+Most commands operate on one or more "things", which can be services or
+instances, by name. When passing service names, Maestro will
+automatically expand those to their corresponding list of instances. The
+`logs` command is the only one that operates on strictly one container
+instance.
+
+Impact of defined dependencies on orchestration order
+-----------------------------------------------------
+
+One of the main features of Maestro is its understand of dependencies
+between services. When Maestro carries out an orchestration action,
+dependencies are always considered unless the `-i |
+--ignore-dependencies` flag is passed.
+
+**But Maestro will only respect the dependencies to other services and
+containers that the current orchestration action includes.** If you want
+Maestro to automatically include the dependencies of the services or
+containers you want to act on in the orchestration that will be carried
+out, you must pass the `-d | --with-dependencies` flag!
+
+For example, assuming we have two services, ZooKeeper (`zookeeper`) and
+Kafka (`kafka`). Kafka depends on ZooKeeper:
+
+```
+# Starts Kafka and only Kafka:
+$ maestro start kafka
+
+# Starts ZooKeeper, then Kafka:
+$ maestro start -d kafka
+# Which is equivalent to:
+$ maestro start kafka zookeeper
+
+# Starts ZooKeeper and Kafka at the same time (includes dependencies but
+# ignores dependency order constraints):
+$ maestro start -d -i kafka
+```
 
 Examples of Docker images with Maestro orchestration
 ====================================================

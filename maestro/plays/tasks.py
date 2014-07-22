@@ -9,7 +9,7 @@ import json
 import time
 
 from .. import exceptions
-from ..termoutput import green, blue, red
+from ..termoutput import green, blue, red, time_ago
 
 
 CONTAINER_STATUS_FMT = '{:<10s} '
@@ -89,15 +89,18 @@ class StatusTask(Task):
         self.o.pending('checking...')
         try:
             s = self.container.status(refresh=True)
-            if s and s['State']['Running']:
-                self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
-                self.o.commit(green(TASK_RESULT_FMT.format('running')))
-            else:
-                self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
-                self.o.commit(red(TASK_RESULT_FMT.format('down')))
-        except:
+        except Exception:
             self.o.commit(CONTAINER_STATUS_FMT.format('-'))
             self.o.commit(red(TASK_RESULT_FMT.format('host down')))
+
+        if s and s['State']['Running']:
+            self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
+            self.o.commit(green('running {}'.format(
+                time_ago(self.container.started_at))))
+        else:
+            self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
+            self.o.commit(red('down {}'.format(
+                time_ago(self.container.finished_at))))
 
 
 class StartTask(Task):
@@ -117,9 +120,14 @@ class StartTask(Task):
             # running. This makes the following code not very nice and this
             # could be improved.
             result = self._create_and_start_container()
-            self.o.commit(blue('up') if result is None else
-                          (green('started') if result else
-                          red('service did not start!')))
+            if result is None:
+                self.o.commit(blue('up {}'.format(
+                    time_ago(self.container.started_at))))
+            elif result:
+                self.o.commit(green('started'))
+            else:
+                self.o.commit(red('service did not start!'))
+
             if result is False:
                 error = [
                     ('Halting start sequence because {} failed to start!'

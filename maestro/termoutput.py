@@ -2,6 +2,7 @@
 #
 # Docker container orchestration utility.
 
+import datetime
 import threading
 import sys
 
@@ -28,6 +29,29 @@ def _default_printer(s):
     sys.stdout.write(s)
     sys.stdout.write('\033[K\r')
     sys.stdout.flush()
+
+
+def time_ago(t, base=None):
+    """Return a string representing the time delta between now and the given
+    datetime object.
+
+    Args:
+        t (datetime.datetime): A UTC timestamp as a datetime object.
+        base (datetime.datetime): If not None, the time to calculate the delta
+            against.
+    """
+    delta = int(((base or datetime.datetime.utcnow()) - t).total_seconds())
+    if delta < 0:
+        return None
+    if delta < 60:
+        return '{}s'.format(delta)
+    if delta < 3600:
+        return '{}m'.format(delta/60)
+    if delta < 86400:
+        return '{}d'.format(delta/60/60)
+
+    # Biggest step is by month.
+    return '{}mo'.format(delta/60/60/24)
 
 
 class OutputManager:

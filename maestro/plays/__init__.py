@@ -71,6 +71,7 @@ class BaseOrchestrationPlay:
             # Abort if needed
             if self._error:
                 task.o.commit(red('aborted!'))
+                task.o.commit(self._error)
                 return
 
             try:

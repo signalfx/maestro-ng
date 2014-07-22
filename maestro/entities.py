@@ -3,12 +3,19 @@
 # Docker container orchestration utility.
 
 import bgtunnel
+import datetime
+
+# Import _strptime manually to work around a thread safety issue when using
+# strptime() from threads for the first time.
+import _strptime # flake8: noqa
+
 import docker
 try:
     from docker.errors import APIError
 except ImportError:
     # Fall back to <= 0.3.1 location
     from docker.client import APIError
+
 import multiprocessing.pool
 import re
 import six
@@ -328,6 +335,41 @@ class Container(Entity):
         if the container doesn't exist."""
         status = self.status()
         return status and status.get('ID', status.get('Id', None))
+
+    def _parse_go_time(self, s):
+        """Parse a time string found in the container status into a Python
+        datetime object.
+
+        Docker uses Go's Time.String() method to convert a UTC timestamp into a
+        string, but that representation isn't directly parsable from Python as
+        it includes nanoseconds: http://golang.org/pkg/time/#Time.String
+
+        We don't really care about sub-second precision here anyway, so we
+        strip it out and parse the datetime up to the second.
+
+        Args:
+            s (string): the time string from the container inspection
+                dictionary.
+        Returns: The corresponding Python datetime.datetime object, or None if
+            the time string clearly represented a non-initialized time (which
+            seems to be 0001-01-01T00:00:00Z in Go).
+        """
+        if not s:
+            return None
+        t = datetime.datetime.strptime(s.split('.')[0], '%Y-%m-%dT%H:%M:%S')
+        return t if t.year > 1 else None
+
+    @property
+    def started_at(self):
+        """Returns the time at which the container was started."""
+        status = self.status()
+        return status and self._parse_go_time(status['State']['StartedAt'])
+
+    @property
+    def finished_at(self):
+        """Returns the time at which the container finished executing."""
+        status = self.status()
+        return status and self._parse_go_time(status['State']['FinishedAt'])
 
     def status(self, refresh=False):
         """Retrieve the details about this container from the Docker daemon, or

@@ -203,7 +203,7 @@ class Status(BaseOrchestrationPlay):
 
     def __init__(self, containers=[], concurrency=None):
         BaseOrchestrationPlay.__init__(
-            self, containers, ignore_dependencies=False,
+            self, containers, ignore_dependencies=True,
             concurrency=concurrency)
 
     def run(self):

@@ -12,6 +12,9 @@ with open('README.md') as readme:
 with open('maestro/version.py') as f:
     exec(f.read())
 
+with open('requirements.txt') as f:
+    requirements = [line.strip() for line in f.readlines()]
+
 setup(
     name=name,
     version=version,
@@ -19,7 +22,7 @@ setup(
     long_description=long_description,
     zip_safe=True,
     packages=find_packages(),
-    install_requires=['docker-py>=0.3.0', 'pyyaml', 'jinja2', 'six', 'bgtunnel'],
+    install_requires=requirements,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',

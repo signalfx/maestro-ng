@@ -9,6 +9,7 @@ from __future__ import print_function
 import argparse
 import jinja2
 import logging
+import requests.exceptions
 import sys
 import os
 import yaml
@@ -190,11 +191,14 @@ def main(args=None, config=None):
             options.things = c.services.keys()
             options.with_dependencies = not options.ignore_dependencies
         getattr(c, options.command)(**vars(options))
-    except exceptions.MaestroException as e:
-        sys.stderr.write('{}\n'.format(e))
-        return 1
+        return 0
     except KeyboardInterrupt:
-        return 1
+        pass
+    except requests.exceptions.Timeout as te:
+        sys.stderr.write('Error: {}\n'.format(te.args[0][1]))
+    except Exception as e:
+        sys.stderr.write('Error: {}\n'.format(e))
+    return 1
 
 
 if __name__ == '__main__':

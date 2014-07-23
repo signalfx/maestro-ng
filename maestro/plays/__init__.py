@@ -119,7 +119,6 @@ class BaseOrchestrationPlay:
 
         # Display and raise any error that occurred
         if self._error:
-            sys.stderr.write('Error: {}\n'.format(self._error))
             raise self._error
 
     def _run(self):

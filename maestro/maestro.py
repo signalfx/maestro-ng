@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import functools
 import inspect
+import requests.exceptions
 
 from . import audit
 from . import entities
@@ -215,8 +216,12 @@ class Conductor:
         try:
             play.run()
             self.auditor.success(things, action)
+        except requests.exceptions.Timeout as e:
+            self.auditor.error(things, action, message=e.args[0][1])
+            raise e
         except Exception as e:
             self.auditor.error(things, action, message=e)
+            raise e
 
     def status(self, things, full=False, with_dependencies=False,
                concurrency=None, **kwargs):

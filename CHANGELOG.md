@@ -1,6 +1,19 @@
 ChangeLog
 =========
 
+Maestro 0.2.1.1
+---------------
+
+_July 22nd, 2014_
+
+* Provide no-tty output without ANSI escape codes (output still looks a
+  bit funky, but at least it's not riddle with unreadable escape codes)
+* Fix "time ago" calculation that shows hours as days
+* Correctly bubble up orchestration errors and exit with a non-zero
+  returncode
+* Fix install requirements when installing through setup.py (which pip
+  does by default)
+
 Maestro 0.2.1
 -------------
 

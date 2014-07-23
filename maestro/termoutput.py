@@ -52,8 +52,10 @@ def time_ago(t, base=None):
         return ' for {}s'.format(delta)
     if delta < 3600:
         return ' for {}m'.format(delta/60)
+    if delta < 86400:
+        return ' for {}h'.format(delta/60/60)
     # Biggest step is by day.
-    return ' for {}d'.format(delta/60/60)
+    return ' for {}d'.format(delta/60/60/24)
 
 
 class OutputManager:

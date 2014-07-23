@@ -1,6 +1,18 @@
 ChangeLog
 =========
 
+Maestro 0.2.1
+-------------
+
+_July 22nd, 2014_
+
+* New pluggable audit trail functionality to send orchestration commands
+  and results notifications to audit trail targets. Currently supports
+  HipChat (via python-simple-hipchat) and log file
+* Fix status orchestration play to not enforce dependency order as it's
+  useless and slows it down
+* Show how long a container has been up or down for
+
 Maestro 0.2.0
 -------------
 

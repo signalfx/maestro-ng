@@ -11,7 +11,7 @@ import sys
 from . import tasks
 from .. import exceptions
 from .. import termoutput
-from ..termoutput import color, green, red
+from ..termoutput import green, red
 
 
 class BaseOrchestrationPlay:
@@ -25,6 +25,10 @@ class BaseOrchestrationPlay:
     HEADER_FMT = '{:>3s}  {:<20s} {:<20s} {:<20s} ' + \
                  tasks.CONTAINER_STATUS_FMT + ' ' + tasks.TASK_RESULT_FMT
     HEADERS = ['  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS']
+
+    LINE_FMT = ('{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} {:<20.20s}'
+                if sys.stdout.isatty() else
+                '{:>3d}. {:<20.20s} {:<20.20s} {:<20.20s}')
 
     def __init__(self, containers=[], forward=True, ignore_dependencies=False,
                  concurrency=None):
@@ -169,11 +173,9 @@ class FullStatus(BaseOrchestrationPlay):
     def _run(self):
         for order, container in enumerate(self._containers, 1):
             o = termoutput.OutputFormatter(prefix=(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
-                '{:<20.20s}').format(order,
-                                     container.name,
-                                     container.service.name,
-                                     container.ship.address))
+                BaseOrchestrationPlay.LINE_FMT.format(
+                    order, container.name, container.service.name,
+                    container.ship.address)))
 
             try:
                 o.pending('checking container...')
@@ -199,8 +201,11 @@ class FullStatus(BaseOrchestrationPlay):
                     o.pending('{:>9.9s}:{:s}'.format(port['external'][1],
                                                      name))
                     ping = container.ping_port(name)
-                    o.commit('\033[{:d};1m{:>9.9s}\033[;0m:{:s}'.format(
-                        color(ping), port['external'][1], name))
+                    if ping:
+                        o.commit(green('{:>9.9s}'.format(port['external'][1])))
+                    else:
+                        o.commit(red('{:>9.9s}'.format(port['external'][1])))
+                    o.commit(':{}'.format(name))
             except Exception:
                 o.commit(tasks.CONTAINER_STATUS_FMT.format('-'))
                 o.commit(red('host down'))
@@ -219,11 +224,9 @@ class Status(BaseOrchestrationPlay):
     def _run(self):
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
-                '{:<20.20s}').format(order + 1,
-                                     container.name,
-                                     container.service.name,
-                                     container.ship.address))
+                BaseOrchestrationPlay.LINE_FMT.format(
+                    order + 1, container.name, container.service.name,
+                    container.ship.address)))
             self.register(tasks.StatusTask(o, container))
 
 
@@ -245,11 +248,9 @@ class Start(BaseOrchestrationPlay):
     def _run(self):
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
-                '{:<20.20s}').format(order + 1,
-                                     container.name,
-                                     container.service.name,
-                                     container.ship.address))
+                BaseOrchestrationPlay.LINE_FMT.format(
+                    order + 1, container.name, container.service.name,
+                    container.ship.address)))
             self.register(tasks.StartTask(o, container, self._registries,
                                           self._refresh_images))
 
@@ -269,11 +270,9 @@ class Stop(BaseOrchestrationPlay):
     def _run(self):
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
-                '{:<20.20s}').format(len(self._containers) - order,
-                                     container.name,
-                                     container.service.name,
-                                     container.ship.address))
+                BaseOrchestrationPlay.LINE_FMT.format(
+                    len(self._containers) - order, container.name,
+                    container.service.name, container.ship.address)))
             self.register(tasks.StopTask(o, container))
 
 
@@ -289,11 +288,9 @@ class Clean(BaseOrchestrationPlay):
     def _run(self):
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
-                '{:<20.20s}').format(order + 1,
-                                     container.name,
-                                     container.service.name,
-                                     container.ship.address))
+                BaseOrchestrationPlay.LINE_FMT.format(
+                    order + 1, container.name, container.service.name,
+                    container.ship.address)))
             self.register(tasks.RemoveTask(o, container))
 
 
@@ -319,11 +316,9 @@ class Restart(BaseOrchestrationPlay):
     def _run(self):
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
-                '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
-                '{:<20.20s}').format(order + 1,
-                                     container.name,
-                                     container.service.name,
-                                     container.ship.address))
+                BaseOrchestrationPlay.LINE_FMT.format(
+                    order + 1, container.name, container.service.name,
+                    container.ship.address)))
             self.register(tasks.RestartTask(
                 o, container, self._registries, self._refresh_images,
                 self._step_delay if order > 0 else 0, self._stop_start_delay))

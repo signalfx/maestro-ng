@@ -4,25 +4,27 @@
 
 import datetime
 import threading
+import re
 import sys
 
 
-def color(cond):
-    """Returns 32 (green) or 31 (red) depending on the validity of the given
-    condition."""
-    return cond and 32 or 31
+STRIP_COLORS = re.compile(r'\033\[[0-9;]+m')
+
+
+def color(n, s, bold=True):
+    return '\033[{};{}m{}\033[;0m'.format(n, '1' if bold else '', s)
 
 
 def green(s):
-    return '\033[32;1m{}\033[;0m'.format(s)
+    return color(32, s)
 
 
 def blue(s):
-    return '\033[36;m{}\033[;0m'.format(s)
+    return color(36, s, bold=False)
 
 
 def red(s):
-    return '\033[31;1m{}\033[;0m'.format(s)
+    return color(31, s)
 
 
 def _default_printer(s):
@@ -66,30 +68,41 @@ class OutputManager:
     positioned line on the output block.
     """
 
-    def __init__(self, lines):
+    def __init__(self, lines, out=sys.stdout):
         self._lines = lines
+        self._out = out
         self._formatters = {}
         self._lock = threading.Lock()
-
-    def start(self):
-        self._print('{}\033[{}A'.format('\n' * self._lines, self._lines))
 
     def get_formatter(self, pos, prefix=None):
         f = OutputFormatter(lambda s: self._print(s, pos), prefix=prefix)
         self._formatters[pos] = f
         return f
 
+    def start(self):
+        if not self._out.isatty():
+            return
+        self._print('{}\033[{}A'.format('\n' * self._lines, self._lines))
+
     def end(self):
+        if not self._out.isatty():
+            return
         self._print('\033[{}B'.format(self._lines))
 
     def _print(self, s, pos=None):
+        if not self._out.isatty():
+            s = STRIP_COLORS.sub('', s)
+            self._out.write(s + '\n')
+            self._out.flush()
+            return
+
         with self._lock:
             if pos:
-                sys.stdout.write('\033[{}B'.format(pos))
-            sys.stdout.write('\r{}\033[K\r'.format(s))
+                self._out.write('\033[{}B'.format(pos))
+            self._out.write('\r{}\033[K\r'.format(s))
             if pos:
-                sys.stdout.write('\033[{}A'.format(pos))
-            sys.stdout.flush()
+                self._out.write('\033[{}A'.format(pos))
+            self._out.flush()
 
 
 class OutputFormatter:

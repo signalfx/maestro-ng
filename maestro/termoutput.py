@@ -47,14 +47,11 @@ def time_ago(t, base=None):
     if delta < 0:
         return ''
     if delta < 60:
-        return '{}s'.format(delta)
+        return ' for {}s'.format(delta)
     if delta < 3600:
-        return '{}m'.format(delta/60)
-    if delta < 86400:
-        return '{}d'.format(delta/60/60)
-
-    # Biggest step is by month.
-    return '{}mo'.format(delta/60/60/24)
+        return ' for {}m'.format(delta/60)
+    # Biggest step is by day.
+    return ' for {}d'.format(delta/60/60)
 
 
 class OutputManager:

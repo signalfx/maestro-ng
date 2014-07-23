@@ -97,11 +97,11 @@ class StatusTask(Task):
 
         if s and s['State']['Running']:
             self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
-            self.o.commit(green('running {}'.format(
+            self.o.commit(green('running{}'.format(
                 time_ago(self.container.started_at))))
         else:
             self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
-            self.o.commit(red('down {}'.format(
+            self.o.commit(red('down{}'.format(
                 time_ago(self.container.finished_at))))
 
 
@@ -123,7 +123,7 @@ class StartTask(Task):
             # could be improved.
             result = self._create_and_start_container()
             if result is None:
-                self.o.commit(blue('up {}'.format(
+                self.o.commit(blue('up{}'.format(
                     time_ago(self.container.started_at))))
             elif result:
                 self.o.commit(green('started'))

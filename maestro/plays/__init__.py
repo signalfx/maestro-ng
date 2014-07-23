@@ -9,6 +9,7 @@ import threading
 import sys
 
 from . import tasks
+from .. import exceptions
 from .. import termoutput
 from ..termoutput import color, green, red
 
@@ -41,11 +42,9 @@ class BaseOrchestrationPlay:
         self._error = None
         self._cv = threading.Condition()
 
-    def start(self):
-        """Start the orchestration play."""
-        print(BaseOrchestrationPlay.HEADER_FMT
-              .format(*BaseOrchestrationPlay.HEADERS))
-        self._om.start()
+    @property
+    def containers(self):
+        return self._containers
 
     def register(self, task):
         """Register an orchestration action for a given container.
@@ -91,7 +90,13 @@ class BaseOrchestrationPlay:
         t.start()
         self._threads.add(t)
 
-    def end(self):
+    def _start(self):
+        """Start the orchestration play."""
+        print(BaseOrchestrationPlay.HEADER_FMT
+              .format(*BaseOrchestrationPlay.HEADERS))
+        self._om.start()
+
+    def _end(self):
         """End the orchestration play by waiting for all the action threads to
         complete."""
         for t in self._threads:
@@ -99,7 +104,7 @@ class BaseOrchestrationPlay:
                 while not self._error and t.isAlive():
                     t.join(1)
             except KeyboardInterrupt:
-                self._error = 'Manual abort.'
+                self._error = exceptions.MaestroException('Manual abort')
             except Exception as e:
                 self._error = e
             finally:
@@ -108,12 +113,18 @@ class BaseOrchestrationPlay:
                 self._cv.release()
         self._om.end()
 
-        # Display any error that occurred
+        # Display and raise any error that occurred
         if self._error:
             sys.stderr.write('Error: {}\n'.format(self._error))
+            raise self._error
+
+    def _run(self):
+        raise NotImplementedError
 
     def run(self):
-        raise NotImplementedError
+        self._start()
+        self._run()
+        self._end()
 
     def _gather_dependencies(self, container):
         """Transitively gather all containers from the dependencies or
@@ -155,8 +166,7 @@ class FullStatus(BaseOrchestrationPlay):
     def __init__(self, containers=[]):
         BaseOrchestrationPlay.__init__(self, containers)
 
-    def run(self):
-        self.start()
+    def _run(self):
         for order, container in enumerate(self._containers, 1):
             o = termoutput.OutputFormatter(prefix=(
                 '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
@@ -195,7 +205,6 @@ class FullStatus(BaseOrchestrationPlay):
                 o.commit(tasks.CONTAINER_STATUS_FMT.format('-'))
                 o.commit(red('host down'))
             o.commit('\n')
-        self.end()
 
 
 class Status(BaseOrchestrationPlay):
@@ -207,8 +216,7 @@ class Status(BaseOrchestrationPlay):
             self, containers, ignore_dependencies=True,
             concurrency=concurrency)
 
-    def run(self):
-        self.start()
+    def _run(self):
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
                 '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
@@ -217,7 +225,6 @@ class Status(BaseOrchestrationPlay):
                                      container.service.name,
                                      container.ship.address))
             self.register(tasks.StatusTask(o, container))
-        self.end()
 
 
 class Start(BaseOrchestrationPlay):
@@ -235,8 +242,7 @@ class Start(BaseOrchestrationPlay):
         self._registries = registries
         self._refresh_images = refresh_images
 
-    def run(self):
-        self.start()
+    def _run(self):
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
                 '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
@@ -246,7 +252,6 @@ class Start(BaseOrchestrationPlay):
                                      container.ship.address))
             self.register(tasks.StartTask(o, container, self._registries,
                                           self._refresh_images))
-        self.end()
 
 
 class Stop(BaseOrchestrationPlay):
@@ -261,8 +266,7 @@ class Stop(BaseOrchestrationPlay):
             ignore_dependencies=ignore_dependencies,
             concurrency=concurrency)
 
-    def run(self):
-        self.start()
+    def _run(self):
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
                 '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
@@ -271,7 +275,6 @@ class Stop(BaseOrchestrationPlay):
                                      container.service.name,
                                      container.ship.address))
             self.register(tasks.StopTask(o, container))
-        self.end()
 
 
 class Clean(BaseOrchestrationPlay):
@@ -283,8 +286,7 @@ class Clean(BaseOrchestrationPlay):
             self, containers, ignore_dependencies=False,
             concurrency=concurrency)
 
-    def run(self):
-        self.start()
+    def _run(self):
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
                 '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
@@ -293,7 +295,6 @@ class Clean(BaseOrchestrationPlay):
                                      container.service.name,
                                      container.ship.address))
             self.register(tasks.RemoveTask(o, container))
-        self.end()
 
 
 class Restart(BaseOrchestrationPlay):
@@ -315,8 +316,7 @@ class Restart(BaseOrchestrationPlay):
         self._step_delay = step_delay
         self._stop_start_delay = stop_start_delay
 
-    def run(self):
-        self.start()
+    def _run(self):
         for order, container in enumerate(self._containers):
             o = self._om.get_formatter(order, prefix=(
                 '{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} ' +
@@ -327,4 +327,3 @@ class Restart(BaseOrchestrationPlay):
             self.register(tasks.RestartTask(
                 o, container, self._registries, self._refresh_images,
                 self._step_delay if order > 0 else 0, self._stop_start_delay))
-        self.end()

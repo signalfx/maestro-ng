@@ -3,3 +3,4 @@ pyyaml
 jinja2
 six
 bgtunnel
+python-simple-hipchat

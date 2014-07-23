@@ -87,11 +87,13 @@ class StatusTask(Task):
     def run(self):
         self.o.reset()
         self.o.pending('checking...')
+
         try:
             s = self.container.status(refresh=True)
         except Exception:
             self.o.commit(CONTAINER_STATUS_FMT.format('-'))
             self.o.commit(red(TASK_RESULT_FMT.format('host down')))
+            return
 
         if s and s['State']['Running']:
             self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))

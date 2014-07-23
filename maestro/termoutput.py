@@ -40,9 +40,12 @@ def time_ago(t, base=None):
         base (datetime.datetime): If not None, the time to calculate the delta
             against.
     """
+    if not t:
+        return ''
+
     delta = int(((base or datetime.datetime.utcnow()) - t).total_seconds())
     if delta < 0:
-        return None
+        return ''
     if delta < 60:
         return '{}s'.format(delta)
     if delta < 3600:

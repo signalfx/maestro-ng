@@ -5,7 +5,9 @@
 from __future__ import print_function
 
 import functools
+import inspect
 
+from . import audit
 from . import entities
 from . import exceptions
 from . import plays
@@ -76,6 +78,10 @@ class Conductor:
                 # Containers also get links from the service's dependencies.
                 for dependency in service.requires.union(service.wants_info):
                     container.env.update(dependency.get_link_variables())
+
+        # Instantiate audit bindings
+        self.auditor = audit.AuditorFactory.from_config(
+            self._config.get('audit', []))
 
     def _order_dependencies(self, pending=[], ordered=[], forward=True):
         """Order the given set of containers into an order respecting the
@@ -191,6 +197,27 @@ class Conductor:
 
         print(' '.join(filter(lambda x: x.startswith(prefix), set(choices))))
 
+    def _audit_play(self, play):
+        """Run an orchestration play, wrapping its execution in audit trail
+        calls.
+
+        If auditors have been configured, they will be triggered before the
+        orchestration play starts, and when it ends in either success or error
+        situations.
+
+        Args:
+            play (plays.BaseOrchestrationPlay): An orchestration play instance
+                ready to run.
+        """
+        action = inspect.stack()[1][3]
+        things = [c.name for c in play.containers]
+        self.auditor.action(things, action)
+        try:
+            play.run()
+            self.auditor.success(things, action)
+        except Exception as e:
+            self.auditor.error(things, action, message=e)
+
     def status(self, things, full=False, with_dependencies=False,
                concurrency=None, **kwargs):
         """Display the status of the given services and containers, but only
@@ -231,8 +258,10 @@ class Conductor:
         """
         containers = self._ordered_containers(things) \
             if with_dependencies else self._to_containers(things)
-        plays.Start(containers, self.registries, refresh_images,
-                    ignore_dependencies, concurrency).run()
+
+        self._audit_play(
+            plays.Start(containers, self.registries, refresh_images,
+                        ignore_dependencies, concurrency))
 
     def restart(self, things, refresh_images=False, with_dependencies=False,
                 ignore_dependencies=False, concurrency=None, step_delay=0,
@@ -257,9 +286,10 @@ class Conductor:
         """
         containers = self._ordered_containers(things, False) \
             if with_dependencies else self._to_containers(things)
-        plays.Restart(containers, self.registries, refresh_images,
-                      ignore_dependencies, concurrency, step_delay,
-                      stop_start_delay).run()
+        self._audit_play(
+            plays.Restart(containers, self.registries, refresh_images,
+                          ignore_dependencies, concurrency, step_delay,
+                          stop_start_delay))
 
     def stop(self, things, with_dependencies=False, ignore_dependencies=False,
              concurrency=None, **kwargs):
@@ -281,7 +311,8 @@ class Conductor:
         """
         containers = self._ordered_containers(things, False) \
             if with_dependencies else self._to_containers(things)
-        plays.Stop(containers, ignore_dependencies, concurrency).run()
+        self._audit_play(
+            plays.Stop(containers, ignore_dependencies, concurrency))
 
     def clean(self, things, with_dependencies=False, concurrency=None,
               **kwargs):
@@ -296,7 +327,7 @@ class Conductor:
         """
         containers = self._ordered_containers(things) \
             if with_dependencies else self._to_containers(things)
-        plays.Clean(containers, concurrency).run()
+        self._audit_play(plays.Clean(containers, concurrency))
 
     def logs(self, things, follow, n, **kwargs):
         """Display the logs of the given container.

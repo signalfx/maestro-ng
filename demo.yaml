@@ -15,6 +15,14 @@ ships:
       user: vagrant
       key: {{ env.HOME }}/.vagrant.d/insecure_private_key
 
+audit:
+  - type: hipchat
+    name: Local Test
+    room: {{ env.MAESTRO_HIPCHAT_ROOM }}
+    token: {{ env.MAESTRO_HIPCHAT_TOKEN }}
+  - type: log
+    file: maestro.auditlog
+
 services:
   # 2-node ZooKeeper cluster.
   zookeeper:

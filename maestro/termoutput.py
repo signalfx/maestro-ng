@@ -45,17 +45,23 @@ def time_ago(t, base=None):
     if not t:
         return ''
 
-    delta = int(((base or datetime.datetime.utcnow()) - t).total_seconds())
-    if delta < 0:
+    delta = (base or datetime.datetime.utcnow()) - t
+    duration = delta.total_seconds()
+    days, seconds = delta.days, delta.seconds
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = (seconds % 60)
+
+    if duration < 0:
         return ''
-    if delta < 60:
-        return ' for {}s'.format(delta)
-    if delta < 3600:
-        return ' for {}m'.format(delta/60)
-    if delta < 86400:
-        return ' for {}h'.format(delta/60/60)
+    if duration < 60:
+        return ' for {}s'.format(duration)
+    if duration < 3600:
+        return ' for {}m{}s'.format(minutes, seconds)
+    if duration < 86400:
+        return ' for {}h{}m'.format(hours, minutes)
     # Biggest step is by day.
-    return ' for {}d'.format(delta/60/60/24)
+    return ' for {}d{}h{}m'.format(days, hours, minutes)
 
 
 class OutputManager:

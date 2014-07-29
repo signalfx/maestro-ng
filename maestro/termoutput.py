@@ -46,7 +46,7 @@ def time_ago(t, base=None):
         return ''
 
     delta = (base or datetime.datetime.utcnow()) - t
-    duration = delta.total_seconds()
+    duration = int(delta.total_seconds())
     days, seconds = delta.days, delta.seconds
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60

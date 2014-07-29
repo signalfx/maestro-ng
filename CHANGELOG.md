@@ -1,6 +1,8 @@
 ChangeLog
 =========
 
+* Docker Links support (#21)
+
 Maestro 0.2.2
 -------------
 

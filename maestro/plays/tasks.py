@@ -211,7 +211,8 @@ class StartTask(Task):
             self.container.id,
             binds=self.container.volumes,
             port_bindings=ports,
-            privileged=self.container.privileged)
+            privileged=self.container.privileged,
+            links=self.container.links)
 
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.

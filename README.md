@@ -508,6 +508,31 @@ available in its `maestro.guestutils` module. The recommended (or
 easiest) way to build this startup script is to write it in Python, and
 have the Maestro package installed in your container.
 
+Links
+-----
+
+Maestro also supports defining links to link same-host containers
+together via Docker's Links feature. Read more about [Docker
+Links](http://docs.docker.io/en/latest/use/working_with_links_names/) to
+learn more. Note that the format of the environment variables is not the
+same as the ones Maestro inserts into the container's environment, so
+software running inside the containers needs to deal with that on its
+own.
+
+Defining links is done through the instance-level `links` section, with
+each link defined as a child in the format `name: alias`:
+
+```yaml
+services:
+  myservice:
+    image: ...
+    instances:
+      myservice-1:
+        # ...
+        links:
+          mongodb01: db
+```
+
 Guest utils helper functions
 ----------------------------
 

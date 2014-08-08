@@ -65,6 +65,20 @@ class ContainerTest(unittest.TestCase):
             self.assertIn(k, container.env)
             self.assertEqual(v, container.env[k])
 
+class ShipTest(unittest.TestCase):
+
+    def test_single_ip(self):
+        IP = '1.2.3.4'
+        ship = entities.Ship('test_ship', IP)
+        self.assertEqual(ship.ip,IP)
+        self.assertEqual(ship.published_ip,IP)
+
+    def test_published_ip(self):
+        IP = '1.2.3.4'
+        PUBLISHED_IP = '2.3.4.5'
+        ship = entities.Ship('test_ship', IP, published_ip=PUBLISHED_IP)
+        self.assertEqual(ship.ip,IP)
+        self.assertEqual(ship.published_ip,PUBLISHED_IP)
 
 class BaseConfigFileUsingTest(unittest.TestCase):
 

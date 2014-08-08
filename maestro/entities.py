@@ -55,7 +55,7 @@ class Ship(Entity):
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT,
-                 timeout=None, ssh_tunnel=None):
+                 timeout=None, ssh_tunnel=None, published_ip=None):
         """Instantiate a new ship.
 
         Args:
@@ -69,6 +69,7 @@ class Ship(Entity):
         self._ip = ip
         self._docker_port = docker_port
         self._tunnel = None
+        self._published_ip = published_ip
 
         if ssh_tunnel:
             if 'user' not in ssh_tunnel:
@@ -103,6 +104,11 @@ class Ship(Entity):
         return self._ip
 
     @property
+    def published_ip(self):
+        """Returns this host's published IP address or hostname."""
+        return self._published_ip or self._ip
+
+    @property
     def backend(self):
         """Returns the Docker client wrapper to talk to the Docker daemon on
         this host."""
@@ -115,12 +121,15 @@ class Ship(Entity):
         return self.name
 
     def __repr__(self):
+        ip = self._ip
+        if self._published_ip:
+            ip += '({})'.format(self._published_ip)
         if self._tunnel:
             return '<ship:{} ssh://{}@{}:{}->{}>'.format(
-                self.name, self._tunnel.ssh_user, self._ip,
+                self.name, self._tunnel.ssh_user, ip,
                 self._tunnel.bind_port, self._docker_port)
         return '<ship:{} http://{}:{}>'.format(
-            self.name, self._ip, self._docker_port)
+            self.name, ip, self._docker_port)
 
 
 class Service(Entity):
@@ -319,7 +328,7 @@ class Container(Entity):
         self.env['MAESTRO_ENVIRONMENT_NAME'] = env_name
         self.env['SERVICE_NAME'] = self.service.name
         self.env['CONTAINER_NAME'] = self.name
-        self.env['CONTAINER_HOST_ADDRESS'] = self.ship.ip
+        self.env['CONTAINER_HOST_ADDRESS'] = self.ship.published_ip
 
         # With everything defined, build lifecycle state helpers as configured
         self._lifecycle = self._parse_lifecycle(config.get('lifecycle', {}))
@@ -400,7 +409,7 @@ class Container(Entity):
         basename = _to_env_var_name(self.name)
         port_number = lambda p: p.split('/')[0]
 
-        links = {'{}_HOST'.format(basename): self.ship.ip}
+        links = {'{}_HOST'.format(basename): self.ship.published_ip}
         for name, spec in self.ports.items():
             links['{}_{}_PORT'.format(basename, _to_env_var_name(name))] = \
                 port_number(spec['external'][1])
@@ -437,7 +446,7 @@ class Container(Entity):
         if parts[1] == 'udp':
             return False
 
-        return lifecycle.TCPPortPinger(self.ship.ip, int(parts[0])).test()
+        return lifecycle.TCPPortPinger(self.ship.published_ip, int(parts[0])).test()
 
     def _parse_ports(self, ports):
         """Parse port mapping specifications for this container."""

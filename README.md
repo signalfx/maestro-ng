@@ -165,6 +165,8 @@ be placed on (by name). Additionally, it may define:
       container;
   - `command`, to specify or override the command executed by the
     container.
+  - `dns`, override the default DNS servers. Either a single IP address
+    or a list of IPs
 
 ```yaml
 services:
@@ -174,6 +176,7 @@ services:
       zk-1:
         ship: vm1.ore1
         ports: {client: 2181, peer: 2888, leader_election: 3888}
+        dns: [8.8.8.8, 8.8.4.4]
         lifecycle:
           running: [{type: tcp, port: client}]
         privileged: true
@@ -199,6 +202,7 @@ services:
       kafka-broker:
         ship: vm2.ore1
         ports: {broker: 9092}
+        dns: 8.8.8.8
         lifecycle:
           running: [{type: tcp, port: broker}]
         volumes:

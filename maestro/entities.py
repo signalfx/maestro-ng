@@ -51,7 +51,7 @@ class Ship(Entity):
     """
 
     DEFAULT_DOCKER_PORT = 4243
-    DEFAULT_DOCKER_VERSION = '1.8'
+    DEFAULT_DOCKER_VERSION = '1.10'
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT,
@@ -307,7 +307,7 @@ class Container(Entity):
         self.privileged = config.get('privileged', False)
 
         # -dns value
-        self.dns = config.get('dns')
+        self._dns = config.get('dns')
 
         # Stop timeout
         self.stop_timeout = config.get('stop_timeout', 10)
@@ -352,6 +352,18 @@ class Container(Entity):
         if the container doesn't exist."""
         status = self.status()
         return status and status.get('ID', status.get('Id', None))
+
+    @property
+    def dns(self):
+        """ Return the DNS settings for this container as a list, or None if 
+            no DNS settings exist"""
+        if not self._dns:
+            return None
+        if isinstance(self._dns,basestring):
+            return [self._dns]
+        else:
+            return self._dns
+
 
     def _parse_go_time(self, s):
         """Parse a time string found in the container status into a Python

@@ -191,6 +191,7 @@ class StartTask(Task):
             cpu_shares=self.container.cpu_shares,
             ports=ports,
             detach=True,
+            dns=container.dns,
             command=self.container.command)
 
         self.o.pending('waiting for container creation...')

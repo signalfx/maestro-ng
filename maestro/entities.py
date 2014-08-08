@@ -27,6 +27,11 @@ import weakref
 from . import exceptions
 from . import lifecycle
 
+try:
+    basestring
+except:
+    # Python 3 removed basestring
+    basestring = str
 
 class Entity:
     """Base class for named entities in the orchestrator."""

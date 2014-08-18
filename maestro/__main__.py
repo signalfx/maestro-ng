@@ -10,7 +10,6 @@ import argparse
 import jinja2
 import logging
 import os
-import requests.exceptions
 import sys
 import traceback
 import yaml

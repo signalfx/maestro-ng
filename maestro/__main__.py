@@ -9,9 +9,10 @@ from __future__ import print_function
 import argparse
 import jinja2
 import logging
+import os
 import requests.exceptions
 import sys
-import os
+import traceback
 import yaml
 
 from . import exceptions, maestro
@@ -194,10 +195,8 @@ def main(args=None, config=None):
         return 0
     except KeyboardInterrupt:
         pass
-    except requests.exceptions.Timeout as te:
-        sys.stderr.write('Error: {}\n'.format(te.args[0][1]))
-    except Exception as e:
-        sys.stderr.write('Error: {}\n'.format(e))
+    except:
+        traceback.print_exc()
     return 1
 
 

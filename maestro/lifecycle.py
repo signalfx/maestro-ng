@@ -111,7 +111,7 @@ class Sleep(BaseLifecycleHelper):
         while self.wait > 0:
             time.sleep(1)
             self.wait -= 1
-        return not self.abort
+        return True
 
     @staticmethod
     def from_config(container, config):

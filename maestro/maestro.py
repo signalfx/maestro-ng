@@ -211,7 +211,12 @@ class Conductor:
             play.run()
             self.auditor.success(things, action)
         except requests.exceptions.Timeout as e:
-            self.auditor.error(things, action, message=e.args[0][1])
+            try:
+                msg = e.args[0][1]
+            except:
+                # varies with the timeout exception
+                msg = e.arg[0][0]
+            self.auditor.error(things, action, message=msg)
             raise e
         except Exception as e:
             self.auditor.error(things, action, message=e)

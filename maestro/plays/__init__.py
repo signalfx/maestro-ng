@@ -6,12 +6,11 @@ from __future__ import print_function
 
 import functools
 import threading
-import sys
 
 from . import tasks
 from .. import exceptions
 from .. import termoutput
-from ..termoutput import green, red
+from ..termoutput import green, red, supports_color
 
 
 class BaseOrchestrationPlay:
@@ -27,7 +26,7 @@ class BaseOrchestrationPlay:
     HEADERS = ['  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS']
 
     LINE_FMT = ('{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} {:<20.20s}'
-                if sys.stdout.isatty() else
+                if supports_color() else
                 '{:>3d}. {:<20.20s} {:<20.20s} {:<20.20s}')
 
     def __init__(self, containers=[], forward=True, ignore_dependencies=False,

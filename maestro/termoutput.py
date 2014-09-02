@@ -6,9 +6,14 @@ import datetime
 import threading
 import re
 import sys
+import os
 
 
 STRIP_COLORS = re.compile(r'\033\[[0-9;]+m')
+
+
+def supports_color(out=sys.stdout):
+    return out.isatty() or 'ANSICON' in os.environ
 
 
 def color(n, s, bold=True):
@@ -88,17 +93,17 @@ class OutputManager:
         return f
 
     def start(self):
-        if not self._out.isatty():
+        if not supports_color(self._out):
             return
         self._print('{}\033[{}A'.format('\n' * self._lines, self._lines))
 
     def end(self):
-        if not self._out.isatty():
+        if not supports_color(self._out):
             return
         self._print('\033[{}B'.format(self._lines))
 
     def _print(self, s, pos=None):
-        if not self._out.isatty():
+        if not supports_color(self._out):
             s = STRIP_COLORS.sub('', s)
             self._out.write(s + '\n')
             self._out.flush()

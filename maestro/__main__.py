@@ -100,6 +100,13 @@ def create_parser():
         '-F', '--full', action='store_true',
         help='show full status with port state')
 
+    # pull
+    subparser = subparsers.add_parser(
+        parents=[common, concurrent],
+        name='pull',
+        description='Pull container images from registry',
+        help='pull container images from registry')
+
     # start
     subparser = subparsers.add_parser(
         parents=[common, concurrent, with_refresh],

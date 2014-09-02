@@ -245,6 +245,28 @@ class Conductor:
         else:
             plays.Status(containers, concurrency).run()
 
+    def pull(self, things, with_dependencies=False,
+             ignore_dependencies=False, concurrency=None, **kwargs):
+        """Force an image pull to refresh images for the given services and
+        containers. Dependencies of the requested containers and services are
+        pulled first.
+
+        Args:
+            things (set<string>): The list of things to pull.
+            with_dependencies (boolean): Whether to act on only the specified
+                things, or their dependencies as well.
+            ignore_dependencies (boolean): Whether dependency order should be
+                respected.
+            concurrency (int): The maximum number of instances that can be
+                acted on at the same time.
+        """
+        containers = self._ordered_containers(things) \
+            if with_dependencies else self._to_containers(things)
+
+        self._audit_play(
+            plays.Pull(containers, self.registries,
+                       ignore_dependencies, concurrency))
+
     def start(self, things, refresh_images=False, with_dependencies=False,
               ignore_dependencies=False, concurrency=None, **kwargs):
         """Start the given container(s) and services(s). Dependencies of the

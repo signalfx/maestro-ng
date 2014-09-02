@@ -253,6 +253,27 @@ class Start(BaseOrchestrationPlay):
                                           self._refresh_images))
 
 
+class Pull(BaseOrchestrationPlay):
+    """A Maestro orchestration play that will force an image pull to refresh
+       images for the given services and containers."""
+
+    def __init__(self, containers=[], registries={},
+                 ignore_dependencies=True, concurrency=None):
+        BaseOrchestrationPlay.__init__(
+            self, containers, ignore_dependencies=ignore_dependencies,
+            concurrency=concurrency)
+
+        self._registries = registries
+
+    def _run(self):
+        for order, container in enumerate(self._containers):
+            o = self._om.get_formatter(order, prefix=(
+                BaseOrchestrationPlay.LINE_FMT.format(
+                    order + 1, container.name, container.service.name,
+                    container.ship.address)))
+            self.register(tasks.PullTask(o, container, self._registries))
+
+
 class Stop(BaseOrchestrationPlay):
     """A Maestro orchestration play that will stop the containers of the
     requested services. The list of containers should be provided reversed so

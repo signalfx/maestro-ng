@@ -678,13 +678,14 @@ contains the path to your `maestro-ng` repository clone and using
 ```
 $ maestro -h
 usage: maestro [-h] [-f FILE] [-v]
-               {status,start,stop,restart,logs,deptree} ...
+               {status,pull,start,stop,restart,logs,deptree} ...
 
 Maestro, Docker container orchestrator.
 
 positional arguments:
-  {status,start,stop,restart,logs,deptree}
+  {status,pull,start,stop,restart,logs,deptree}
     status              display container status
+    pull                pull images from repository
     start               start services and containers
     stop                stop services and containers
     restart             restart services and containers

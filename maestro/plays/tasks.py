@@ -169,9 +169,7 @@ class StartTask(Task):
                 not filter(
                     lambda i: self.container.service.image in i['RepoTags'],
                     self.container.ship.backend.images(image['repository'])):
-            # First, attempt to login if we can/need to.
-            LoginTask(self.o, self.container, self._registries).run()
-            PullTask(self.o, self.container).run()
+            PullTask(self.o, self.container, self._registries).run()
 
         # Create and start the container.
         ports = self.container.ports \
@@ -328,12 +326,17 @@ class LoginTask(Task):
 class PullTask(Task):
     """Pull (download) the image a container is based on."""
 
-    def __init__(self, o, container):
+    def __init__(self, o, container, registries={}):
         Task.__init__(self, o, container)
+        self._registries = registries
         self._progress = {}
 
     def run(self):
         self.o.reset()
+
+        # First, attempt to login if we can/need to.
+        LoginTask(self.o, self.container, self._registries).run()
+
         self.o.pending('pulling image {}...'
                        .format(self.container.service.image))
         image = self.container.service.get_image_details()

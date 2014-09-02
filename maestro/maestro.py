@@ -15,7 +15,7 @@ from . import plays
 from . import termoutput
 
 AVAILABLE_MAESTRO_COMMANDS = ['status', 'start', 'stop', 'restart',
-                              'clean', 'logs', 'deptree']
+                              'pull', 'clean', 'logs', 'deptree']
 
 
 class Conductor:

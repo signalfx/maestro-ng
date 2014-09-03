@@ -89,6 +89,8 @@ run. Here's the outline:
 name: demo
 registries:
   # Auth credentials for each registry that needs them (see below)
+ship_defaults:
+  # defaults for some of the ship attributes (see below)
 ships:
   # Ships definitions (see below)
 services:
@@ -108,6 +110,14 @@ registries:
     username: maestro
     password: secret
     email: maestro-robot@domain.com
+```
+
+The ship defaults allow you to specify certain ship attribute defaults, like
+timeout, docker_port, and ssh_timeout.
+
+```yaml
+ship_defaults:
+  timeout: 60
 ```
 
 The _ships_ are simple to define. They are named (but that name doesn't

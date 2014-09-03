@@ -112,11 +112,13 @@ registries:
 
 The _ships_ are simple to define. They are named (but that name doesn't
 need to match their DNS resolvable host name), and need an `ip`
-address/hostname. If the Docker daemon doesn't listen its default port
-of 2375, the `docker_port` can be overriden. You can also use an SSH
-tunnel to secure the communication with the target Docker daemon
-(especially if you don't want to Docker daemon to listen on anything
-else than localhost, and rely on SSH key-based authentication instead).
+address/hostname. You can optionally use `published_ip` to specify a different
+external IP/host address passed to containers instead of the default behavior
+of using `ip`. If the Docker daemon doesn't listen its default port of 2375,
+the `docker_port` can be overriden. You can also use an SSH tunnel to secure
+the communication with the target Docker daemon (especially if you don't
+want to Docker daemon to listen on anything else than localhost, and rely
+on SSH key-based authentication instead).
 
 ```yaml
 ships:
@@ -124,6 +126,7 @@ ships:
   vm2.ore2: {ip: c415.ore2.domain.com, docker_port: 4243}
   vm3.ore3:
     ip: c416.ore3.domain.com
+    published_ip: external.domain.com
     docker_port: 4243
     ssh_tunnel:
       user: ops
@@ -162,6 +165,8 @@ be placed on (by name). Additionally, it may define:
       container;
   - `command`, to specify or override the command executed by the
     container.
+  - `dns`, override the default DNS servers. Either a single IP address
+    or a list of IPs
 
 ```yaml
 services:
@@ -171,6 +176,7 @@ services:
       zk-1:
         ship: vm1.ore1
         ports: {client: 2181, peer: 2888, leader_election: 3888}
+        dns: [8.8.8.8, 8.8.4.4]
         lifecycle:
           running: [{type: tcp, port: client}]
         privileged: true
@@ -196,6 +202,7 @@ services:
       kafka-broker:
         ship: vm2.ore1
         ports: {broker: 9092}
+        dns: 8.8.8.8
         lifecycle:
           running: [{type: tcp, port: broker}]
         volumes:

@@ -54,8 +54,8 @@ class Ship(Entity):
     DEFAULT_DOCKER_VERSION = '1.8'
     DEFAULT_DOCKER_TIMEOUT = 5
 
-    def __init__(self, name, ip, docker_port=DEFAULT_DOCKER_PORT,
-                 timeout=None, ssh_tunnel=None):
+    def __init__(self, name, ip, docker_port=None, timeout=None,
+                 ssh_tunnel=None):
         """Instantiate a new ship.
 
         Args:
@@ -67,7 +67,7 @@ class Ship(Entity):
         """
         Entity.__init__(self, name)
         self._ip = ip
-        self._docker_port = docker_port
+        self._docker_port = int(docker_port or self.DEFAULT_DOCKER_PORT)
         self._tunnel = None
 
         if ssh_tunnel:
@@ -84,13 +84,14 @@ class Ship(Entity):
                 ssh_address=ip,
                 ssh_user=ssh_tunnel['user'],
                 ssh_port=int(ssh_tunnel.get('port', 22)),
-                host_port=docker_port,
+                host_port=self._docker_port,
                 silent=True,
                 identity_file=ssh_tunnel['key'])
             self._backend_url = 'http://localhost:{}'.format(
                 self._tunnel.bind_port)
         else:
-            self._backend_url = 'http://{:s}:{:d}'.format(ip, docker_port)
+            self._backend_url = 'http://{:s}:{:d}'.format(
+                ip, self._docker_port)
 
         self._backend = docker.Client(
             base_url=self._backend_url,

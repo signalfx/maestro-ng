@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013 SignalFuse, Inc.
+# Copyright (C) 2013-2014 SignalFuse, Inc.
 # Utility functions for service start scripts that help work with Maestro
 # orchestration.
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2013 SignalFuse, Inc.
+# Copyright (C) 2013-2014 SignalFuse, Inc.
 #
 # Docker container orchestration utility.
 
@@ -12,6 +12,7 @@ from . import audit
 from . import entities
 from . import exceptions
 from . import plays
+from . import shipproviders
 from . import termoutput
 
 AVAILABLE_MAESTRO_COMMANDS = ['status', 'start', 'stop', 'restart',
@@ -29,19 +30,8 @@ class Conductor:
     def __init__(self, config):
         self._config = config
 
-        self.ship_defaults = config.get('ship_defaults', {})
-
-        def _config_from_ship_or_defaults(ship, key_name):
-            return ship.get(key_name, self.ship_defaults.get(key_name))
-
-        # Create container ships.
-        self.ships = dict(
-            (k, entities.Ship(
-                k, v['ip'],
-                docker_port=_config_from_ship_or_defaults(v, 'docker_port'),
-                ssh_tunnel=_config_from_ship_or_defaults(v, 'ssh_tunnel'),
-                timeout=_config_from_ship_or_defaults(v, 'timeout')))
-            for k, v in self._config['ships'].items())
+        self.ships = (shipproviders.ShipsProviderFactory
+                      .from_config(config).ships())
 
         # Register defined private Docker registries authentications
         self.registries = self._config.get('registries') or {}

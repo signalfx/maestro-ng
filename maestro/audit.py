@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# Copyright (C) 2014 SignalFuse, Inc.
+#
+# Docker container orchestration utility.
+
 import getpass
 
 

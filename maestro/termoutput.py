@@ -2,6 +2,7 @@
 #
 # Docker container orchestration utility.
 
+import curses
 import datetime
 import threading
 import re
@@ -10,6 +11,7 @@ import os
 
 
 STRIP_COLORS = re.compile(r'\033\[[0-9;]+m')
+DEFAULT_TERM_COLUMNS = 120
 
 
 def supports_color(out=sys.stdout):
@@ -30,6 +32,26 @@ def blue(s):
 
 def red(s):
     return color(31, s)
+
+
+def columns():
+    """Returns the number of columns available for displaying the output.
+
+    If the COLUMNS environment variable is set, use that. If the output is not
+    a tty, default the DEFAULT_TERM_COLUMNS. Otherwise, fire up a temporary
+    curses window context to figure it out without having to poke into the term
+    stuff ourselves.
+    """
+    if 'COLUMNS' in os.environ:
+        return int(os.environ['COLUMNS'])
+
+    if not sys.stdout.isatty():
+        return DEFAULT_TERM_COLUMNS
+
+    win = curses.initscr()
+    _, cols = win.getmaxyx()
+    curses.endwin()
+    return cols
 
 
 def _default_printer(s):

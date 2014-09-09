@@ -178,7 +178,7 @@ class StartTask(Task):
             or None
 
         self.o.pending('creating container from {}...'.format(
-            self.container.service.image))
+            self.container.service.short_image))
         self.container.ship.backend.create_container(
             image=self.container.service.image,
             hostname=self.container.name,
@@ -191,7 +191,7 @@ class StartTask(Task):
             detach=True,
             command=self.container.command)
 
-        self.o.pending('waiting for container creation...')
+        self.o.pending('waiting for container...')
         if not self._wait_for_status(lambda x: x):
             raise exceptions.OrchestrationException(
                 'Container status could not be obtained after creation!')
@@ -214,7 +214,7 @@ class StartTask(Task):
 
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.
-        self.o.pending('waiting for container initialization...')
+        self.o.pending('waiting for initialization...')
         check_running = lambda x: x and x['State']['Running']
         if not self._wait_for_status(check_running):
             raise exceptions.OrchestrationException(
@@ -338,7 +338,7 @@ class PullTask(Task):
         LoginTask(self.o, self.container, self._registries).run()
 
         self.o.pending('pulling image {}...'
-                       .format(self.container.service.image))
+                       .format(self.container.service.short_image))
         image = self.container.service.get_image_details()
         for dlstatus in self.container.ship.backend.pull(stream=True, **image):
             percentage = self._update_pull_progress(dlstatus)
@@ -387,7 +387,7 @@ class RemoveTask(Task):
             self.o.commit(red(TASK_RESULT_FMT.format('skipped')))
             return
 
-        self.o.pending('removing old container {}...'.format(self.cid))
+        self.o.pending('removing container {}...'.format(self.cid))
         self.container.ship.backend.remove_container(self.container.id)
 
         if self._standalone:

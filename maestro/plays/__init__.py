@@ -10,7 +10,7 @@ import threading
 from . import tasks
 from .. import exceptions
 from .. import termoutput
-from ..termoutput import green, red, supports_color
+from ..termoutput import columns, green, red, supports_color
 
 
 class BaseOrchestrationPlay:
@@ -21,13 +21,23 @@ class BaseOrchestrationPlay:
     order direction.
     """
 
-    HEADER_FMT = '{:>3s}  {:<20s} {:<20s} {:<20s} ' + \
-                 tasks.CONTAINER_STATUS_FMT + ' ' + tasks.TASK_RESULT_FMT
+    # Data column size.
+    # Bounded between 20 and 40 characters, keeping 60 columns for the task
+    # pending and commited output in the last column.
+    _CSIZE = min(40, max(20, (columns() - 60) / 3))
+
+    # Header line format and titles.
+    HEADER_FMT = ('{{:>3s}}  {{:<{}.{}s}} {{:<20.20s}} {{:<{}.{}s}} '
+                  .format(_CSIZE, _CSIZE, _CSIZE, _CSIZE)) + \
+        tasks.CONTAINER_STATUS_FMT + ' ' + tasks.TASK_RESULT_FMT
     HEADERS = ['  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS']
 
-    LINE_FMT = ('{:>3d}. \033[;1m{:<20.20s}\033[;0m {:<20.20s} {:<20.20s}'
-                if supports_color() else
-                '{:>3d}. {:<20.20s} {:<20.20s} {:<20.20s}')
+    # Output line format (to which the task output colmns are added).
+    LINE_FMT = ('{{:>3d}}. {}{{:<{}.{}s}}{} {{:<20.20s}} {{:<{}.{}s}}'
+                .format('\033[1m' if supports_color() else '',
+                        _CSIZE, _CSIZE,
+                        '\033[0m' if supports_color() else '',
+                        _CSIZE, _CSIZE))
 
     def __init__(self, containers=[], forward=True, ignore_dependencies=False,
                  concurrency=None):

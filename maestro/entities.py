@@ -165,6 +165,12 @@ class Service(Entity):
         service."""
         return self._image
 
+    @property
+    def short_image(self):
+        """Return the abbreviated name (stripped of its registry component,
+        when present) of the image used by this service."""
+        return self._image[self._image.find('/')+1:]
+
     def get_image_details(self):
         """Return a dictionary detailing the image used by this service, with
         its repository name and the requested tag (defaulting to latest if not

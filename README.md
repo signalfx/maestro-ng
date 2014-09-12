@@ -173,7 +173,10 @@ be placed on (by name). Additionally, it may define:
     - `swap`, the swap limit of the container (in bytes, or with one
       of the `k`, `m` or `g` suffixes, also valid in uppercase);
   - `command`, to specify or override the command executed by the
-    container.
+    container;
+  - `net`, to specify the container's network mode (one of `bridge` --
+    the default, `host`, `container:<name|id>` or `none` to disable
+    networking altogether);
   - `dns`, to specify one (as a single IP address) or more DNS servers
     (as a list) to be declared inside the container.
 
@@ -219,7 +222,10 @@ services:
         stop_timeout: 2
         limits:
           memory: 5G
+          swap: 200m
           cpu: 10
+        dns: [ 8.8.8.8, 8.8.4.4 ]
+        net: host
 ```
 
 Defining dependencies

@@ -304,6 +304,9 @@ class Container(Entity):
         # Should this container run with -privileged?
         self.privileged = config.get('privileged', False)
 
+        # Network mode
+        self.network_mode = config.get('net')
+
         # DNS settings for the container, always as a list
         self.dns = config.get('dns')
         if isinstance(self.dns, six.string_types):

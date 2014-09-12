@@ -13,6 +13,22 @@ class EntityTest(unittest.TestCase):
         self.assertEqual(entities.Entity('foo').name, 'foo')
 
 
+class ShipTest(unittest.TestCase):
+
+    def test_simple_ship(self):
+        ship = entities.Ship('foo', '10.0.0.1')
+        self.assertEqual(ship.name, 'foo')
+        self.assertEqual(ship.ip, '10.0.0.1')
+        self.assertEqual(ship.endpoint, '10.0.0.1')
+
+    def test_ship_endpoint(self):
+        ship = entities.Ship('foo', '10.0.0.1', '192.168.10.1')
+        self.assertEqual(ship.name, 'foo')
+        self.assertEqual(ship.ip, '10.0.0.1')
+        self.assertEqual(ship.endpoint, '192.168.10.1')
+        self.assertTrue(ship.endpoint in ship.backend.base_url)
+
+
 class ServiceTest(unittest.TestCase):
 
     def test_get_image(self):
@@ -69,41 +85,41 @@ class ContainerTest(unittest.TestCase):
         service = entities.Service('foo', 'stackbrew/ubuntu', env={})
         container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
                                        service, config={'dns': '8.8.8.8'})
-        self.assertEqual(['8.8.8.8'], container.dns)
+        self.assertEqual(container.dns, ['8.8.8.8'])
 
     def test_dns_as_list_option(self):
         service = entities.Service('foo', 'stackbrew/ubuntu', env={})
         container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
                                        service,
                                        config={'dns': ['8.8.8.8', '8.8.4.4']})
-        self.assertEqual(['8.8.8.8', '8.8.4.4'], container.dns)
+        self.assertEqual(container.dns, ['8.8.8.8', '8.8.4.4'])
 
     def test_no_dns_option(self):
         service = entities.Service('foo', 'stackbrew/ubuntu', env={})
         container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
                                        service, config={})
-        self.assertEqual(None, container.dns)
+        self.assertIsNone(container.dns)
 
     def test_swap_limit_number(self):
         config = {'limits': {'swap': 42}}
         service = entities.Service('foo', 'stackbrew/ubuntu', env={})
         container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
                                        service, config=config)
-        self.assertEqual(42, container.memswap_limit)
+        self.assertEqual(container.memswap_limit, 42)
 
     def test_swap_limit_string_no_suffix(self):
         config = {'limits': {'swap': '42'}}
         service = entities.Service('foo', 'stackbrew/ubuntu', env={})
         container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
                                        service, config=config)
-        self.assertEqual(42, container.memswap_limit)
+        self.assertEqual(container.memswap_limit, 42)
 
     def test_swap_limit_string_with_suffix(self):
         config = {'limits': {'swap': '42k'}}
         service = entities.Service('foo', 'stackbrew/ubuntu', env={})
         container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
                                        service, config=config)
-        self.assertEqual(42*1024, container.memswap_limit)
+        self.assertEqual(container.memswap_limit, 42*1024)
 
 
 class BaseConfigFileUsingTest(unittest.TestCase):
@@ -130,6 +146,17 @@ class ConfigTest(BaseConfigFileUsingTest):
         os.environ['BAR'] = 'bar'
         config = self._get_config('test_env')
         self.assertEqual('bar', config['foo'])
+
+    def test_ship_parsing(self):
+        config = self._get_config('test_ships')
+        c = maestro.Conductor(config)
+        self.assertEqual(c.ships['ship1'].ip, '10.0.0.1')
+        self.assertEqual(c.ships['ship1'].endpoint, '192.168.10.1')
+        self.assertTrue('192.168.10.1' in c.ships['ship1'].backend.base_url)
+
+        self.assertEqual(c.ships['ship2'].ip, '10.0.0.2')
+        self.assertEqual(c.ships['ship2'].endpoint, '10.0.0.2')
+        self.assertTrue('1234' in c.ships['ship2'].backend.base_url)
 
 
 class LifecycleHelperTest(unittest.TestCase):

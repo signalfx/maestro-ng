@@ -123,10 +123,19 @@ ship_defaults:
 The _ships_ are simple to define. They are named (but that name doesn't
 need to match their DNS resolvable host name), and need an `ip`
 address/hostname. If the Docker daemon doesn't listen its default port
-of 2375, the `docker_port` can be overriden. You can also use an SSH
-tunnel to secure the communication with the target Docker daemon
-(especially if you don't want to Docker daemon to listen on anything
-else than localhost, and rely on SSH key-based authentication instead).
+of 2375, the `docker_port` can be overriden.
+
+If the address of the machine is not the one you want to use to interact
+with the Docker daemon running there (for example via a private
+network), you can override the Docker daemon endpoint address with the
+`endpoint` parameter. If not specified, Maestro will simply use the
+ship's `ip` parameter.
+
+You can also use an SSH tunnel to secure the communication with the
+target Docker daemon (especially if you don't want to Docker daemon to
+listen on anything else than `localhost`, and rely on SSH key-based
+authentication instead). Here again, if the `endpoint` parameter is
+specified, it will be used as the target host for the SSH connection.
 
 ```yaml
 ships:
@@ -134,6 +143,7 @@ ships:
   vm2.ore2: {ip: c415.ore2.domain.com, docker_port: 4243}
   vm3.ore3:
     ip: c416.ore3.domain.com
+    endpoint: c416.corp.domain.com
     docker_port: 4243
     ssh_tunnel:
       user: ops

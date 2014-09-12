@@ -54,7 +54,7 @@ class Ship(Entity):
     DEFAULT_DOCKER_VERSION = '1.10'
     DEFAULT_DOCKER_TIMEOUT = 5
 
-    def __init__(self, name, ip, docker_port=None, timeout=None,
+    def __init__(self, name, ip, endpoint=None, docker_port=None, timeout=None,
                  ssh_tunnel=None):
         """Instantiate a new ship.
 
@@ -67,6 +67,7 @@ class Ship(Entity):
         """
         Entity.__init__(self, name)
         self._ip = ip
+        self._endpoint = endpoint or ip
         self._docker_port = int(docker_port or self.DEFAULT_DOCKER_PORT)
         self._tunnel = None
 
@@ -81,7 +82,7 @@ class Ship(Entity):
                         self.name))
 
             self._tunnel = bgtunnel.open(
-                ssh_address=ip,
+                ssh_address=self._endpoint,
                 ssh_user=ssh_tunnel['user'],
                 ssh_port=int(ssh_tunnel.get('port', 22)),
                 host_port=self._docker_port,
@@ -91,7 +92,7 @@ class Ship(Entity):
                 self._tunnel.bind_port)
         else:
             self._backend_url = 'http://{:s}:{:d}'.format(
-                ip, self._docker_port)
+                self._endpoint, self._docker_port)
 
         self._backend = docker.Client(
             base_url=self._backend_url,
@@ -100,8 +101,13 @@ class Ship(Entity):
 
     @property
     def ip(self):
-        """Returns this host's IP address or hostname."""
+        """Returns this ship's IP address or hostname."""
         return self._ip
+
+    @property
+    def endpoint(self):
+        """Returns this ship's Docker endpoint IP address or hostname."""
+        return self._endpoint
 
     @property
     def backend(self):
@@ -117,11 +123,11 @@ class Ship(Entity):
 
     def __repr__(self):
         if self._tunnel:
-            return '<ship:{} ssh://{}@{}:{}->{}>'.format(
-                self.name, self._tunnel.ssh_user, self._ip,
-                self._tunnel.bind_port, self._docker_port)
-        return '<ship:{} http://{}:{}>'.format(
-            self.name, self._ip, self._docker_port)
+            return '<ship:{}@{} via ssh://{}@{}:{}->{}>'.format(
+                self.name, self._ip, self._tunnel.ssh_user,
+                self._endpoint, self._tunnel.bind_port, self._docker_port)
+        return '<ship:{}@{} via {}>'.format(
+            self.name, self._ip, self._backend_url)
 
 
 class Service(Entity):

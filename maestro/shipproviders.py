@@ -43,7 +43,7 @@ class StaticShipsProvider(ShipsProvider):
         # Create container ships.
         self._ships = dict(
             (k, entities.Ship(
-                k, v['ip'],
+                k, ip=v['ip'], endpoint=v.get('endpoint'),
                 docker_port=self._from_ship_or_defaults(v, 'docker_port'),
                 ssh_tunnel=self._from_ship_or_defaults(v, 'ssh_tunnel'),
                 timeout=self._from_ship_or_defaults(v, 'timeout')))

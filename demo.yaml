@@ -7,7 +7,7 @@ name: demo
 ships:
   # docker_port remains at default 4243 on all our hosts
   vm1: {ip: &vm1ip 192.168.10.2}
-  vm2: {ip: 192.168.11.2, timeout: 1}
+  vm2: {ip: 192.168.11.2, endpoint: 192.168.10.2, timeout: 2}
   vm-ssh:
     ip: 192.168.10.2
     docker_port: 4243

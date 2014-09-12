@@ -1,7 +1,29 @@
 ChangeLog
 =========
 
+Maestro 0.2.3
+-------------
+
+_September 12th, 2014_
+
 * Docker Links support (#21)
+* Allow for forced colored output by setting the `ANSICON` environment
+  variable, even if the terminal is not a tty (#72)
+* New `pull` command that just performs the image pull/refresh without
+  affecting the running containers (#71). Very useful in preparation of
+  a rolling upgrade as it can be done with maximum parallelism
+* Introduce `ship_defaults` section to provide defaults for ship
+  attributes like `timeout` or SSH tunnel configuration (#73)
+* Scaffolding for ship providers, default one is the static list of
+  ships but more intelligent providers can be implemented, pulling from
+  EC2 APIs for example
+* Variable column width for container and ship name if the terminal size
+  allows it
+* Add support for docker -dns (#59)
+* Add support for docker -net (#41)
+* Add support for specifying a distinct ship endpoint address, used to
+  talk to the Docker daemon (#67, #70)
+* Fix bug in sleep lifecycle helper (#69)
 
 Maestro 0.2.2
 -------------

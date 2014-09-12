@@ -210,6 +210,7 @@ class StartTask(Task):
             binds=self.container.volumes,
             port_bindings=ports,
             privileged=self.container.privileged,
+            dns=self.container.dns,
             links=self.container.links)
 
         # Waiting one second and checking container state again to make sure

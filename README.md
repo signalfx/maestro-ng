@@ -172,6 +172,8 @@ be placed on (by name). Additionally, it may define:
       container;
   - `command`, to specify or override the command executed by the
     container.
+  - `dns`, to specify one (as a single IP address) or more DNS servers
+    (as a list) to be declared inside the container.
 
 ```yaml
 services:

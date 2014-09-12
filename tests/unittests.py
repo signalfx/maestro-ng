@@ -65,6 +65,25 @@ class ContainerTest(unittest.TestCase):
             self.assertIn(k, container.env)
             self.assertEqual(v, container.env[k])
 
+    def test_dns_option(self):
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config={'dns': '8.8.8.8'})
+        self.assertEqual(['8.8.8.8'], container.dns)
+
+    def test_dns_as_list_option(self):
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service,
+                                       config={'dns': ['8.8.8.8', '8.8.4.4']})
+        self.assertEqual(['8.8.8.8', '8.8.4.4'], container.dns)
+
+    def test_no_dns_option(self):
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config={})
+        self.assertEqual(None, container.dns)
+
 
 class BaseConfigFileUsingTest(unittest.TestCase):
 

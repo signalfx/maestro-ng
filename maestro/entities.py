@@ -51,7 +51,7 @@ class Ship(Entity):
     """
 
     DEFAULT_DOCKER_PORT = 4243
-    DEFAULT_DOCKER_VERSION = '1.8'
+    DEFAULT_DOCKER_VERSION = '1.10'
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, docker_port=None, timeout=None,
@@ -303,6 +303,11 @@ class Container(Entity):
 
         # Should this container run with -privileged?
         self.privileged = config.get('privileged', False)
+
+        # DNS settings for the container, always as a list
+        self.dns = config.get('dns')
+        if isinstance(self.dns, six.string_types):
+            self.dns = [self.dns]
 
         # Stop timeout
         self.stop_timeout = config.get('stop_timeout', 10)

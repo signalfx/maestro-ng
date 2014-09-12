@@ -84,6 +84,27 @@ class ContainerTest(unittest.TestCase):
                                        service, config={})
         self.assertEqual(None, container.dns)
 
+    def test_swap_limit_number(self):
+        config = {'limits': {'swap': 42}}
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config=config)
+        self.assertEqual(42, container.memswap_limit)
+
+    def test_swap_limit_string_no_suffix(self):
+        config = {'limits': {'swap': '42'}}
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config=config)
+        self.assertEqual(42, container.memswap_limit)
+
+    def test_swap_limit_string_with_suffix(self):
+        config = {'limits': {'swap': '42k'}}
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config=config)
+        self.assertEqual(42*1024, container.memswap_limit)
+
 
 class BaseConfigFileUsingTest(unittest.TestCase):
 

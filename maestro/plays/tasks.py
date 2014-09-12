@@ -186,6 +186,7 @@ class StartTask(Task):
             environment=self.container.env,
             volumes=self.container.volumes.values(),
             mem_limit=self.container.mem_limit,
+            memswap_limit=self.container.memswap_limit,
             cpu_shares=self.container.cpu_shares,
             ports=ports,
             detach=True,

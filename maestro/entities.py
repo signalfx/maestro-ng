@@ -315,16 +315,8 @@ class Container(Entity):
         # Get limits
         limits = config.get('limits', {})
         self.cpu_shares = limits.get('cpu')
-        self.mem_limit = limits.get('memory')
-        if isinstance(self.mem_limit, six.string_types):
-            units = {'k': 1024,
-                     'm': 1024*1024,
-                     'g': 1024*1024*1024}
-            suffix = self.mem_limit[-1].lower()
-            if suffix in units.keys():
-                self.mem_limit = int(self.mem_limit[:-1]) * units[suffix]
-        # TODO: add swap limit support when it will be available in docker-py
-        # self.swap_limit = limits.get('swap')
+        self.mem_limit = self._parse_bytes(limits.get('memory'))
+        self.memswap_limit = self._parse_bytes(limits.get('swap'))
 
         # Seed the service name, container name and host address as part of the
         # container's environment.
@@ -352,6 +344,24 @@ class Container(Entity):
         if the container doesn't exist."""
         status = self.status()
         return status and status.get('ID', status.get('Id', None))
+
+    def _parse_bytes(self, s):
+        if not s or not isinstance(s, six.string_types):
+            return s
+
+        units = {'k': 1024,
+                 'm': 1024*1024,
+                 'g': 1024*1024*1024}
+        suffix = s[-1].lower()
+
+        if suffix not in units.keys():
+            if not s.isdigit():
+                raise exceptions.EnvironmentConfigurationException(
+                        'Unknown unit suffix {} in {} for container {}!'
+                        .format(suffix, s, self.name))
+            return int(s)
+
+        return int(s[:-1]) * units[suffix]
 
     def _parse_go_time(self, s):
         """Parse a time string found in the container status into a Python

@@ -166,10 +166,12 @@ be placed on (by name). Additionally, it may define:
   - `stop_timeout`, the number of seconds Docker will wait between
     sending `SIGTERM` and `SIGKILL` (defaults to 10);
   - `limits`:
-    - `memory`, the memory limit of the container (`k`, `m` and `g`
-      limits accepted, also valid in uppercase);
+    - `memory`, the memory limit of the container (in bytes, or with one
+      of the `k`, `m` or `g` suffixes, also valid in uppercase);
     - `cpu`, the number of CPU shares (relative weight) allocated to the
       container;
+    - `swap`, the swap limit of the container (in bytes, or with one
+      of the `k`, `m` or `g` suffixes, also valid in uppercase);
   - `command`, to specify or override the command executed by the
     container.
   - `dns`, to specify one (as a single IP address) or more DNS servers

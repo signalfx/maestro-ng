@@ -169,7 +169,8 @@ class StartTask(Task):
                 not filter(
                     lambda i: self.container.service.image in i['RepoTags'],
                     self.container.ship.backend.images(image['repository'])):
-            PullTask(self.o, self.container, self._registries).run()
+            PullTask(self.o, self.container, self._registries,
+                     standalone=False).run()
 
         # Create and start the container.
         ports = self.container.ports \
@@ -329,9 +330,10 @@ class LoginTask(Task):
 class PullTask(Task):
     """Pull (download) the image a container is based on."""
 
-    def __init__(self, o, container, registries={}):
+    def __init__(self, o, container, registries={}, standalone=True):
         Task.__init__(self, o, container)
         self._registries = registries
+        self._standalone = standalone
         self._progress = {}
 
     def run(self):
@@ -346,6 +348,10 @@ class PullTask(Task):
         for dlstatus in self.container.ship.backend.pull(stream=True, **image):
             percentage = self._update_pull_progress(dlstatus)
             self.o.pending('... {:.1f}%'.format(percentage))
+
+        if self._standalone:
+            self.o.commit(CONTAINER_STATUS_FMT.format(''))
+            self.o.commit(green(TASK_RESULT_FMT.format('done')))
 
     def _update_pull_progress(self, last):
         """Update an image pull progress map with latest download progress

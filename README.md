@@ -1,5 +1,4 @@
-MaestroNG, an orchestrator of Docker-based deployments
-======================================================
+# MaestroNG, an orchestrator of Docker-based deployments
 
 [![Build Status](https://travis-ci.org/signalfuse/maestro-ng.png)](https://travis-ci.org/signalfuse/maestro-ng)
 
@@ -19,8 +18,7 @@ complex, multi-host environments using Docker containers possible and
 easy to use. Maestro of course supports declared dependencies between
 services and makes sure to honor those during environment bring up.
 
-What is Maestro?
-----------------
+## What is Maestro?
 
 MaestroNG is, for now, a command-line utility that allows for
 automatically managing the orchestrated deployment and bring up of a set
@@ -32,8 +30,7 @@ contact the Docker daemon of each host in the environment to figure out
 the status of the environment and what actions to take based on the
 requested command.
 
-Dependencies
-------------
+## Dependencies
 
 MaestroNG requires Docker 0.6.7 or newer on the hosts as it makes use of
 the container naming feature and bug fixes in NAT port forwarding.
@@ -45,8 +42,7 @@ below.
 * PyYAML (you may need to install this manually, e.g. `apt-get install python-yaml`)
 * A recent [docker-py](http://github.com/dotcloud/docker-py)
 
-Installation
-------------
+## Installation
 
 You can install Maestro via _Pip_:
 
@@ -54,8 +50,27 @@ You can install Maestro via _Pip_:
 $ pip install --user --upgrade git+git://github.com/signalfuse/maestro-ng
 ```
 
-Orchestration
-=============
+### Note for MacOS users
+
+The above command may fail if you installed Python and `pip` via
+Homebrew, usually with the following error message:
+
+```
+error: can't combine user with prefix, exec_prefix/home, or install_(plat)base
+```
+
+This is because the Homebrew formula for `pip` configures distutils with
+an installation prefix, and this cannot be combined with the use of the
+`--user` flag, as describe in https://github.com/Homebrew/homebrew/wiki/Homebrew-and-Python#note-on-pip-install---user.
+
+If you encounter this problem, simply install the package without the
+`--user` flag:
+
+```
+$ pip install --upgrade git+git://github.com/signalfuse/maestro-ng
+```
+
+# Orchestration
 
 The orchestration features of Maestro obviously rely on the
 collaboration of the Docker containers that you are controlling with
@@ -72,8 +87,7 @@ Let's first look at how environments and services are described, then
 we'll discuss what information Maestro passes down to the containers
 through their environment.
 
-Environment description
------------------------
+## Environment description
 
 The environment is described using YAML. The format is still a bit in
 flux but the base has been set and should remain fairly stable. It is
@@ -238,8 +252,7 @@ services:
         net: host
 ```
 
-Defining dependencies
----------------------
+## Defining dependencies
 
 Services can depend on each other (circular dependencies are not
 supported though). This dependency tree instructs Maestro to start and
@@ -293,8 +306,7 @@ services:
       www-1: { ... }
 ```
 
-Port mapping syntax
--------------------
+## Port mapping syntax
 
 Maestro supports several syntaxes for specifying port mappings. Unless
 the syntax supports and/or specifies it, Maestro will make the following
@@ -384,8 +396,7 @@ services:
         external: [ *demoip, 25/tcp ]
 ```
 
-Port mappings and named ports
------------------------------
+## Port mappings and named ports
 
 When services depend on each other, they most likely need to
 communicate. If service B depends on service A, service B needs to be
@@ -427,8 +438,7 @@ dependent service can know the address of a remote service, and the
 specific port number of a desired endpoint. For example, service
 depending on ZooKeeper would be looking for its `client` port.
 
-Lifecycle checks
-----------------
+## Lifecycle checks
 
 When controlling containers (your service instances), Maestro can
 perform additional checks to confirm that the service reached the
@@ -476,8 +486,7 @@ type: exec
 command: "python my_cool_script.py"
 ```
 
-How Maestro orchestrates and service auto-configuration
--------------------------------------------------------
+## How Maestro orchestrates and service auto-configuration
 
 The orchestration performed by Maestro is two-fold. The first part is
 providing a way for each container to learn about the environment they
@@ -538,8 +547,7 @@ available in its `maestro.guestutils` module. The recommended (or
 easiest) way to build this startup script is to write it in Python, and
 have the Maestro package installed in your container.
 
-Links
------
+## Links
 
 Maestro also supports defining links to link same-host containers
 together via Docker's Links feature. Read more about [Docker
@@ -563,8 +571,7 @@ services:
           mongodb01: db
 ```
 
-Guest utils helper functions
-----------------------------
+## Guest utils helper functions
 
 To make use of the Maestro guest utils functions, you'll need to have
 the Maestro package installed inside your container. You can easily
@@ -629,8 +636,7 @@ Other functions you might need are:
     retrieve the exposed (internal) port number of a specific named port
     of a given container.
 
-Working with image registries
------------------------------
+## Working with image registries
 
 When Maestro needs to start a new container, it will do whatever it can
 to make sure the image this container needs is available; the image full
@@ -652,8 +658,7 @@ that registry.
 If credentials are found, Maestro will login to the registry before
 attempting to pull the image.
 
-Passing extra environment variables
------------------------------------
+## Passing extra environment variables
 
 You can pass in or override arbitrary environment variables by providing
 a dictionary of environment variables key/value pairs. This can be done
@@ -695,8 +700,7 @@ env:
   JVM_OPTS: [ *jvmopts, '-XX:+UseConcMarkSweep' ]
 ```
 
-Usage
-=====
+# Usage
 
 Once installed, Maestro is available both as a library through the
 `maestro` package and as an executable. To run Maestro, simply execute
@@ -775,8 +779,7 @@ automatically expand those to their corresponding list of instances. The
 `logs` command is the only one that operates on strictly one container
 instance.
 
-Impact of defined dependencies on orchestration order
------------------------------------------------------
+## Impact of defined dependencies on orchestration order
 
 One of the main features of Maestro is its understand of dependencies
 between services. When Maestro carries out an orchestration action,
@@ -806,8 +809,7 @@ $ maestro start kafka zookeeper
 $ maestro start -d -i kafka
 ```
 
-Examples of Docker images with Maestro orchestration
-====================================================
+# Examples of Docker images with Maestro orchestration
 
 For examples of Docker images that are suitable for use with Maestro,
 you can look at the following repositories:

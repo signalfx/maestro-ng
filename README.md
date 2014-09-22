@@ -201,6 +201,7 @@ be placed on (by name). Additionally, it may define:
   - `net`, to specify the container's network mode (one of `bridge` --
     the default, `host`, `container:<name|id>` or `none` to disable
     networking altogether);
+  - `restart`, to specify the restart policy (see Restart Policy below)
   - `dns`, to specify one (as a single IP address) or more DNS servers
     (as a list) to be declared inside the container.
 
@@ -250,6 +251,7 @@ services:
           cpu: 10
         dns: [ 8.8.8.8, 8.8.4.4 ]
         net: host
+        restart: {name: on-failure, maximum_retry_count: 3}
 ```
 
 ## Defining dependencies
@@ -535,6 +537,20 @@ of zero indicates success, as per the Unix convention). For example:
 ```yaml
 type: exec
 command: "python my_cool_script.py"
+```
+
+## Restart Policy
+Since version 1.2 docker allows to define the restart policy once a container stops.
+Allowed values are:
+
+  * `restart: no`, container is never restarted when stopped (default behaviour);
+  * `restart: always`, container is always restarted when stopped;
+  * `restart: on-failure`, container is restarted when stopped because of a failure.
+
+You can also specify the number of maximum retries for restarting the container before giving up (in this case 3):
+
+```yaml
+    restart: { name: on-failure, maximum_retry_count: 3}
 ```
 
 ## How Maestro orchestrates and service auto-configuration

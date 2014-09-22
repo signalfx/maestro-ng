@@ -36,3 +36,7 @@ class InvalidPortSpecException(MaestroException):
 class InvalidLifecycleCheckConfigurationException(MaestroException):
     "Error thrown when a lifecycle check isn't configured properly."""
     pass
+
+
+class InvalidRestartPolicyConfigurationException(MaestroException):
+    "Error thrown when a restart policy isn't configured properly."""

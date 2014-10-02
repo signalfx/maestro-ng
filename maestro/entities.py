@@ -4,6 +4,7 @@
 
 import bgtunnel
 import datetime
+import time
 
 # Import _strptime manually to work around a thread safety issue when using
 # strptime() from threads for the first time.
@@ -90,6 +91,11 @@ class Ship(Entity):
                 identity_file=ssh_tunnel['key'])
             self._backend_url = 'http://localhost:{}'.format(
                 self._tunnel.bind_port)
+            
+            # Apparently bgtunnel isn't always ready right away and this 
+            # drastically cuts down on the timeouts
+            time.sleep(1)
+
         else:
             self._backend_url = 'http://{:s}:{:d}'.format(
                 self._endpoint, self._docker_port)

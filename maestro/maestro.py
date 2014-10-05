@@ -215,7 +215,7 @@ class Conductor:
                 msg = e.args[0][1]
             except:
                 # varies with the timeout exception
-                msg = e.arg[0][0]
+                msg = e.args[0][0]
             self.auditor.error(things, action, message=msg)
             raise e
         except Exception as e:

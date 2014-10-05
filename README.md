@@ -180,7 +180,7 @@ be placed on (by name). Additionally, it may define:
   - `lifecycle`, for lifecycle state checks, which Maestro uses to
     confirm a service correctly started or stopped (see Lifecycle checks
     below);
-  - `volume`, for container volume mappings, as a map of `<destination
+  - `volumes`, for container volume mappings, as a map of `<destination
     in container>: <source from host>`;
   - `env`, for environment variables, as a map of `<variable name>:
     <value>` (variables defined at the instance level override variables

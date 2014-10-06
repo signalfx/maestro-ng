@@ -206,14 +206,10 @@ class FullStatus(BaseOrchestrationPlay):
                 for name, port in container.ports.items():
                     o.commit('\n')
                     o = termoutput.OutputFormatter(prefix='     >>')
-                    o.pending('{:>9.9s}:{:s}'.format(port['external'][1],
-                                                     name))
-                    ping = container.ping_port(name)
-                    if ping:
-                        o.commit(green('{:>9.9s}'.format(port['external'][1])))
-                    else:
-                        o.commit(red('{:>9.9s}'.format(port['external'][1])))
-                    o.commit(':{}'.format(name))
+                    o.commit('{:>15.15s}: {:>9.9s} is'
+                             .format(name, port['external'][1]))
+                    o.commit(green('up') if container.ping_port(name)
+                             else red('down'))
             except Exception:
                 o.commit(tasks.CONTAINER_STATUS_FMT.format('-'))
                 o.commit(red('host down'))

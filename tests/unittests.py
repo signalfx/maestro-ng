@@ -210,5 +210,73 @@ class LifecycleHelperTest(unittest.TestCase):
             lifecycle.LifecycleHelperFactory.from_config,
             self._get_container(), {'type': 'test-does-not-exist'})
 
+    def test_parse_checker_http_defaults(self):
+        container = self._get_container()
+        c = lifecycle.LifecycleHelperFactory.from_config(container,
+            {'type': 'http', 'port': 'server'})
+        self.assertIsInstance(c, lifecycle.HttpRequestLifecycle)
+        self.assertEqual(c.host, container.ship.ip)
+        self.assertEqual(c.port, 4242)
+        self.assertEqual(c.max_wait, lifecycle.HttpRequestLifecycle.DEFAULT_MAX_WAIT)
+        self.assertEqual(c.match_regex,None)
+        self.assertEqual(c.path,'/')
+        self.assertEqual(c.scheme,'http')
+        self.assertEqual(c.method,'get')
+        self.assertEqual(c.requests_options,{})
+
+        self.assertTrue(c._test_response)
+
+    def test_parse_checker_http_explicits(self):
+        container = self._get_container()
+        c = lifecycle.LifecycleHelperFactory.from_config(container,
+            {'type': 'http', 'port': 'server','match_regex':'abc[^d]','path':'/blah','scheme':'https','method':'put','max_wait': 2,'requests_options':{'verify':False}})
+        self.assertIsInstance(c, lifecycle.HttpRequestLifecycle)
+        self.assertEqual(c.host, container.ship.ip)
+        self.assertEqual(c.port, 4242)
+        self.assertEqual(c.max_wait, 2)
+        self.assertFalse(c.match_regex.search('abcd'))
+        self.assertTrue(c.match_regex.search('abce'))
+        self.assertEqual(c.path,'/blah')
+        self.assertEqual(c.scheme,'https')
+        self.assertEqual(c.method,'put')
+        self.assertEqual(c.requests_options,{'verify':False})
+
+    def test_parse_checker_http_status_match(self):
+        class FakeEmptyResponse(object):
+            status_code = 200
+
+        container = self._get_container()
+        c = lifecycle.LifecycleHelperFactory.from_config(container,
+            {'type': 'http', 'port': 'server',})
+        self.assertTrue(c._test_response(FakeEmptyResponse()))
+
+    def test_parse_checker_http_status_fail(self):
+        class FakeEmptyResponse(object):
+            status_code = 500
+
+        container = self._get_container()
+        c = lifecycle.LifecycleHelperFactory.from_config(container,
+            {'type': 'http', 'port': 'server',})
+        self.assertFalse(c._test_response(FakeEmptyResponse()))
+
+    def test_parse_checker_http_regex_match(self):
+        class FakeEmptyResponse(object):
+            text = 'blah abce blah'
+
+        container = self._get_container()
+        c = lifecycle.LifecycleHelperFactory.from_config(container,
+            {'type': 'http', 'port': 'server','match_regex':'abc[^d]'})
+        self.assertTrue(c._test_response(FakeEmptyResponse()))
+
+    def test_parse_checker_http_regex_fail(self):
+        class FakeEmptyResponse(object):
+            text = 'blah abcd blah'
+
+        container = self._get_container()
+        c = lifecycle.LifecycleHelperFactory.from_config(container,
+            {'type': 'http', 'port': 'server','match_regex':'abc[^d]'})
+        self.assertFalse(c._test_response(FakeEmptyResponse()))
+
+#host,port,match_regex=None,path='/',scheme='http',method='get',max_wait=DEFAULT_MAX_WAIT,**requests_options
 if __name__ == '__main__':
     unittest.main()

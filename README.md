@@ -477,6 +477,57 @@ services:
         - {type: tcp, port: client, max_wait: 10}
 ```
 
+**TCP port pinging** makes Maestro attempt to connect to the configured
+port (by name), once per second until it succeeds or the `max_wait`
+value is reached (defaults to 300 seconds).
+
+Assuming your instance declares a `client` named port, you can make
+Maestro wait up to 10 seconds for this port to become available by doing
+the following:
+
+```yaml
+services:
+  zookeeper:
+    image: zookeeper:3.4.5
+    ports: {client: 2181}
+    lifecycle:
+      running:
+        - {type: tcp, port: client, max_wait: 10}
+```
+
+**HTTP Request** makes Maestro execute web requests to a target, once 
+per second until it succeeds or the `max_wait` value is reached 
+(defaults to 300 seconds).
+
+Assuming your instance declares a `admin` named port that runs a
+webserver, you can make Maestro wait up to 10 seconds for an HTTP 
+request to this port for the default path "/" to succeed by doing the following:
+
+```yaml
+services:
+  frontend:
+    image: frontend
+    ports: {admin: 8080}
+    lifecycle:
+      running:
+        - {type: http, port: admin, max_wait: 10}
+```
+
+Options:
+ - `port`, named port for an instance or explicit numbered port
+ - `host`, IP or resolvable hostname (defaults to ship.ip)
+ - `match_regex`, regular expression to test response against (defaults
+   to checking for HTTP 200 response code)
+ - `path`, path (including querystring) to use for request (defaults to
+   /)
+ - `scheme`, request scheme (defaults to http)
+ - `method`, HTTP method (defaults to GET)
+ - `max_wait`, max number of seconds to wait for a successful response 
+   (defaults to 300)
+ - `requests_options`, additional dictionary of options passed directly
+   to python's requests.request() method (e.g. verify=False to disable
+   certificate validation)
+
 **Script execution** makes Maestro execute the given command, using the
 return code to denote the success or failure of the test (a return code
 of zero indicates success, as per the Unix convention). For example:

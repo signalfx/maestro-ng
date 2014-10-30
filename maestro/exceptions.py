@@ -40,3 +40,4 @@ class InvalidLifecycleCheckConfigurationException(MaestroException):
 
 class InvalidRestartPolicyConfigurationException(MaestroException):
     "Error thrown when a restart policy isn't configured properly."""
+    pass

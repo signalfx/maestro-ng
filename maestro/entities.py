@@ -29,6 +29,10 @@ from . import exceptions
 from . import lifecycle
 
 
+# Possible values for the restart policy type.
+_VALID_RESTART_POLICIES = ['no', 'always', 'on-failure']
+
+
 class Entity:
     """Base class for named entities in the orchestrator."""
     def __init__(self, name):
@@ -91,8 +95,8 @@ class Ship(Entity):
                 identity_file=ssh_tunnel['key'])
             self._backend_url = 'http://localhost:{}'.format(
                 self._tunnel.bind_port)
-            
-            # Apparently bgtunnel isn't always ready right away and this 
+
+            # Apparently bgtunnel isn't always ready right away and this
             # drastically cuts down on the timeouts
             time.sleep(1)
 
@@ -320,28 +324,8 @@ class Container(Entity):
         self.network_mode = config.get('net')
 
         # Restart policy
-        def parse_restart_policy(policy):
-            valid_policies=('no', 'always', 'on-failure')
-            if type(policy) == str:
-                policy_name=policy
-                max_retry_count=0 
-            elif type(policy) == dict and \
-                 'name' in policy and \
-                 'maximum_retry_count' in policy:
-                policy_name=policy['name']
-                max_retry_count=policy['maximum_retry_count']
-            else:
-                raise exceptions.InvalidRestartPolicyConfigurationException(
-                        'Wrong format for the restart policy for container {}'.format(self.name))
-            if policy_name not in valid_policies:
-                raise exceptions.InvalidRestartPolicyConfigurationException(
-                        'Wrong restart policy name {} is invalid for container {}, choose from {}'
-                        .format(repr(policy_name), self.name, valid_policies))
-            return {
-                 "MaximumRetryCount": max_retry_count,
-                 "Name": policy_name } 
-        self.restart_policy = parse_restart_policy(config.get('restart', 'no'))
-        
+        self.restart_policy = self._parse_restart_policy(config.get('restart'))
+
         # DNS settings for the container, always as a list
         self.dns = config.get('dns')
         if isinstance(self.dns, six.string_types):
@@ -400,6 +384,29 @@ class Container(Entity):
             return int(s)
 
         return int(s[:-1]) * units[suffix]
+
+    def _parse_restart_policy(self, spec):
+        def _make_policy(name='no', retries=0):
+            if name not in _VALID_RESTART_POLICIES:
+                raise exceptions.InvalidRestartPolicyConfigurationException(
+                        'Invalid restart policy {} for container {}; choose one of {}.'
+                        .format(name, self.name, ', '.join(_VALID_RESTART_POLICIES)))
+            return {'Name': name, 'MaximumRetryCount': int(retries)}
+
+        try:
+            if isinstance(spec, six.string_types):
+                return _make_policy(*spec.split(':', 1))
+            elif type(spec) == dict:
+                return _make_policy(**spec)
+        except exceptions.InvalidRestartPolicyConfigurationException as e:
+            raise
+        except:
+            raise exceptions.InvalidRestartPolicyConfigurationException(
+                    'Invalid restart policy format for container {}: "{}"'
+                    .format(self.name, spec))
+
+        # Fall-back to default
+        return _make_policy()
 
     def _parse_go_time(self, s):
         """Parse a time string found in the container status into a Python

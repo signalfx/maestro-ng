@@ -201,7 +201,7 @@ be placed on (by name). Additionally, it may define:
   - `net`, to specify the container's network mode (one of `bridge` --
     the default, `host`, `container:<name|id>` or `none` to disable
     networking altogether);
-  - `restart`, to specify the restart policy (see Restart Policy below)
+  - `restart`, to specify the restart policy (see Restart Policy below);
   - `dns`, to specify one (as a single IP address) or more DNS servers
     (as a list) to be declared inside the container.
 
@@ -251,7 +251,9 @@ services:
           cpu: 10
         dns: [ 8.8.8.8, 8.8.4.4 ]
         net: host
-        restart: {name: on-failure, maximum_retry_count: 3}
+        restart:
+          name: on-failure
+          maximum_retry_count: 3
 ```
 
 ## Defining dependencies
@@ -539,18 +541,30 @@ type: exec
 command: "python my_cool_script.py"
 ```
 
-## Restart Policy
-Since version 1.2 docker allows to define the restart policy once a container stops.
-Allowed values are:
+## Restart policy
 
-  * `restart: no`, container is never restarted when stopped (default behaviour);
-  * `restart: always`, container is always restarted when stopped;
-  * `restart: on-failure`, container is restarted when stopped because of a failure.
+Since version 1.2 docker allows to define the restart policy of a
+container when it stops. The available policies are:
 
-You can also specify the number of maximum retries for restarting the container before giving up (in this case 3):
+  - `restart: no`, the default. The container is not restarted;
+  - `restart: always`: the container is _always_ restarted, regardless
+    of its exit code;
+  - `restart: on-failure`: the container is restarted if it exits with a
+    non-zero exit code.
+
+You can also specify the number of maximum retries for restarting the
+container before giving up:
 
 ```yaml
-    restart: { name: on-failure, maximum_retry_count: 3}
+restart:
+  name: on-failure
+  retries: 3
+```
+
+Or as a single string (similar to Docker's command line option):
+
+```yaml
+restart: "on-failure:3"
 ```
 
 ## How Maestro orchestrates and service auto-configuration

@@ -121,6 +121,64 @@ class ContainerTest(unittest.TestCase):
                                        service, config=config)
         self.assertEqual(container.memswap_limit, 42*1024)
 
+    def test_restart_policy_default(self):
+        config = {}
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config=config)
+        self.assertEqual(container.restart_policy, { 'Name': 'no', 'MaximumRetryCount': 0})
+
+    def test_restart_policy_no(self):
+        config = {'restart': 'no'}
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config=config)
+        self.assertEqual(container.restart_policy, { 'Name': 'no', 'MaximumRetryCount': 0})
+        
+    def test_restart_policy_always(self):
+        config = {'restart': 'always'}
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config=config)
+        self.assertEqual(container.restart_policy, { 'Name': 'always', 'MaximumRetryCount': 0})
+        
+    def test_restart_policy_onfailure(self):
+        config = {'restart': 'on-failure'}
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config=config)
+        self.assertEqual(container.restart_policy, { 'Name': 'on-failure', 'MaximumRetryCount': 0})
+
+    def test_restart_policy_onfailure_with_max_retries(self):
+        config = {'restart': {'name': 'on-failure', 'maximum_retry_count': 42}}
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config=config)
+        self.assertEqual(container.restart_policy, { 'Name': 'on-failure', 'MaximumRetryCount': 42})
+
+    def test_restart_policy_wrong_type(self):
+        config = {'restart': [] }
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        self.assertRaises(
+		exceptions.InvalidRestartPolicyConfigurationException, 
+                lambda : entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                             service, config=config))
+
+    def test_restart_policy_wrong_structure(self):
+        config = {'restart': { 'name': 'no' } }
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        self.assertRaises(
+		exceptions.InvalidRestartPolicyConfigurationException, 
+                lambda : entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                             service, config=config))
+
+    def test_restart_policy_wrong_name(self):
+        config = {'restart': 'noclue' } 
+        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
+        self.assertRaises(
+		exceptions.InvalidRestartPolicyConfigurationException, 
+                lambda : entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                             service, config=config))
 
 class BaseConfigFileUsingTest(unittest.TestCase):
 

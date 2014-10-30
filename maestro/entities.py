@@ -319,6 +319,29 @@ class Container(Entity):
         # Network mode
         self.network_mode = config.get('net')
 
+        # Restart policy
+        def parse_restart_policy(policy):
+            valid_policies=('no', 'always', 'on-failure')
+            if type(policy) == str:
+                policy_name=policy
+                max_retry_count=0 
+            elif type(policy) == dict and \
+                 'name' in policy and \
+                 'maximum_retry_count' in policy:
+                policy_name=policy['name']
+                max_retry_count=policy['maximum_retry_count']
+            else:
+                raise exceptions.InvalidRestartPolicyConfigurationException(
+                        'Wrong format for the restart policy for container {}'.format(self.name))
+            if policy_name not in valid_policies:
+                raise exceptions.InvalidRestartPolicyConfigurationException(
+                        'Wrong restart policy name {} is invalid for container {}, choose from {}'
+                        .format(repr(policy_name), self.name, valid_policies))
+            return {
+                 "MaximumRetryCount": max_retry_count,
+                 "Name": policy_name } 
+        self.restart_policy = parse_restart_policy(config.get('restart', 'no'))
+        
         # DNS settings for the container, always as a list
         self.dns = config.get('dns')
         if isinstance(self.dns, six.string_types):

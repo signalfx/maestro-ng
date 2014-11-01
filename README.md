@@ -165,6 +165,33 @@ ships:
       port: 22 # That's the default
 ```
 
+You can also connect to a Docker daemon secured by TLS.  Note
+that if you want to use verification, you have to
+give the IP (or something that is resolvable inside
+the container) as IP, and the name in the server
+certificate as endpoint.
+
+Not using verification works too (just don't mention
+`tls_verify` and `tls_ca_cert`), but a warning from
+inside `urllib3` will make maestroe's output unreadable.
+
+In the example below, "docker1" is the CN in the server
+certificate.  All certificates and keys have been
+created as explained in
+https://docs.docker.com/articles/https/
+
+```yaml
+ships:
+    docker1:
+        ip: 172.17.42.1
+        endpoint: docker1
+        tls: true
+        tls_verify: true
+        tls_ca_cert: ca.pem
+        tls_key: key.pem
+        tls_cert: cert.pem
+```
+
 Services are also named. Their name is used for commands that act on
 specific services instead of the whole environment, and is also used in
 dependency declarations. Each service must define the Docker image its

@@ -56,11 +56,13 @@ class Ship(Entity):
     """
 
     DEFAULT_DOCKER_PORT = 4243
+    DEFAULT_DOCKER_TLS_PORT = 2376
     DEFAULT_DOCKER_VERSION = '1.10'
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, endpoint=None, docker_port=None, timeout=None,
-                 ssh_tunnel=None):
+                 ssh_tunnel=None,
+                 tls=None, tls_verify=False, tls_ca_cert=None, tls_cert=None, tls_key=None, ssl_version=None):
         """Instantiate a new ship.
 
         Args:
@@ -73,7 +75,8 @@ class Ship(Entity):
         Entity.__init__(self, name)
         self._ip = ip
         self._endpoint = endpoint or ip
-        self._docker_port = int(docker_port or self.DEFAULT_DOCKER_PORT)
+        self._docker_port = int(docker_port or
+                (self.DEFAULT_DOCKER_TLS_PORT if tls else self.DEFAULT_DOCKER_PORT))
         self._tunnel = None
 
         if ssh_tunnel:
@@ -101,13 +104,23 @@ class Ship(Entity):
             time.sleep(1)
 
         else:
-            self._backend_url = 'http://{:s}:{:d}'.format(
-                self._endpoint, self._docker_port)
+            proto = "https" if (tls or tls_verify) else "http"
+            self._backend_url = '{:s}://{:s}:{:d}'.format(
+                proto, self._endpoint, self._docker_port)
+
+        self._tls = None
+        if tls:
+            self._tls = docker.tls.TLSConfig(
+                    verify = tls_verify,
+                    client_cert = (tls_cert, tls_key),
+                    ca_cert = tls_ca_cert,
+                    ssl_version = ssl_version)
 
         self._backend = docker.Client(
             base_url=self._backend_url,
             version=Ship.DEFAULT_DOCKER_VERSION,
-            timeout=timeout or Ship.DEFAULT_DOCKER_TIMEOUT)
+            timeout=timeout or Ship.DEFAULT_DOCKER_TIMEOUT,
+            tls=self._tls)
 
     @property
     def ip(self):

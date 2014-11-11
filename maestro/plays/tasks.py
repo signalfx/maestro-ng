@@ -11,6 +11,11 @@ import time
 from .. import exceptions
 from ..termoutput import green, blue, red, time_ago
 
+try:
+    from urlparse import urlparse
+except ImportError:
+    # Python 3
+    from urllib.parse import urlparse
 
 CONTAINER_STATUS_FMT = '{:<10s} '
 TASK_RESULT_FMT = '{:<10s}'
@@ -316,8 +321,25 @@ class LoginTask(Task):
             return
 
         registry, repo_name = image['repository'].split('/', 1)
+
+        # Check if the prefix of an image is configured by name as a registry
         if registry not in self._registries:
-            return
+            # Now check if it's configured as the FQDN in a configured
+            # registry
+            matchedByFqdn = None
+            for registry_name, settings in self._registries.items():
+                # Note that we only consider the fqdn here. Different
+                # registries on the same host but different ports wouldn't
+                # work
+                fqdn = urlparse(settings['registry']).netloc
+                if registry == fqdn or registry == fqdn.split(':')[0]:
+                    # This is it.
+                    matchedByFqdn = registry_name
+                    break
+            if not matchedByFqdn:
+                return
+            else:
+                registry = matchedByFqdn
 
         self.o.reset()
         self.o.pending('logging in to {}...'.format(registry))

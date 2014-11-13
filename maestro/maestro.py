@@ -267,7 +267,8 @@ class Conductor:
                        ignore_dependencies, concurrency))
 
     def start(self, things, refresh_images=False, with_dependencies=False,
-              ignore_dependencies=False, concurrency=None, **kwargs):
+              ignore_dependencies=False, concurrency=None, reuse=False,
+              **kwargs):
         """Start the given container(s) and services(s). Dependencies of the
         requested containers and services are started first.
 
@@ -281,17 +282,19 @@ class Conductor:
                 respected.
             concurrency (int): The maximum number of instances that can be
                 acted on at the same time.
+            reuse (boolean): reuse an existing container instead of
+                dropping/re-creating
         """
         containers = self._ordered_containers(things) \
             if with_dependencies else self._to_containers(things)
 
         self._audit_play(
             plays.Start(containers, self.registries, refresh_images,
-                        ignore_dependencies, concurrency))
+                        ignore_dependencies, concurrency, reuse))
 
     def restart(self, things, refresh_images=False, with_dependencies=False,
                 ignore_dependencies=False, concurrency=None, step_delay=0,
-                stop_start_delay=0, **kwargs):
+                stop_start_delay=0, reuse=False, **kwargs):
         """Restart the given container(s) and services(s). Dependencies of the
         requested containers and services are started first.
 
@@ -315,7 +318,7 @@ class Conductor:
         self._audit_play(
             plays.Restart(containers, self.registries, refresh_images,
                           ignore_dependencies, concurrency, step_delay,
-                          stop_start_delay))
+                          stop_start_delay, reuse))
 
     def stop(self, things, with_dependencies=False, ignore_dependencies=False,
              concurrency=None, **kwargs):

@@ -241,13 +241,14 @@ class Start(BaseOrchestrationPlay):
     application to become available before moving to the next one."""
 
     def __init__(self, containers=[], registries={}, refresh_images=False,
-                 ignore_dependencies=True, concurrency=None):
+                 ignore_dependencies=True, concurrency=None, reuse=False):
         BaseOrchestrationPlay.__init__(
             self, containers, ignore_dependencies=ignore_dependencies,
             concurrency=concurrency)
 
         self._registries = registries
         self._refresh_images = refresh_images
+        self._reuse = reuse
 
     def _run(self):
         for order, container in enumerate(self._containers):
@@ -256,7 +257,7 @@ class Start(BaseOrchestrationPlay):
                     order + 1, container.name, container.service.name,
                     container.ship.address)))
             self.register(tasks.StartTask(o, container, self._registries,
-                                          self._refresh_images))
+                                          self._refresh_images, self._reuse))
 
 
 class Pull(BaseOrchestrationPlay):

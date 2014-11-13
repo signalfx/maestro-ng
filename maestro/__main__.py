@@ -86,9 +86,13 @@ def create_parser():
         help='ignore dependency order')
 
     with_refresh = argparse.ArgumentParser(add_help=False)
-    with_refresh.add_argument(
+    refresh_or_reuse_group = with_refresh.add_mutually_exclusive_group()
+    refresh_or_reuse_group.add_argument(
         '-r', '--refresh-images', action='store_true',
         help='force refresh of container images from registry')
+    refresh_or_reuse_group.add_argument(
+        '--reuse', action='store_true',
+        help='reuse existing container if it exists')
 
     # status
     subparser = subparsers.add_parser(

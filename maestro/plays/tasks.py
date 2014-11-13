@@ -106,12 +106,17 @@ class StatusTask(Task):
 
 
 class StartTask(Task):
-    """Start a container, refreshing the image if requested."""
+    """Start a container, refreshing the image if requested.
 
-    def __init__(self, o, container, registries={}, refresh=False):
+    If reuse is True, the container will not be removed and re-created
+    if it exists."""
+
+    def __init__(self, o, container, registries={}, refresh=False,
+                 reuse=False):
         Task.__init__(self, o, container)
         self._registries = registries
         self._refresh = refresh
+        self._reuse = reuse
 
     def run(self):
         self.o.reset()
@@ -160,38 +165,39 @@ class StartTask(Task):
             # application were already running.
             return None
 
-        # Otherwise we need to start it.
-        RemoveTask(self.o, self.container, standalone=False).run()
+        if (not self._reuse) or (not status):
+            # Otherwise we need to start it.
+            RemoveTask(self.o, self.container, standalone=False).run()
 
-        # Check if the image is available, or if we need to pull it down.
-        image = self.container.service.get_image_details()
-        if self._refresh or \
+            # Check if the image is available, or if we need to pull it down.
+            image = self.container.service.get_image_details()
+            if self._refresh or \
                 not filter(
                     lambda i: self.container.service.image in i['RepoTags'],
                     self.container.ship.backend.images(image['repository'])):
-            PullTask(self.o, self.container, self._registries,
-                     standalone=False).run()
+                PullTask(self.o, self.container, self._registries,
+                         standalone=False).run()
 
-        # Create and start the container.
-        ports = self.container.ports \
-            and map(lambda p: tuple(p['exposed'].split('/')),
-                    self.container.ports.values()) \
-            or None
+            # Create and start the container.
+            ports = self.container.ports \
+                and map(lambda p: tuple(p['exposed'].split('/')),
+                        self.container.ports.values()) \
+                or None
 
-        self.o.pending('creating container from {}...'.format(
-            self.container.service.short_image))
-        self.container.ship.backend.create_container(
-            image=self.container.service.image,
-            hostname=self.container.name,
-            name=self.container.name,
-            environment=self.container.env,
-            volumes=self.container.volumes.values(),
-            mem_limit=self.container.mem_limit,
-            memswap_limit=self.container.memswap_limit,
-            cpu_shares=self.container.cpu_shares,
-            ports=ports,
-            detach=True,
-            command=self.container.command)
+            self.o.pending('creating container from {}...'.format(
+                self.container.service.short_image))
+            self.container.ship.backend.create_container(
+                image=self.container.service.image,
+                hostname=self.container.name,
+                name=self.container.name,
+                environment=self.container.env,
+                volumes=self.container.volumes.values(),
+                mem_limit=self.container.mem_limit,
+                memswap_limit=self.container.memswap_limit,
+                cpu_shares=self.container.cpu_shares,
+                ports=ports,
+                detach=True,
+                command=self.container.command)
 
         self.o.pending('waiting for container...')
         if not self._wait_for_status(lambda x: x):
@@ -272,12 +278,13 @@ class RestartTask(Task):
     """Task that restarts a container."""
 
     def __init__(self, o, container, registries={}, refresh=False,
-                 step_delay=0, stop_start_delay=0):
+                 step_delay=0, stop_start_delay=0, reuse=False):
         Task.__init__(self, o, container)
         self._registries = registries
         self._refresh = refresh
         self._step_delay = step_delay
         self._stop_start_delay = stop_start_delay
+        self._reuse = reuse
 
     def run(self):
         self.o.reset()
@@ -295,7 +302,7 @@ class RestartTask(Task):
             time.sleep(self._stop_start_delay)
 
         StartTask(self.o, self.container, self._registries,
-                  self._refresh).run()
+                  self._refresh, self._reuse).run()
 
 
 class LoginTask(Task):

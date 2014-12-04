@@ -328,7 +328,7 @@ class Restart(BaseOrchestrationPlay):
 
     def __init__(self, containers=[], registries={}, refresh_images=False,
                  ignore_dependencies=True, concurrency=None, step_delay=0,
-                 stop_start_delay=0):
+                 stop_start_delay=0, reuse=False):
         BaseOrchestrationPlay.__init__(
             self, containers, forward=False,
             ignore_dependencies=ignore_dependencies,
@@ -338,6 +338,7 @@ class Restart(BaseOrchestrationPlay):
         self._refresh_images = refresh_images
         self._step_delay = step_delay
         self._stop_start_delay = stop_start_delay
+        self._reuse = reuse
 
     def _run(self):
         for order, container in enumerate(self._containers):
@@ -347,4 +348,5 @@ class Restart(BaseOrchestrationPlay):
                     container.ship.address)))
             self.register(tasks.RestartTask(
                 o, container, self._registries, self._refresh_images,
-                self._step_delay if order > 0 else 0, self._stop_start_delay))
+                self._step_delay if order > 0 else 0, self._stop_start_delay,
+                self._reuse))

@@ -353,6 +353,9 @@ class Container(Entity):
         self.mem_limit = self._parse_bytes(limits.get('memory'))
         self.memswap_limit = self._parse_bytes(limits.get('swap'))
 
+        # Get lxc-conf
+        self.lxc_conf = dict(config.get('lxc_conf', {}))
+
         # Seed the service name, container name and host address as part of the
         # container's environment.
         self.env['MAESTRO_ENVIRONMENT_NAME'] = env_name

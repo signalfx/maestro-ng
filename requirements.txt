@@ -1,4 +1,4 @@
-docker-py>=0.5.0
+docker-py>=0.5.3
 pyyaml
 jinja2
 six

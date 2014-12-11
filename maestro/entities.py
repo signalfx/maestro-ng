@@ -61,8 +61,8 @@ class Ship(Entity):
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, endpoint=None, docker_port=None, timeout=None,
-                 ssh_tunnel=None,
-                 tls=None, tls_verify=False, tls_ca_cert=None, tls_cert=None, tls_key=None, ssl_version=None):
+                 ssh_tunnel=None, tls=None, tls_verify=False, tls_ca_cert=None,
+                 tls_cert=None, tls_key=None, ssl_version=None):
         """Instantiate a new ship.
 
         Args:
@@ -190,25 +190,7 @@ class Service(Entity):
 
     @property
     def image(self):
-        """Return the full name and tag of the image used by instances of this
-        service."""
         return self._image
-
-    @property
-    def short_image(self):
-        """Return the abbreviated name (stripped of its registry component,
-        when present) of the image used by this service."""
-        return self._image[self._image.find('/')+1:]
-
-    def get_image_details(self):
-        """Return a dictionary detailing the image used by this service, with
-        its repository name and the requested tag (defaulting to latest if not
-        specified)."""
-        p = self._image.rsplit(':', 1)
-        if len(p) > 1 and '/' in p[1]:
-            p[0] = self._image
-            p.pop()
-        return {'repository': p[0], 'tag': len(p) > 1 and p[1] or 'latest'}
 
     @property
     def dependencies(self):
@@ -296,6 +278,7 @@ class Container(Entity):
         self._status = None  # The container's status, cached.
         self._ship = ship
         self._service = service
+        self._image = config.get('image', service.image)
 
         # Register this instance container as being part of its parent service.
         self._service.register_container(self)
@@ -379,6 +362,36 @@ class Container(Entity):
         if the container doesn't exist."""
         status = self.status()
         return status and status.get('ID', status.get('Id', None))
+
+    @property
+    def shortid(self):
+        return self.id[:7] if self.id else '-'
+
+    @property
+    def image(self):
+        """Return the full name and tag of the image used by instances of this
+        service."""
+        return self._image
+
+    @property
+    def short_image(self):
+        """Return the abbreviated name (stripped of its registry component,
+        when present) of the image used by this service."""
+        return self._image[self._image.find('/')+1:]
+
+    def get_image_details(self):
+        """Return a dictionary detailing the image used by this service, with
+        its repository name and the requested tag (defaulting to latest if not
+        specified)."""
+        p = self._image.rsplit(':', 1)
+        if len(p) > 1 and '/' in p[1]:
+            p[0] = self._image
+            p.pop()
+        return {'repository': p[0], 'tag': len(p) > 1 and p[1] or 'latest'}
+
+    @property
+    def shortid_and_tag(self):
+        return '{}:{}'.format(self.get_image_details()['tag'], self.shortid)
 
     def _parse_bytes(self, s):
         if not s or not isinstance(s, six.string_types):

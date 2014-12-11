@@ -35,38 +35,53 @@ class ServiceTest(unittest.TestCase):
         service = entities.Service('foo', 'stackbrew/ubuntu:13.10')
         self.assertEqual(service.image, 'stackbrew/ubuntu:13.10')
 
+class ContainerTest(unittest.TestCase):
+
+    def test_image_propagates_from_service(self):
+        service = entities.Service('foo', 'stackbrew/ubuntu:13.10')
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config={})
+        self.assertEqual(container.image, service.image)
+
     def test_get_image_details_basic(self):
         service = entities.Service('foo', 'stackbrew/ubuntu:13.10')
-        d = service.get_image_details()
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config={})
+        d = container.get_image_details()
         self.assertEqual(d['repository'], 'stackbrew/ubuntu')
         self.assertEqual(d['tag'], '13.10')
 
     def test_get_image_details_notag(self):
         service = entities.Service('foo', 'stackbrew/ubuntu')
-        d = service.get_image_details()
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config={})
+        d = container.get_image_details()
         self.assertEqual(d['repository'], 'stackbrew/ubuntu')
         self.assertEqual(d['tag'], 'latest')
 
     def test_get_image_details_custom_registry(self):
         service = entities.Service('foo', 'quay.io/foo/bar:13.10')
-        d = service.get_image_details()
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config={})
+        d = container.get_image_details()
         self.assertEqual(d['repository'], 'quay.io/foo/bar')
         self.assertEqual(d['tag'], '13.10')
 
     def test_get_image_details_custom_port(self):
         service = entities.Service('foo', 'quay.io:8081/foo/bar:13.10')
-        d = service.get_image_details()
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config={})
+        d = container.get_image_details()
         self.assertEqual(d['repository'], 'quay.io:8081/foo/bar')
         self.assertEqual(d['tag'], '13.10')
 
     def test_get_image_details_custom_port_notag(self):
         service = entities.Service('foo', 'quay.io:8081/foo/bar')
-        d = service.get_image_details()
+        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
+                                       service, config={})
+        d = container.get_image_details()
         self.assertEqual(d['repository'], 'quay.io:8081/foo/bar')
         self.assertEqual(d['tag'], 'latest')
-
-
-class ContainerTest(unittest.TestCase):
 
     def test_env_propagates_from_service(self):
         service_env = {'ENV_VAR': 'value'}

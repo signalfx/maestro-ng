@@ -10,7 +10,7 @@ import threading
 from . import tasks
 from .. import exceptions
 from .. import termoutput
-from ..termoutput import columns, green, red, supports_color
+from ..termoutput import columns, green, red, supports_color, time_ago
 
 
 class BaseOrchestrationPlay:
@@ -21,23 +21,27 @@ class BaseOrchestrationPlay:
     order direction.
     """
 
-    # Data column size.
-    # Bounded between 20 and 40 characters, keeping 60 columns for the task
+    # Data column sizes.
+    # Instance name column is bounded between 20 and 40 characters. Ship name
+    # column is bounded between 0 and 40 characters. We keep 60 columns for
     # pending and commited output in the last column.
-    _CSIZE = min(40, max(20, (columns() - 60) / 3))
+    _COLUMNS = columns()
+    _INST_CSIZE = min(40, max(20, (_COLUMNS - 60) / 3))
+    _SHIP_CSIZE = min(40, max(0, _COLUMNS - _INST_CSIZE - 80))
 
     # Header line format and titles.
     HEADER_FMT = ('{{:>3s}}  {{:<{}.{}s}} {{:<20.20s}} {{:<{}.{}s}} '
-                  .format(_CSIZE, _CSIZE, _CSIZE, _CSIZE)) + \
+                  .format(_INST_CSIZE, _INST_CSIZE,
+                          _SHIP_CSIZE, _SHIP_CSIZE)) + \
         tasks.CONTAINER_STATUS_FMT + ' ' + tasks.TASK_RESULT_FMT
     HEADERS = ['  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS']
 
     # Output line format (to which the task output colmns are added).
     LINE_FMT = ('{{:>3d}}. {}{{:<{}.{}s}}{} {{:<20.20s}} {{:<{}.{}s}}'
                 .format('\033[1m' if supports_color() else '',
-                        _CSIZE, _CSIZE,
+                        _INST_CSIZE, _INST_CSIZE,
                         '\033[0m' if supports_color() else '',
-                        _CSIZE, _CSIZE))
+                        _SHIP_CSIZE, _SHIP_CSIZE))
 
     def __init__(self, containers=[], forward=True, ignore_dependencies=False,
                  concurrency=None):
@@ -190,11 +194,13 @@ class FullStatus(BaseOrchestrationPlay):
                 status = container.status()
 
                 if status and status['State']['Running']:
-                    o.commit(green(tasks.CONTAINER_STATUS_FMT
-                                   .format(container.id[:7])))
+                    o.commit(green(tasks.CONTAINER_STATUS_FMT.format(
+                        container.shortid_and_tag)))
+                    o.commit(green('running{}'.format(
+                        time_ago(container.started_at))))
                 else:
-                    o.commit(red(tasks.CONTAINER_STATUS_FMT
-                                 .format('down')))
+                    o.commit(red('down{}'.format(
+                        time_ago(container.finished_at))))
 
                 o.pending('checking service...')
                 running = status and status['State']['Running']
@@ -203,17 +209,19 @@ class FullStatus(BaseOrchestrationPlay):
                 else:
                     o.commit(red(tasks.TASK_RESULT_FMT.format('down')))
 
+                print()
+                print('     {}'.format(container.image))
+
                 for name, port in container.ports.items():
-                    o.commit('\n')
                     o = termoutput.OutputFormatter(prefix='     >>')
                     o.commit('{:>15.15s}: {:>9.9s} is'
                              .format(name, port['external'][1]))
                     o.commit(green('up') if container.ping_port(name)
                              else red('down'))
+                    o.commit('\n')
             except Exception:
                 o.commit(tasks.CONTAINER_STATUS_FMT.format('-'))
                 o.commit(red('host down'))
-            o.commit('\n')
 
 
 class Status(BaseOrchestrationPlay):

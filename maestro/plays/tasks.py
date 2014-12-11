@@ -12,7 +12,7 @@ from .. import exceptions
 from ..termoutput import green, blue, red, time_ago
 
 
-CONTAINER_STATUS_FMT = '{:<10s} '
+CONTAINER_STATUS_FMT = '{:<25s} '
 TASK_RESULT_FMT = '{:<10s}'
 
 
@@ -29,10 +29,6 @@ class Task:
         """
         self.o = o
         self.container = container
-
-    @property
-    def cid(self):
-        return self.container.id[:7] if self.container.id else '-'
 
     def _wait_for_status(self, cond, retries=10):
         """Wait for the container's status to comply to the given condition."""
@@ -96,11 +92,13 @@ class StatusTask(Task):
             return
 
         if s and s['State']['Running']:
-            self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
+            self.o.commit(green(CONTAINER_STATUS_FMT.format(
+                self.container.shortid_and_tag)))
             self.o.commit(green('running{}'.format(
                 time_ago(self.container.started_at))))
         else:
-            self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
+            self.o.commit(CONTAINER_STATUS_FMT.format(
+                self.container.shortid_and_tag))
             self.o.commit(red('down{}'.format(
                 time_ago(self.container.finished_at))))
 
@@ -160,7 +158,8 @@ class StartTask(Task):
         status = self.container.status(refresh=True)
 
         if status and status['State']['Running']:
-            self.o.commit(blue(CONTAINER_STATUS_FMT.format(self.cid)))
+            self.o.commit(blue(CONTAINER_STATUS_FMT.format(
+                self.container.shortid_and_tag)))
             # We use None as a special marker showing the container and the
             # application were already running.
             return None
@@ -170,10 +169,10 @@ class StartTask(Task):
             RemoveTask(self.o, self.container, standalone=False).run()
 
             # Check if the image is available, or if we need to pull it down.
-            image = self.container.service.get_image_details()
+            image = self.container.get_image_details()
             if self._refresh or \
                 not filter(
-                    lambda i: self.container.service.image in i['RepoTags'],
+                    lambda i: self.container.image in i['RepoTags'],
                     self.container.ship.backend.images(image['repository'])):
                 PullTask(self.o, self.container, self._registries,
                          standalone=False).run()
@@ -185,9 +184,9 @@ class StartTask(Task):
                 or None
 
             self.o.pending('creating container from {}...'.format(
-                self.container.service.short_image))
+                self.container.short_image))
             self.container.ship.backend.create_container(
-                image=self.container.service.image,
+                image=self.container.image,
                 hostname=self.container.name,
                 name=self.container.name,
                 environment=self.container.env,
@@ -203,7 +202,8 @@ class StartTask(Task):
         if not self._wait_for_status(lambda x: x):
             raise exceptions.OrchestrationException(
                 'Container status could not be obtained after creation!')
-        self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
+        self.o.commit(green(CONTAINER_STATUS_FMT.format(
+            self.container.shortid_and_tag)))
 
         ports = collections.defaultdict(list) if self.container.ports else None
         if ports is not None:
@@ -248,7 +248,8 @@ class StopTask(Task):
         try:
             status = self.container.status(refresh=True)
             if not status or not status['State']['Running']:
-                self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
+                self.o.commit(CONTAINER_STATUS_FMT.format(
+                    self.container.shortid_and_tag))
                 self.o.commit(blue(TASK_RESULT_FMT.format('down')))
                 return
         except:
@@ -256,7 +257,8 @@ class StopTask(Task):
             self.o.commit(red(TASK_RESULT_FMT.format('host down')))
             return
 
-        self.o.commit(green(CONTAINER_STATUS_FMT.format(self.cid)))
+        self.o.commit(green(CONTAINER_STATUS_FMT.format(
+            self.container.shortid_and_tag)))
 
         try:
             self.o.pending('stopping service...')
@@ -318,7 +320,7 @@ class LoginTask(Task):
         self._registries = registries
 
     def run(self):
-        image = self.container.service.get_image_details()
+        image = self.container.get_image_details()
         if image['repository'].find('/') <= 0:
             return
 
@@ -351,8 +353,8 @@ class PullTask(Task):
         LoginTask(self.o, self.container, self._registries).run()
 
         self.o.pending('pulling image {}...'
-                       .format(self.container.service.short_image))
-        image = self.container.service.get_image_details()
+                       .format(self.container.short_image))
+        image = self.container.get_image_details()
         for dlstatus in self.container.ship.backend.pull(stream=True, **image):
             percentage = self._update_pull_progress(dlstatus)
             self.o.pending('... {:.1f}%'.format(percentage))
@@ -400,13 +402,16 @@ class RemoveTask(Task):
             return
 
         if status['State']['Running']:
-            self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
+            self.o.commit(CONTAINER_STATUS_FMT.format(
+                self.container.shortid_and_tag))
             self.o.commit(red(TASK_RESULT_FMT.format('skipped')))
             return
 
-        self.o.pending('removing container {}...'.format(self.cid))
+        self.o.pending('removing container {}...'.format(
+            self.container.shortid))
         self.container.ship.backend.remove_container(self.container.id)
 
         if self._standalone:
-            self.o.commit(CONTAINER_STATUS_FMT.format(self.cid))
+            self.o.commit(CONTAINER_STATUS_FMT.format(
+                self.container.shortid))
             self.o.commit(green(TASK_RESULT_FMT.format('removed')))

@@ -202,6 +202,8 @@ of that service's instances.
 Each service instance must at least define the _ship_ its container will
 be placed on (by name). Additionally, it may define:
 
+  - `image`, to override the service-level image repository name, if
+    needed (useful for canary deployments for example);
   - `ports`, a dictionary of port mappings, as a map of `<port name>:
     <port or port mapping spec>` (see below for port spec syntax);
   - `lifecycle`, for lifecycle state checks, which Maestro uses to

@@ -137,6 +137,9 @@ def create_parser():
     subparser.add_argument(
         '--stop-start-delay', type=int, default=0,
         help='delay, in seconds, between stopping and starting each container')
+    subparser.add_argument(
+        '--only-if-changed', action='store_true',
+        help='only restart if the container image was updated')
 
     # clean
     subparser = subparsers.add_parser(

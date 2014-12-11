@@ -144,6 +144,17 @@ class Ship(Entity):
             return '{} (ssh:{})'.format(self.name, self._tunnel.bind_port)
         return self.name
 
+    def get_image_ids(self):
+        """Returns a dictionary of tagged images available on the Docker daemon
+        running on this ship."""
+        images = {}
+        for image in self._backend.images():
+            if image['RepoTags'] is '<none>:<none>':
+                continue
+            for tag in image['RepoTags']:
+                images[tag] = image['Id']
+        return images
+
     def __repr__(self):
         if self._tunnel:
             return '<ship:{}@{} via ssh://{}@{}:{}->{}>'.format(
@@ -366,6 +377,10 @@ class Container(Entity):
     @property
     def shortid(self):
         return self.id[:7] if self.id else '-'
+
+    def is_running(self):
+        status = self.status(refresh=True)
+        return status and status['State']['Running']
 
     @property
     def image(self):

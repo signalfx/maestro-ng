@@ -282,8 +282,8 @@ class Conductor:
                 respected.
             concurrency (int): The maximum number of instances that can be
                 acted on at the same time.
-            reuse (boolean): reuse an existing container instead of
-                dropping/re-creating
+            reuse (boolean): Restart the existing container instead of
+                destroying/recreating a new one.
         """
         containers = self._ordered_containers(things) \
             if with_dependencies else self._to_containers(things)
@@ -294,7 +294,8 @@ class Conductor:
 
     def restart(self, things, refresh_images=False, with_dependencies=False,
                 ignore_dependencies=False, concurrency=None, step_delay=0,
-                stop_start_delay=0, reuse=False, **kwargs):
+                stop_start_delay=0, reuse=False, only_if_changed=False,
+                **kwargs):
         """Restart the given container(s) and services(s). Dependencies of the
         requested containers and services are started first.
 
@@ -312,13 +313,17 @@ class Conductor:
                 next container.
             stop_start_delay (int): Time, in seconds, to wait between stopping
                 and starting each container.
+            reuse (boolean): Restart the existing container instead of
+                destroying/recreating a new one.
+            only_if_changed (boolean): Only restart the container if its
+                underlying image was updated.
         """
         containers = self._ordered_containers(things, False) \
             if with_dependencies else self._to_containers(things)
         self._audit_play(
             plays.Restart(containers, self.registries, refresh_images,
                           ignore_dependencies, concurrency, step_delay,
-                          stop_start_delay, reuse))
+                          stop_start_delay, reuse, only_if_changed))
 
     def stop(self, things, with_dependencies=False, ignore_dependencies=False,
              concurrency=None, **kwargs):

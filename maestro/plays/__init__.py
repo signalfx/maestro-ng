@@ -191,9 +191,8 @@ class FullStatus(BaseOrchestrationPlay):
 
             try:
                 o.pending('checking container...')
-                status = container.status()
 
-                if status and status['State']['Running']:
+                if container.is_running():
                     o.commit(green(tasks.CONTAINER_STATUS_FMT.format(
                         container.shortid_and_tag)))
                     o.commit(green('running{}'.format(
@@ -201,13 +200,6 @@ class FullStatus(BaseOrchestrationPlay):
                 else:
                     o.commit(red('down{}'.format(
                         time_ago(container.finished_at))))
-
-                o.pending('checking service...')
-                running = status and status['State']['Running']
-                if running:
-                    o.commit(green(tasks.TASK_RESULT_FMT.format('up')))
-                else:
-                    o.commit(red(tasks.TASK_RESULT_FMT.format('down')))
 
                 print()
                 print('     {}'.format(container.image))
@@ -336,7 +328,7 @@ class Restart(BaseOrchestrationPlay):
 
     def __init__(self, containers=[], registries={}, refresh_images=False,
                  ignore_dependencies=True, concurrency=None, step_delay=0,
-                 stop_start_delay=0, reuse=False):
+                 stop_start_delay=0, reuse=False, only_if_changed=False):
         BaseOrchestrationPlay.__init__(
             self, containers, forward=False,
             ignore_dependencies=ignore_dependencies,
@@ -347,6 +339,7 @@ class Restart(BaseOrchestrationPlay):
         self._step_delay = step_delay
         self._stop_start_delay = stop_start_delay
         self._reuse = reuse
+        self._only_if_changed = only_if_changed
 
     def _run(self):
         for order, container in enumerate(self._containers):
@@ -357,4 +350,4 @@ class Restart(BaseOrchestrationPlay):
             self.register(tasks.RestartTask(
                 o, container, self._registries, self._refresh_images,
                 self._step_delay if order > 0 else 0, self._stop_start_delay,
-                self._reuse))
+                self._reuse, self._only_if_changed))

@@ -85,22 +85,20 @@ class StatusTask(Task):
         self.o.pending('checking...')
 
         try:
-            s = self.container.status(refresh=True)
+            if self.container.is_running():
+                self.o.commit(green(CONTAINER_STATUS_FMT.format(
+                    self.container.shortid_and_tag)))
+                self.o.commit(green('running{}'.format(
+                    time_ago(self.container.started_at))))
+            else:
+                self.o.commit(CONTAINER_STATUS_FMT.format(
+                    self.container.shortid_and_tag))
+                self.o.commit(red('down{}'.format(
+                    time_ago(self.container.finished_at))))
         except Exception:
             self.o.commit(CONTAINER_STATUS_FMT.format('-'))
             self.o.commit(red(TASK_RESULT_FMT.format('host down')))
             return
-
-        if s and s['State']['Running']:
-            self.o.commit(green(CONTAINER_STATUS_FMT.format(
-                self.container.shortid_and_tag)))
-            self.o.commit(green('running{}'.format(
-                time_ago(self.container.started_at))))
-        else:
-            self.o.commit(CONTAINER_STATUS_FMT.format(
-                self.container.shortid_and_tag))
-            self.o.commit(red('down{}'.format(
-                time_ago(self.container.finished_at))))
 
 
 class StartTask(Task):
@@ -155,16 +153,14 @@ class StartTask(Task):
         necessary. We then wait for the application to start and return True or
         False depending on whether the start was successful."""
         self.o.pending('checking service...')
-        status = self.container.status(refresh=True)
-
-        if status and status['State']['Running']:
+        if self.container.is_running():
             self.o.commit(blue(CONTAINER_STATUS_FMT.format(
                 self.container.shortid_and_tag)))
             # We use None as a special marker showing the container and the
             # application were already running.
             return None
 
-        if (not self._reuse) or (not status):
+        if (not self._reuse) or (not self.container.status()):
             # Otherwise we need to start it.
             RemoveTask(self.o, self.container, standalone=False).run()
 
@@ -280,16 +276,34 @@ class RestartTask(Task):
     """Task that restarts a container."""
 
     def __init__(self, o, container, registries={}, refresh=False,
-                 step_delay=0, stop_start_delay=0, reuse=False):
+                 step_delay=0, stop_start_delay=0, reuse=False,
+                 only_if_changed=False):
         Task.__init__(self, o, container)
         self._registries = registries
         self._refresh = refresh
         self._step_delay = step_delay
         self._stop_start_delay = stop_start_delay
         self._reuse = reuse
+        self._only_if_changed = only_if_changed
 
     def run(self):
         self.o.reset()
+
+        if self._refresh:
+            PullTask(self.o, self.container, self._registries,
+                     standalone=False).run()
+
+        if self._only_if_changed:
+            if self.container.is_running():
+                self.o.pending('checking image...')
+                images = self.container.ship.get_image_ids()
+                if images.get(self.container.image) == \
+                        self.container.status()['Image']:
+                    self.o.commit(CONTAINER_STATUS_FMT.format(
+                        self.container.shortid_and_tag))
+                    self.o.commit(blue('up to date'))
+                    return
+
         if self._step_delay:
             self.o.pending('waiting {}s before restart...'
                            .format(self._step_delay))
@@ -304,7 +318,7 @@ class RestartTask(Task):
             time.sleep(self._stop_start_delay)
 
         StartTask(self.o, self.container, self._registries,
-                  self._refresh, self._reuse).run()
+                  False, self._reuse).run()
 
 
 class LoginTask(Task):

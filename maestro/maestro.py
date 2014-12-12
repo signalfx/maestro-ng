@@ -46,6 +46,7 @@ class Conductor:
 
         for kind, service in self._config.get('services', {}).items():
             self.services[kind] = entities.Service(kind, service['image'],
+                                                   self.schema,
                                                    service.get('env', {}))
 
             for name, instance in service['instances'].items():
@@ -54,6 +55,7 @@ class Conductor:
                                        self.ships[instance['ship']],
                                        self.services[kind],
                                        instance,
+                                       self.schema,
                                        self._config['name'])
 
         # Resolve dependencies between services.
@@ -77,6 +79,10 @@ class Conductor:
         # Instantiate audit bindings
         self.auditor = audit.AuditorFactory.from_config(
             self._config.get('audit', []))
+
+    @property
+    def schema(self):
+        return self._config.get('__maestro', {'schema': 1})
 
     def _order_dependencies(self, pending=[], ordered=[], forward=True):
         """Order the given set of containers into an order respecting the

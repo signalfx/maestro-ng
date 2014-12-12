@@ -1,6 +1,25 @@
 ChangeLog
 =========
 
+Maestro 0.2.4.1
+---------------
+
+_December 12th, 2014_
+
+This fix release introduces YAML file schema versioning, in particular
+to ease the pain of the migration to Maestro >= 0.2.4. A new YAML
+snippet can be added to your environment description file to specify the
+version of the "schema" used to understand this YAML file by Maestro:
+
+```yaml
+__maestro:
+  schema: 2
+```
+
+If you don't specify this information, Maestro will assume that you use
+schema version 1, which in particular understands volume bindings the
+"old way" (up to version 0.2.3).
+
 Maestro 0.2.4
 -------------
 

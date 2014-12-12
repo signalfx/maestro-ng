@@ -100,6 +100,9 @@ dependencies between these services and the instances of each of these
 services that need to run. Here's the outline:
 
 ```yaml
+__maestro:
+  schema: 2
+
 name: demo
 registries:
   # Auth credentials for each registry that needs them (see below)
@@ -110,6 +113,14 @@ ships:
 services:
   # Services definition (see below)
 ```
+
+The first element, `__maestro`, is used to pass in some information to
+Maestro that does not directly relate to your enviroment description,
+but helps Maestro understand it. In particular, the `schema` version
+is used to note what version of the YAML "schema" Maestro will be using
+when parsing the enviroment description. This is used when backwards
+incompatible changes are introduces by Maestro to provide an easier
+upgrade path.
 
 The _registries_ define for each Docker registry Maestro might need to
 pull images from the authentication credentials needed to access them

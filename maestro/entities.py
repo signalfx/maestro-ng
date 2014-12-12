@@ -173,7 +173,7 @@ class Service(Entity):
     services need to be started.
     """
 
-    def __init__(self, name, image, env=None):
+    def __init__(self, name, image, schema=None, env=None):
         """Instantiate a new named service/component of the platform using a
         given Docker image.
 
@@ -184,11 +184,13 @@ class Service(Entity):
             name (string): the name of this service.
             image (string): the name of the Docker image the instances of this
                 service should use.
+            schema (dict): Maestro schema versioning information.
             env (dict): a dictionary of environment variables to use as the
                 base environment for all instances of this service.
         """
         Entity.__init__(self, name)
         self._image = image
+        self._schema = schema
         self.env = env or {}
         self._requires = set([])
         self._wants_info = set([])
@@ -273,7 +275,8 @@ class Container(Entity):
     """A Container represents an instance of a particular service that will be
     executed inside a Docker container on its target ship/host."""
 
-    def __init__(self, name, ship, service, config, env_name='local'):
+    def __init__(self, name, ship, service, config=None, schema=None,
+                 env_name='local'):
         """Create a new Container object.
 
         Args:
@@ -283,13 +286,17 @@ class Container(Entity):
             service (Service): the Service this container is an instance of.
             config (dict): the YAML-parsed dictionary containing this
                 instance's configuration (ports, environment, volumes, etc.)
+            schema (dict): Maestro schema versioning information.
             env_name (string): the name of the Maestro environment.
         """
         Entity.__init__(self, name)
+        config = config or {}
+
         self._status = None  # The container's status, cached.
         self._ship = ship
         self._service = service
         self._image = config.get('image', service.image)
+        self._schema = schema
 
         # Register this instance container as being part of its parent service.
         self._service.register_container(self)
@@ -549,6 +556,12 @@ class Container(Entity):
         """
         result = {}
         def _parse_spec(src, spec):
+            # Short path for obsolete schemas
+            # TODO(mpetazzoni): remove when obsoleted
+            if self._schema and self._schema.get('schema') == 1:
+                result[spec] = {'bind': src, 'ro': False}
+                return
+
             if isinstance(spec, six.string_types):
                 result[src] = {'bind': spec, 'ro': False}
             elif type(spec) == dict and 'target' in spec:

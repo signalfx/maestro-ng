@@ -43,14 +43,15 @@ class ContainerTest(unittest.TestCase):
     CONTAINER = 'foo1'
     SHIP = 'ship'
     SHIP_IP = '10.0.0.1'
+    SCHEMA = {'schema': 2}
 
-    def _cntr(service_name=SERVICE, service_env={}, image=IMAGE,
+    def _cntr(service_name=SERVICE, service_env=None, image=IMAGE,
               ship_name=SHIP, ship_ip=SHIP_IP,
-              container_name=CONTAINER, config={}):
-        service = entities.Service(service_name, image, service_env)
+              container_name=CONTAINER, config=None, schema=SCHEMA):
+        service = entities.Service(service_name, image, schema, service_env)
         return entities.Container(container_name,
                                   entities.Ship(ship_name, ship_ip),
-                                  service, config=config)
+                                  service, config=config, schema=schema)
 
     def test_image_propagates_from_service(self):
         container = self._cntr()
@@ -188,6 +189,13 @@ class ContainerTest(unittest.TestCase):
             exceptions.InvalidVolumeConfigurationException,
             lambda: self._cntr(config={'volumes': {
                 '/outside': {'bind': '/inside'}}}))
+
+    def test_volumes_old_schema(self):
+        container = self._cntr(config={'volumes':
+            {'/inside': '/outside'}
+        }, schema={'schema': 1})
+        self.assertEqual(container.volumes,
+                {'/outside': {'bind': '/inside', 'ro': False}})
 
 
 class BaseConfigFileUsingTest(unittest.TestCase):

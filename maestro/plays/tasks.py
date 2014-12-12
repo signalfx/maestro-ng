@@ -178,6 +178,8 @@ class StartTask(Task):
                 and map(lambda p: tuple(p['exposed'].split('/')),
                         self.container.ports.values()) \
                 or None
+            volumes = [volume['bind'] for volume in
+                       self.container.volumes.values()]
 
             self.o.pending('creating container from {}...'.format(
                 self.container.short_image))
@@ -186,7 +188,7 @@ class StartTask(Task):
                 hostname=self.container.name,
                 name=self.container.name,
                 environment=self.container.env,
-                volumes=self.container.volumes.values(),
+                volumes=volumes,
                 mem_limit=self.container.mem_limit,
                 memswap_limit=self.container.memswap_limit,
                 cpu_shares=self.container.cpu_shares,

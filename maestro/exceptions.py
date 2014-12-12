@@ -29,15 +29,19 @@ class OrchestrationException(MaestroException):
 
 
 class InvalidPortSpecException(MaestroException):
-    "Error thrown when a port spec is in an invalid format."""
+    """Error thrown when a port spec is in an invalid format."""
     pass
 
 
 class InvalidLifecycleCheckConfigurationException(MaestroException):
-    "Error thrown when a lifecycle check isn't configured properly."""
+    """Error thrown when a lifecycle check isn't configured properly."""
     pass
 
 
 class InvalidRestartPolicyConfigurationException(MaestroException):
-    "Error thrown when a restart policy isn't configured properly."""
+    """Error thrown when a restart policy isn't configured properly."""
     pass
+
+
+class InvalidVolumeConfigurationException(MaestroException):
+    """Error thrown when a volume binding isn't configured properly."""

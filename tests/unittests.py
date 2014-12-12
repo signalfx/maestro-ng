@@ -35,60 +35,56 @@ class ServiceTest(unittest.TestCase):
         service = entities.Service('foo', 'stackbrew/ubuntu:13.10')
         self.assertEqual(service.image, 'stackbrew/ubuntu:13.10')
 
+
 class ContainerTest(unittest.TestCase):
 
+    SERVICE = 'foo'
+    IMAGE = 'stackbrew/ubuntu:13.10'
+    CONTAINER = 'foo1'
+    SHIP = 'ship'
+    SHIP_IP = '10.0.0.1'
+
+    def _cntr(service_name=SERVICE, service_env={}, image=IMAGE,
+              ship_name=SHIP, ship_ip=SHIP_IP,
+              container_name=CONTAINER, config={}):
+        service = entities.Service(service_name, image, service_env)
+        return entities.Container(container_name,
+                                  entities.Ship(ship_name, ship_ip),
+                                  service, config=config)
+
     def test_image_propagates_from_service(self):
-        service = entities.Service('foo', 'stackbrew/ubuntu:13.10')
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config={})
-        self.assertEqual(container.image, service.image)
+        container = self._cntr()
+        self.assertEqual(container.image, container.service.image)
 
     def test_get_image_details_basic(self):
-        service = entities.Service('foo', 'stackbrew/ubuntu:13.10')
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config={})
-        d = container.get_image_details()
+        d = self._cntr().get_image_details()
         self.assertEqual(d['repository'], 'stackbrew/ubuntu')
         self.assertEqual(d['tag'], '13.10')
 
     def test_get_image_details_notag(self):
-        service = entities.Service('foo', 'stackbrew/ubuntu')
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config={})
-        d = container.get_image_details()
+        d = self._cntr(image='stackbrew/ubuntu').get_image_details()
         self.assertEqual(d['repository'], 'stackbrew/ubuntu')
         self.assertEqual(d['tag'], 'latest')
 
     def test_get_image_details_custom_registry(self):
-        service = entities.Service('foo', 'quay.io/foo/bar:13.10')
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config={})
-        d = container.get_image_details()
+        d = self._cntr(image='quay.io/foo/bar:13.10').get_image_details()
         self.assertEqual(d['repository'], 'quay.io/foo/bar')
         self.assertEqual(d['tag'], '13.10')
 
     def test_get_image_details_custom_port(self):
-        service = entities.Service('foo', 'quay.io:8081/foo/bar:13.10')
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config={})
-        d = container.get_image_details()
+        d = self._cntr(image='quay.io:8081/foo/bar:13.10').get_image_details()
         self.assertEqual(d['repository'], 'quay.io:8081/foo/bar')
         self.assertEqual(d['tag'], '13.10')
 
     def test_get_image_details_custom_port_notag(self):
-        service = entities.Service('foo', 'quay.io:8081/foo/bar')
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config={})
-        d = container.get_image_details()
+        d = self._cntr(image='quay.io:8081/foo/bar').get_image_details()
         self.assertEqual(d['repository'], 'quay.io:8081/foo/bar')
         self.assertEqual(d['tag'], 'latest')
 
     def test_env_propagates_from_service(self):
-        service_env = {'ENV_VAR': 'value'}
-        container_env = {'OTHER_ENV_VAR': 'other-value'}
-        service = entities.Service('foo', 'stackbrew/ubuntu', service_env)
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config={'env': container_env})
+        service_env = {'ENV': 'value'}
+        container_env = {'OTHER_ENV': 'other-value'}
+        container = self._cntr(service_env=service_env, config={'env': container_env})
         for k, v in service_env.items():
             self.assertIn(k, container.env)
             self.assertEqual(v, container.env[k])
@@ -97,101 +93,102 @@ class ContainerTest(unittest.TestCase):
             self.assertEqual(v, container.env[k])
 
     def test_dns_option(self):
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config={'dns': '8.8.8.8'})
+        container = self._cntr(config={'dns': '8.8.8.8'})
         self.assertEqual(container.dns, ['8.8.8.8'])
 
     def test_dns_as_list_option(self):
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service,
-                                       config={'dns': ['8.8.8.8', '8.8.4.4']})
+        container = self._cntr(config={'dns': ['8.8.8.8', '8.8.4.4']})
         self.assertEqual(container.dns, ['8.8.8.8', '8.8.4.4'])
 
     def test_no_dns_option(self):
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config={})
-        self.assertIsNone(container.dns)
+        self.assertIsNone(self._cntr().dns)
 
     def test_swap_limit_number(self):
-        config = {'limits': {'swap': 42}}
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config=config)
+        container = self._cntr(config={'limits': {'swap': 42}})
         self.assertEqual(container.memswap_limit, 42)
 
     def test_swap_limit_string_no_suffix(self):
-        config = {'limits': {'swap': '42'}}
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config=config)
+        container = self._cntr(config={'limits': {'swap': '42'}})
         self.assertEqual(container.memswap_limit, 42)
 
     def test_swap_limit_string_with_suffix(self):
-        config = {'limits': {'swap': '42k'}}
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config=config)
+        container = self._cntr(config={'limits': {'swap': '42k'}})
         self.assertEqual(container.memswap_limit, 42*1024)
 
     def test_restart_policy_default(self):
-        config = {}
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config=config)
-        self.assertEqual(container.restart_policy, {'Name': 'no', 'MaximumRetryCount': 0})
+        self.assertEqual(self._cntr().restart_policy,
+                         {'Name': 'no', 'MaximumRetryCount': 0})
 
     def test_restart_policy_no(self):
-        config = {'restart': 'no'}
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config=config)
-        self.assertEqual(container.restart_policy, {'Name': 'no', 'MaximumRetryCount': 0})
+        container = self._cntr(config={'restart': 'no'})
+        self.assertEqual(container.restart_policy,
+                         {'Name': 'no', 'MaximumRetryCount': 0})
 
     def test_restart_policy_always(self):
-        config = {'restart': 'always'}
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config=config)
-        self.assertEqual(container.restart_policy, {'Name': 'always', 'MaximumRetryCount': 0})
+        container = self._cntr(config={'restart': 'always'})
+        self.assertEqual(container.restart_policy,
+                         {'Name': 'always', 'MaximumRetryCount': 0})
 
     def test_restart_policy_onfailure(self):
-        config = {'restart': 'on-failure'}
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config=config)
-        self.assertEqual(container.restart_policy, {'Name': 'on-failure', 'MaximumRetryCount': 0})
+        container = self._cntr(config={'restart': 'on-failure'})
+        self.assertEqual(container.restart_policy,
+                         {'Name': 'on-failure', 'MaximumRetryCount': 0})
 
     def test_restart_policy_onfailure_with_max_retries(self):
-        config = {'restart': {'name': 'on-failure', 'retries': 42}}
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config=config)
-        self.assertEqual(container.restart_policy, {'Name': 'on-failure', 'MaximumRetryCount': 42})
+        container = self._cntr(
+                config={'restart': {'name': 'on-failure', 'retries': 42}})
+        self.assertEqual(container.restart_policy,
+                         {'Name': 'on-failure', 'MaximumRetryCount': 42})
 
     def test_restart_policy_wrong_type(self):
-        config = {'restart': []}
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config=config)
-        self.assertEqual(container.restart_policy, {'Name': 'no', 'MaximumRetryCount': 0})
+        container = self._cntr(config={'restart': []})
+        self.assertEqual(container.restart_policy,
+                         {'Name': 'no', 'MaximumRetryCount': 0})
 
     def test_restart_policy_missing_retries(self):
-        config = {'restart': {'name': 'on-failure'} }
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
-        container = entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                       service, config=config)
-        self.assertEqual(container.restart_policy, {'Name': 'on-failure', 'MaximumRetryCount': 0})
+        container = self._cntr(config={'restart': {'name': 'on-failure'}})
+        self.assertEqual(container.restart_policy,
+                         {'Name': 'on-failure', 'MaximumRetryCount': 0})
 
     def test_restart_policy_wrong_name(self):
-        config = {'restart': 'noclue' }
-        service = entities.Service('foo', 'stackbrew/ubuntu', env={})
         self.assertRaises(
             exceptions.InvalidRestartPolicyConfigurationException,
-                    lambda: entities.Container('foo1', entities.Ship('ship', 'shipip'),
-                                                 service, config=config))
+            lambda: self._cntr(config={'restart': 'noclue'}))
+
+    def test_volumes_simple_bind(self):
+        container = self._cntr(config={'volumes': {'/outside': '/inside'}})
+        self.assertTrue('/outside' in container.volumes)
+        self.assertEqual(container.volumes,
+                         {'/outside': {'bind': '/inside', 'ro': False}})
+
+    def test_volumes_dict_bind_no_mode(self):
+        container = self._cntr(config={'volumes': {
+            '/outside': {'target': '/inside'}}})
+        self.assertTrue('/outside' in container.volumes)
+        self.assertEqual(container.volumes,
+                         {'/outside': {'bind': '/inside', 'ro': False}})
+
+    def test_volumes_ro_bind(self):
+        container = self._cntr(config={'volumes': {
+            '/outside': {
+                'target': '/inside', 'mode': 'ro'
+            }}})
+        self.assertTrue('/outside' in container.volumes)
+        self.assertEqual(container.volumes,
+                         {'/outside': {'bind': '/inside', 'ro': True}})
+
+    def test_volumes_multibind_throws(self):
+        self.assertRaises(
+            exceptions.InvalidVolumeConfigurationException,
+            lambda: self._cntr(config={'volumes': {
+                '/outside': ['/inside1', '/inside2']}}))
+
+    def test_volumes_invalid_params_throws(self):
+        self.assertRaises(
+            exceptions.InvalidVolumeConfigurationException,
+            lambda: self._cntr(config={'volumes': {
+                '/outside': {'bind': '/inside'}}}))
+
 
 class BaseConfigFileUsingTest(unittest.TestCase):
 

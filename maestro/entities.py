@@ -315,9 +315,7 @@ class Container(Entity):
 
         # If no volume source is specified, we assume it's the same path as the
         # destination inside the container.
-        self.volumes = dict(
-            (src or dst, dst) for dst, src in
-            config.get('volumes', {}).items())
+        self.volumes = self._parse_volumes(config.get('volumes', {}))
 
         # Get links
         self.links = dict(
@@ -448,6 +446,23 @@ class Container(Entity):
 
         # Fall-back to default
         return _make_policy()
+
+    def _parse_volumes(self, volumes):
+        result = {}
+        def _parse_spec(src, spec):
+            if isinstance(spec, six.string_types):
+                result[src] = {'bind': spec, 'ro': False}
+            elif type(spec) == dict and 'target' in spec:
+                result[src] = {'bind': spec['target'],
+                               'ro': spec.get('mode', 'rw') == 'ro'}
+            else:
+                raise exceptions.InvalidVolumeConfigurationException(
+                    'Invalid volume specification for container {}: {} -> {}'
+                    .format(self.name, src, spec))
+
+        for src, spec in volumes.items():
+            _parse_spec(src, spec)
+        return result
 
     def _parse_go_time(self, s):
         """Parse a time string found in the container status into a Python

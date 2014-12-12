@@ -209,8 +209,10 @@ be placed on (by name). Additionally, it may define:
   - `lifecycle`, for lifecycle state checks, which Maestro uses to
     confirm a service correctly started or stopped (see Lifecycle checks
     below);
-  - `volumes`, for container volume mappings, as a map of `<destination
-    in container>: <source from host>`;
+  - `volumes`, for container volume mappings, as a map of `<source from
+    host>: <destination in container>`. Each target can also be
+    specified as a map `{target: <destination>, mode: <mode>}`, where
+    `mode` is `ro` (read-only) or `rw` (read-write);
   - `env`, for environment variables, as a map of `<variable name>:
     <value>` (variables defined at the instance level override variables
     defined at the service level);
@@ -246,7 +248,7 @@ services:
           running: [{type: tcp, port: client}]
         privileged: true
         volumes:
-          /var/lib/zookeeper: /data/zookeeper
+          /data/zookeeper: /var/lib/zookeeper
         limits:
           memory: 1g
           cpu: 2
@@ -256,7 +258,7 @@ services:
         lifecycle:
           running: [{type: tcp, port: client}]
         volumes:
-          /var/lib/zookeeper: /data/zookeeper
+          /data/zookeeper: /var/lib/zookeeper
         limits:
           memory: 1g
           cpu: 2
@@ -270,7 +272,10 @@ services:
         lifecycle:
           running: [{type: tcp, port: broker}]
         volumes:
-          /var/lib/kafka: /data/kafka
+          /data/kafka: /var/lib/kafka
+          /etc/locatime:
+            target: /etc/localtime
+            mode: ro
         env:
           BROKER_ID: 0
         stop_timeout: 2

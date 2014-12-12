@@ -1,6 +1,8 @@
 # This is an example of a Maestro environment description file. It starts up a
 # multi-node ZooKeeper cluster to serve a multi-node Kafka broker cluster than
 # can be used for pub/sub and messaging.
+__maestro:
+  schema: 2
 
 name: demo
 
@@ -34,7 +36,7 @@ services:
         lifecycle:
           running: [{type: tcp, port: client, max_wait: 10}]
         volumes:
-          /var/lib/zookeeper: /home/vagrant/data/zookeeper
+          /home/vagrant/data/zookeeper: /var/lib/zookeeper
       zk-node-2:
         ship: vm2
         ports:
@@ -46,7 +48,7 @@ services:
         lifecycle:
           running: [{type: tcp, port: client, max_wait: 10}]
         volumes:
-          /var/lib/zookeeper: /home/vagrant/data/zookeeper
+          /home/vagrant/data/zookeeper: /var/lib/zookeeper
 
   # 2-node Kafka cluster, requires ZooKeeper.
   kafka:
@@ -61,7 +63,7 @@ services:
         lifecycle:
           running: [{type: tcp, port: broker}]
         volumes:
-          /var/lib/kafka: /home/vagrant/data/kafka
+          /home/vagrant/data/kafka: /var/lib/kafka
         env:
           KAFKA_CONFIG_BROKER_ID: 0
       kafka-broker-2:
@@ -70,7 +72,7 @@ services:
         lifecycle:
           running: [{type: tcp, port: broker}]
         volumes:
-          /var/lib/kafka: /home/vagrant/data/kafka
+          /home/vagrant/data/kafka: /var/lib/kafka
         env:
           KAFKA_CONFIG_BROKER_ID: 1
 

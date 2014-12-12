@@ -374,9 +374,13 @@ class Container(Entity):
 
     @property
     def shortid(self):
+        """Returns a short representation of this container's ID, or '-' if the
+        container is not running."""
         return self.id[:7] if self.id else '-'
 
     def is_running(self):
+        """Refreshes the status of this container and tells if it's running or
+        not."""
         status = self.status(refresh=True)
         return status and status['State']['Running']
 
@@ -404,88 +408,9 @@ class Container(Entity):
 
     @property
     def shortid_and_tag(self):
+        """Returns a string representing the tag of the image this container
+        runs on and the short ID of the running container."""
         return '{}:{}'.format(self.get_image_details()['tag'], self.shortid)
-
-    def _parse_bytes(self, s):
-        if not s or not isinstance(s, six.string_types):
-            return s
-
-        units = {'k': 1024,
-                 'm': 1024*1024,
-                 'g': 1024*1024*1024}
-        suffix = s[-1].lower()
-
-        if suffix not in units.keys():
-            if not s.isdigit():
-                raise exceptions.EnvironmentConfigurationException(
-                        'Unknown unit suffix {} in {} for container {}!'
-                        .format(suffix, s, self.name))
-            return int(s)
-
-        return int(s[:-1]) * units[suffix]
-
-    def _parse_restart_policy(self, spec):
-        def _make_policy(name='no', retries=0):
-            if name not in _VALID_RESTART_POLICIES:
-                raise exceptions.InvalidRestartPolicyConfigurationException(
-                        'Invalid restart policy {} for container {}; choose one of {}.'
-                        .format(name, self.name, ', '.join(_VALID_RESTART_POLICIES)))
-            return {'Name': name, 'MaximumRetryCount': int(retries)}
-
-        try:
-            if isinstance(spec, six.string_types):
-                return _make_policy(*spec.split(':', 1))
-            elif type(spec) == dict:
-                return _make_policy(**spec)
-        except exceptions.InvalidRestartPolicyConfigurationException as e:
-            raise
-        except:
-            raise exceptions.InvalidRestartPolicyConfigurationException(
-                    'Invalid restart policy format for container {}: "{}"'
-                    .format(self.name, spec))
-
-        # Fall-back to default
-        return _make_policy()
-
-    def _parse_volumes(self, volumes):
-        result = {}
-        def _parse_spec(src, spec):
-            if isinstance(spec, six.string_types):
-                result[src] = {'bind': spec, 'ro': False}
-            elif type(spec) == dict and 'target' in spec:
-                result[src] = {'bind': spec['target'],
-                               'ro': spec.get('mode', 'rw') == 'ro'}
-            else:
-                raise exceptions.InvalidVolumeConfigurationException(
-                    'Invalid volume specification for container {}: {} -> {}'
-                    .format(self.name, src, spec))
-
-        for src, spec in volumes.items():
-            _parse_spec(src, spec)
-        return result
-
-    def _parse_go_time(self, s):
-        """Parse a time string found in the container status into a Python
-        datetime object.
-
-        Docker uses Go's Time.String() method to convert a UTC timestamp into a
-        string, but that representation isn't directly parsable from Python as
-        it includes nanoseconds: http://golang.org/pkg/time/#Time.String
-
-        We don't really care about sub-second precision here anyway, so we
-        strip it out and parse the datetime up to the second.
-
-        Args:
-            s (string): the time string from the container inspection
-                dictionary.
-        Returns: The corresponding Python datetime.datetime object, or None if
-            the time string clearly represented a non-initialized time (which
-            seems to be 0001-01-01T00:00:00Z in Go).
-        """
-        if not s:
-            return None
-        t = datetime.datetime.strptime(s.split('.')[0], '%Y-%m-%dT%H:%M:%S')
-        return t if t.year > 1 else None
 
     @property
     def started_at(self):
@@ -561,6 +486,105 @@ class Container(Entity):
             return False
 
         return lifecycle.TCPPortPinger(self.ship.ip, int(parts[0])).test()
+
+    def _parse_bytes(self, s):
+        if not s or not isinstance(s, six.string_types):
+            return s
+
+        units = {'k': 1024,
+                 'm': 1024*1024,
+                 'g': 1024*1024*1024}
+        suffix = s[-1].lower()
+
+        if suffix not in units.keys():
+            if not s.isdigit():
+                raise exceptions.EnvironmentConfigurationException(
+                        'Unknown unit suffix {} in {} for container {}!'
+                        .format(suffix, s, self.name))
+            return int(s)
+
+        return int(s[:-1]) * units[suffix]
+
+    def _parse_restart_policy(self, spec):
+        """Parse the restart policy configured for this container.
+
+        Args:
+            spec: the restart policy specification, as extract from the YAML.
+            It can be a string <name>:<max-retries>, or a dictionary with the
+            name and retries for the restart policy.
+        Returns: A Docker-ready dictionary representing the parsed restart
+            policy.
+        """
+        def _make_policy(name='no', retries=0):
+            if name not in _VALID_RESTART_POLICIES:
+                raise exceptions.InvalidRestartPolicyConfigurationException(
+                        'Invalid restart policy {} for container {}; choose one of {}.'
+                        .format(name, self.name, ', '.join(_VALID_RESTART_POLICIES)))
+            return {'Name': name, 'MaximumRetryCount': int(retries)}
+
+        try:
+            if isinstance(spec, six.string_types):
+                return _make_policy(*spec.split(':', 1))
+            elif type(spec) == dict:
+                return _make_policy(**spec)
+        except exceptions.InvalidRestartPolicyConfigurationException as e:
+            raise
+        except:
+            raise exceptions.InvalidRestartPolicyConfigurationException(
+                    'Invalid restart policy format for container {}: "{}"'
+                    .format(self.name, spec))
+
+        # Fall-back to default
+        return _make_policy()
+
+    def _parse_volumes(self, volumes):
+        """Parse the volume bindings defined by this container's configuration.
+
+        Args:
+            volumes (dict): the configured volume mappings as extracted from
+                the YAML file.
+        Returns: A dictionary of bindings host -> binding spec, where the
+            binding spec specifies the target inside the container and its mode
+            (read-only or read-write) in docker-py's format.
+        """
+        result = {}
+        def _parse_spec(src, spec):
+            if isinstance(spec, six.string_types):
+                result[src] = {'bind': spec, 'ro': False}
+            elif type(spec) == dict and 'target' in spec:
+                result[src] = {'bind': spec['target'],
+                               'ro': spec.get('mode', 'rw') == 'ro'}
+            else:
+                raise exceptions.InvalidVolumeConfigurationException(
+                    'Invalid volume specification for container {}: {} -> {}'
+                    .format(self.name, src, spec))
+
+        for src, spec in volumes.items():
+            _parse_spec(src, spec)
+        return result
+
+    def _parse_go_time(self, s):
+        """Parse a time string found in the container status into a Python
+        datetime object.
+
+        Docker uses Go's Time.String() method to convert a UTC timestamp into a
+        string, but that representation isn't directly parsable from Python as
+        it includes nanoseconds: http://golang.org/pkg/time/#Time.String
+
+        We don't really care about sub-second precision here anyway, so we
+        strip it out and parse the datetime up to the second.
+
+        Args:
+            s (string): the time string from the container inspection
+                dictionary.
+        Returns: The corresponding Python datetime.datetime object, or None if
+            the time string clearly represented a non-initialized time (which
+            seems to be 0001-01-01T00:00:00Z in Go).
+        """
+        if not s:
+            return None
+        t = datetime.datetime.strptime(s.split('.')[0], '%Y-%m-%dT%H:%M:%S')
+        return t if t.year > 1 else None
 
     def _parse_ports(self, ports):
         """Parse port mapping specifications for this container."""

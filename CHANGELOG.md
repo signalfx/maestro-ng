@@ -1,6 +1,38 @@
 ChangeLog
 =========
 
+Maestro 0.2.4
+-------------
+
+_December 12th, 2014_
+
+**Note:** this release introduces a breaking change that will require a
+change in your YAML environment files. Volume bindings must now be
+specified as `/on/the/host: /inside/the/container`. This is reversed to
+what Maestro used to do until now, but makes it be the same "direction"
+than what Docker and `docker-py` use. See #74 for more details.
+
+* Display improvements:
+  - Fix completion output for the `pull` command when executed
+    standalone
+  - Simplified and colored port status in the detailed status output
+  - Allow for the ship column to slim down all the way to not being
+    displayed when the terminal is not wide enough
+  - Display container running/down time in the detailed status output
+  - Display each container's image tag in the output
+* Added an `HttpRequestLifecycle` to implement lifecycle checks that
+  perform an HTTP request, valid when getting a 200 response code
+* Added support for container restart policies
+* Added TLS/SSL support
+* Support for re-using existing containers when starting or restarting
+  them with the `--reuse` flag, as opposed to removing and recreating
+  the container (fixes #92)
+* Support for per-container image repository override
+* Added a `--only-if-changed` flag to the `restart` command that will
+  only restart the container if its image has changed after pulling it
+  (fixes #62)
+* Added support for read-only volume bindings (#74)
+
 Maestro 0.2.3
 -------------
 

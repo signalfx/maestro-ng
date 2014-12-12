@@ -91,13 +91,13 @@ through their environment.
 
 The environment is described using YAML. The format is still a bit in
 flux but the base has been set and should remain fairly stable. It is
-named and composed of three main sections: the _registries_ that define
-authentication credentials that might be needed to pull the Docker
-images for the defined _services_ from their registries, the _ships_,
-hosts that will execute the Docker containers, and the _services_, which
-define what service make up the environment, the dependencies between
-these services and the instances of each of these services that need to
-run. Here's the outline:
+named and composed of three main mandatory sections: the _registries_
+that define authentication credentials that might be needed to pull the
+Docker images for the defined _services_ from their registries, the
+_ships_, hosts that will execute the Docker containers, and the
+_services_, which define what service make up the environment, the
+dependencies between these services and the instances of each of these
+services that need to run. Here's the outline:
 
 ```yaml
 name: demo
@@ -475,6 +475,28 @@ exposed through environment variables to other containers. This way, a
 dependent service can know the address of a remote service, and the
 specific port number of a desired endpoint. For example, service
 depending on ZooKeeper would be looking for its `client` port.
+
+## Volume bindings
+
+Volume bindings are specified in a way similar to `docker-py` and
+Docker's expected format, and the `mode` (read-only 'ro', or read-write
+'rw') can be specified for each binding if needed. Volume bindings
+default to being read-write.
+
+```yaml
+volumes:
+  # This will be a read-write binding
+  /on/the/host: /inside/the/container
+
+  # This will be a read-only binding
+  /also/on/the/host/:
+    target: /inside/the/container/too
+    mode: ro
+```
+
+Note that it is currently not possible to bind-mount the same host
+location into two distinct places inside the container as this is not
+supported by `docker-py` (it's a dictionary keyed on the host location).
 
 ## Lifecycle checks
 

@@ -532,24 +532,6 @@ orchestration play immediately.
 
 **TCP port pinging** makes Maestro attempt to connect to the configured
 port (by name), once per second until it succeeds or the `max_wait`
-value is reached (defaults to 60 seconds).
-
-Assuming your instance declares a `client` named port, you can make
-Maestro wait up to 10 seconds for this port to become available by doing
-the following:
-
-```yaml
-services:
-  zookeeper:
-    image: zookeeper:3.4.5
-    ports: {client: 2181}
-    lifecycle:
-      running:
-        - {type: tcp, port: client, max_wait: 10}
-```
-
-**TCP port pinging** makes Maestro attempt to connect to the configured
-port (by name), once per second until it succeeds or the `max_wait`
 value is reached (defaults to 300 seconds).
 
 Assuming your instance declares a `client` named port, you can make
@@ -566,13 +548,14 @@ services:
         - {type: tcp, port: client, max_wait: 10}
 ```
 
-**HTTP Request** makes Maestro execute web requests to a target, once 
-per second until it succeeds or the `max_wait` value is reached 
+**HTTP Request** makes Maestro execute web requests to a target, once
+per second until it succeeds or the `max_wait` value is reached
 (defaults to 300 seconds).
 
 Assuming your instance declares a `admin` named port that runs a
-webserver, you can make Maestro wait up to 10 seconds for an HTTP 
-request to this port for the default path "/" to succeed by doing the following:
+webserver, you can make Maestro wait up to 10 seconds for an HTTP
+request to this port for the default path "/" to succeed by doing the
+following:
 
 ```yaml
 services:
@@ -593,7 +576,7 @@ Options:
    /)
  - `scheme`, request scheme (defaults to http)
  - `method`, HTTP method (defaults to GET)
- - `max_wait`, max number of seconds to wait for a successful response 
+ - `max_wait`, max number of seconds to wait for a successful response
    (defaults to 300)
  - `requests_options`, additional dictionary of options passed directly
    to python's requests.request() method (e.g. verify=False to disable

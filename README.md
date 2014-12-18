@@ -220,8 +220,7 @@ be placed on (by name). Additionally, it may define:
   - `lifecycle`, for lifecycle state checks, which Maestro uses to
     confirm a service correctly started or stopped (see Lifecycle checks
     below);
-  - `volumes`, for container volume mappings, as a map of `<source from
-    host>: <destination in container>`. Each target can also be
+  - `volumes`, for container volume mappings, as a map of `<volume in container>: <target on host>`. Each target can also be
     specified as a map `{target: <destination>, mode: <mode>}`, where
     `mode` is `ro` (read-only) or `rw` (read-write);
   - `env`, for environment variables, as a map of `<variable name>:

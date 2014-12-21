@@ -203,6 +203,14 @@ ships:
         tls_cert: cert.pem
 ```
 
+When Maestro is launched on the same host as the Docker daemon, it is
+possible to specify a UNIX socket instead of an IP address:
+
+```yaml
+ships:
+  local: {unix: /var/run/docker.sock}
+```
+
 Services are also named. Their name is used for commands that act on
 specific services instead of the whole environment, and is also used in
 dependency declarations. Each service must define the Docker image its

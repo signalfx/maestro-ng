@@ -60,9 +60,10 @@ class Ship(Entity):
     DEFAULT_DOCKER_VERSION = '1.10'
     DEFAULT_DOCKER_TIMEOUT = 5
 
-    def __init__(self, name, ip, endpoint=None, docker_port=None, timeout=None,
-                 ssh_tunnel=None, tls=None, tls_verify=False, tls_ca_cert=None,
-                 tls_cert=None, tls_key=None, ssl_version=None):
+    def __init__(self, name, ip=None, endpoint=None, docker_port=None, 
+                 timeout=None, ssh_tunnel=None, tls=None, tls_verify=False, 
+                 tls_ca_cert=None, tls_cert=None, tls_key=None, 
+                 ssl_version=None, unix_socket=None):
         """Instantiate a new ship.
 
         Args:
@@ -71,6 +72,8 @@ class Ship(Entity):
             docker_port (int): the port the Docker daemon listens on.
             ssh_tunnel (dict): configuration for SSH tunneling to the remote
                 Docker daemon.
+            unix_socket (string): path to an UNIX socket to use instead of an
+                IP connection
         """
         Entity.__init__(self, name)
         self._ip = ip
@@ -102,6 +105,9 @@ class Ship(Entity):
             # Apparently bgtunnel isn't always ready right away and this
             # drastically cuts down on the timeouts
             time.sleep(1)
+
+        elif unix_socket:
+            self._backend_url = 'unix://%s' % unix_socket
 
         else:
             proto = "https" if (tls or tls_verify) else "http"

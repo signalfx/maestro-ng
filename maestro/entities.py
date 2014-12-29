@@ -96,8 +96,11 @@ class Ship(Entity):
                 host_port=self._docker_port,
                 silent=True,
                 identity_file=ssh_tunnel['key'])
-            self._backend_url = 'http://localhost:{}'.format(
-                self._tunnel.bind_port)
+            
+            # Make sure we use https through the tunnel, if tls is enabled
+            proto = "https" if (tls or tls_verify) else "http"
+            self._backend_url = '{:s}://localhost:{:d}'.format(
+                proto, self._tunnel.bind_port)            
 
             # Apparently bgtunnel isn't always ready right away and this
             # drastically cuts down on the timeouts

@@ -215,6 +215,7 @@ class StartTask(Task):
             self.container.id,
             binds=self.container.volumes,
             port_bindings=ports,
+            lxc_conf=self.container.lxc_conf,
             privileged=self.container.privileged,
             network_mode=self.container.network_mode,
             restart_policy=self.container.restart_policy,

@@ -43,7 +43,7 @@ class StaticShipsProvider(ShipsProvider):
         # Create container ships.
         self._ships = dict(
             (k, entities.Ship(
-                k, ip=v['ip'], endpoint=v.get('endpoint'),
+                k, ip=v.get('ip', None), endpoint=v.get('endpoint'),
                 docker_port=self._from_ship_or_defaults(v, 'docker_port'),
                 ssh_tunnel=self._from_ship_or_defaults(v, 'ssh_tunnel'),
                 timeout=self._from_ship_or_defaults(v, 'timeout'),
@@ -52,7 +52,8 @@ class StaticShipsProvider(ShipsProvider):
                 tls_key=v.get('tls_key', None),
                 tls_verify=v.get('tls_verify', False),
                 tls_ca_cert=v.get('tls_ca_cert', None),
-                ssl_version=v.get('ssl_version', None)))
+                ssl_version=v.get('ssl_version', None),
+                unix_socket=v.get('unix', None)))
             for k, v in self._config['ships'].items())
 
     def ships(self):

@@ -7,6 +7,11 @@ from __future__ import print_function
 import collections
 import json
 import time
+try:
+    import urlparse
+except ImportError:
+    # Try for Python3
+    from urllib import parse as urlparse
 
 from .. import exceptions
 from ..termoutput import green, blue, red, time_ago
@@ -337,21 +342,27 @@ class LoginTask(Task):
         self._registries = registries
 
     def run(self):
-        image = self.container.get_image_details()
-        if image['repository'].find('/') <= 0:
-            return
-
-        registry, repo_name = image['repository'].split('/', 1)
-        if registry not in self._registries:
+        registry = LoginTask.registry_for_container(self.container,
+                                                    self._registries)
+        if not registry:
             return
 
         self.o.reset()
-        self.o.pending('logging in to {}...'.format(registry))
+        self.o.pending('logging in to {}...'.format(registry[registry]))
         try:
-            self.container.ship.backend.login(**self._registries[registry])
+            self.container.ship.backend.login(**registry)
         except Exception as e:
             raise exceptions.OrchestrationException(
                 'Login to {} failed: {}'.format(registry, e))
+
+    @staticmethod
+    def registry_for_container(container, registries={}):
+        image = container.get_image_details()
+        if image['repository'].find('/') <= 0:
+            return None
+
+        registry, repo_name = image['repository'].split('/', 1)
+        return registries.get(registry)
 
 
 class PullTask(Task):
@@ -371,8 +382,16 @@ class PullTask(Task):
 
         self.o.pending('pulling image {}...'
                        .format(self.container.short_image))
+
+        registry = LoginTask.registry_for_container(self.container,
+                                                    self._registries)
+        insecure = (urlparse.urlparse(registry['registry']).scheme == 'http'
+                    if registry else False)
         image = self.container.get_image_details()
-        for dlstatus in self.container.ship.backend.pull(stream=True, **image):
+
+        # Pull the image (this may be a no-op, but that's fine).
+        for dlstatus in self.container.ship.backend.pull(
+                stream=True, insecure_registry=insecure, **image):
             percentage = self._update_pull_progress(dlstatus)
             self.o.pending('... {:.1f}%'.format(percentage))
 
@@ -385,8 +404,14 @@ class PullTask(Task):
         information for one of the image layers, and return the average of the
         download progress of all layers as an indication of the overall
         progress of the pull."""
+        last = json.loads(last)
+        if 'error' in last:
+            raise exceptions.OrchestrationException(
+                'Pull of image {} failed: {}'.format(
+                    self.container.image,
+                    last['errorDetail']['message']))
+
         try:
-            last = json.loads(last)
             self._progress[last['id']] = (
                 100 if last['status'] == 'Download complete' else
                 (100.0 * last['progressDetail']['current'] /

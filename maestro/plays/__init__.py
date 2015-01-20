@@ -14,6 +14,19 @@ from .. import termoutput
 from ..termoutput import columns, green, red, supports_color, time_ago
 
 
+# This hack is unfortunate, but required to get proper exception tracebacks
+# that work both in Python 2.x and Python 3.x (since we can't write the raise
+# ... from syntax in Python 2.x)
+if sys.version_info[0] == 2:
+    exec("""
+def raise_with_tb(exc, tb):
+    raise exc, None, tb
+""")
+else:
+    def raise_with_tb(exc, tb):
+        raise exc.with_traceback(tb)
+
+
 class BaseOrchestrationPlay:
     """Base class for orchestration plays.
 
@@ -122,9 +135,10 @@ class BaseOrchestrationPlay:
                 while not self._error and t.isAlive():
                     t.join(1)
             except KeyboardInterrupt:
-                self._error = exceptions.MaestroException('Manual abort')
+                self._error = (exceptions.MaestroException('Manual abort'),
+                               None)
             except Exception as e:
-                self._error = e
+                self._error = (e, sys.exc_info()[2])
             finally:
                 self._cv.acquire()
                 self._cv.notifyAll()
@@ -133,7 +147,7 @@ class BaseOrchestrationPlay:
 
         # Display and raise any error that occurred
         if self._error:
-            raise self._error[0], None, self._error[1]
+            raise_with_tb(*self._error)
 
     def _run(self):
         raise NotImplementedError

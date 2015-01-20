@@ -7,7 +7,6 @@ from __future__ import print_function
 import functools
 import inspect
 import requests.exceptions
-import sys
 
 from . import audit
 from . import entities
@@ -224,10 +223,10 @@ class Conductor:
                 # varies with the timeout exception
                 msg = e.args[0][0]
             self.auditor.error(things, action, message=msg)
-            raise e, None, sys.exc_info()[2]
+            raise
         except Exception as e:
             self.auditor.error(things, action, message=e)
-            raise e, None, sys.exc_info()[2]
+            raise
 
     def status(self, things, full=False, with_dependencies=False,
                concurrency=None, **kwargs):

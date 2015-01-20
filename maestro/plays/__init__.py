@@ -5,6 +5,7 @@
 from __future__ import print_function
 
 import functools
+import sys
 import threading
 
 from . import tasks
@@ -96,7 +97,7 @@ class BaseOrchestrationPlay:
                 self._concurrency.release()
                 self._done.add(task.container)
             except Exception as e:
-                self._error = e
+                self._error = (e, sys.exc_info()[2])
             finally:
                 self._cv.acquire()
                 self._cv.notifyAll()
@@ -132,7 +133,7 @@ class BaseOrchestrationPlay:
 
         # Display and raise any error that occurred
         if self._error:
-            raise self._error
+            raise self._error[0], None, self._error[1]
 
     def _run(self):
         raise NotImplementedError

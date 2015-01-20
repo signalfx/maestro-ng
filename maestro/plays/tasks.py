@@ -348,7 +348,7 @@ class LoginTask(Task):
             return
 
         self.o.reset()
-        self.o.pending('logging in to {}...'.format(registry[registry]))
+        self.o.pending('logging in to {}...'.format(registry['registry']))
         try:
             self.container.ship.backend.login(**registry)
         except Exception as e:

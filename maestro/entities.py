@@ -357,10 +357,14 @@ class Container(Entity):
 
         # Seed the service name, container name and host address as part of the
         # container's environment.
-        self.env['MAESTRO_ENVIRONMENT_NAME'] = env_name
-        self.env['SERVICE_NAME'] = self.service.name
-        self.env['CONTAINER_NAME'] = self.name
-        self.env['CONTAINER_HOST_ADDRESS'] = self.ship.ip
+        self.env.update({
+            'MAESTRO_ENVIRONMENT_NAME': env_name,
+            'SERVICE_NAME': self.service.name,
+            'CONTAINER_NAME': self.name,
+            'CONTAINER_HOST_ADDRESS': self.ship.ip,
+            'DOCKER_IMAGE': self.image,
+            'DOCKER_TAG': self.get_image_details()['tag'],
+        })
 
         # With everything defined, build lifecycle state helpers as configured
         self._lifecycle = self._parse_lifecycle(config.get('lifecycle', {}))

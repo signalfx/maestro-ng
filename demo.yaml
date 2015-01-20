@@ -84,4 +84,5 @@ services:
         ship: vm-ssh
         env:
           FOO: "bar test"
-        command: env
+        workdir: /tmp
+        command: "bash -c 'pwd && env'"

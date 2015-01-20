@@ -197,6 +197,10 @@ class ContainerTest(unittest.TestCase):
         self.assertEqual(container.volumes,
                 {'/outside': {'bind': '/inside', 'ro': False}})
 
+    def test_workdir(self):
+        container = self._cntr(config={'workdir': '/tmp'})
+        self.assertEqual(container.workdir, '/tmp')
+
 
 class BaseConfigFileUsingTest(unittest.TestCase):
 

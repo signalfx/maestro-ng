@@ -355,6 +355,9 @@ class Container(Entity):
         self.mem_limit = self._parse_bytes(limits.get('memory'))
         self.memswap_limit = self._parse_bytes(limits.get('swap'))
 
+        # Work directory for the container
+        self.workdir = config.get('workdir')
+
         # Seed the service name, container name and host address as part of the
         # container's environment.
         self.env.update({

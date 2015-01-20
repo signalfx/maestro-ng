@@ -194,6 +194,7 @@ class StartTask(Task):
                 cpu_shares=self.container.cpu_shares,
                 ports=ports,
                 detach=True,
+                working_dir=self.container.workdir,
                 command=self.container.command)
 
         self.o.pending('waiting for container...')

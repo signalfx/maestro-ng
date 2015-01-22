@@ -5,6 +5,7 @@
 import bgtunnel
 import datetime
 import time
+import os
 
 # Import _strptime manually to work around a thread safety issue when using
 # strptime() from threads for the first time.
@@ -60,15 +61,17 @@ class Ship(Entity):
     DEFAULT_DOCKER_VERSION = '1.10'
     DEFAULT_DOCKER_TIMEOUT = 5
 
-    def __init__(self, name, ip, endpoint=None, docker_port=None, timeout=None,
-                 ssh_tunnel=None, tls=None, tls_verify=False, tls_ca_cert=None,
-                 tls_cert=None, tls_key=None, ssl_version=None):
+    def __init__(self, name, ip, endpoint=None, docker_port=None,
+                 socket_path=None, timeout=None, ssh_tunnel=None, tls=None,
+                 tls_verify=False, tls_ca_cert=None, tls_cert=None,
+                 tls_key=None, ssl_version=None):
         """Instantiate a new ship.
 
         Args:
             name (string): the name of the ship.
             ip (string): the IP address of resolvable host name of the host.
             docker_port (int): the port the Docker daemon listens on.
+            socket_path (string): the path to the unix socket the Docker daemon listens on.
             ssh_tunnel (dict): configuration for SSH tunneling to the remote
                 Docker daemon.
         """
@@ -77,6 +80,7 @@ class Ship(Entity):
         self._endpoint = endpoint or ip
         self._docker_port = int(docker_port or
                 (self.DEFAULT_DOCKER_TLS_PORT if tls else self.DEFAULT_DOCKER_PORT))
+        self._socket_path = os.path.realpath(socket_path) if socket_path else None
         self._tunnel = None
 
         if ssh_tunnel:
@@ -105,6 +109,9 @@ class Ship(Entity):
             # Apparently bgtunnel isn't always ready right away and this
             # drastically cuts down on the timeouts
             time.sleep(1)
+
+        elif self._socket_path is not None:
+            self._backend_url = 'unix://{:s}'.format(self._socket_path)
 
         else:
             proto = "https" if (tls or tls_verify) else "http"

@@ -223,10 +223,10 @@ class Conductor:
                 # varies with the timeout exception
                 msg = e.args[0][0]
             self.auditor.error(things, action, message=msg)
-            raise
+            exceptions.raise_with_tb()
         except Exception as e:
             self.auditor.error(things, action, message=e)
-            raise
+            exceptions.raise_with_tb()
 
     def status(self, things, full=False, with_dependencies=False,
                concurrency=None, **kwargs):

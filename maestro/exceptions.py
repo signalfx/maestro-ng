@@ -2,6 +2,22 @@
 #
 # Docker container orchestration utility.
 
+import sys
+
+# This hack is unfortunate, but required to get proper exception tracebacks
+# that work both in Python 2.x and Python 3.x (since we can't write the raise
+# ... from syntax in Python 2.x)
+if sys.version_info[0] == 2:
+    exec("""
+def raise_with_tb(info=None):
+    info = info or sys.exc_info()
+    raise info[0], info[1], info[2]
+""")
+else:
+    def raise_with_tb(info):
+        info = info or sys.exc_info()
+        raise info[1].with_traceback(info[2])
+
 
 class MaestroException(Exception):
     """Base class for Maestro exceptions."""

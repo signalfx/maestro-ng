@@ -162,6 +162,10 @@ listen on anything else than `localhost`, and rely on SSH key-based
 authentication instead). Here again, if the `endpoint` parameter is
 specified, it will be used as the target host for the SSH connection.
 
+If the Docker daemon is listening on a unix domain socket in the local
+filesystem, you can specify `socket_path` to connect to it directly.
+This is useful when the Docker daemon is running locally.
+
 ```yaml
 ships:
   vm1.ore1: {ip: c414.ore1.domain.com}

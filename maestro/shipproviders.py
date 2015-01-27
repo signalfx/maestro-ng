@@ -45,6 +45,7 @@ class StaticShipsProvider(ShipsProvider):
             (k, entities.Ship(
                 k, ip=v['ip'], endpoint=v.get('endpoint'),
                 docker_port=self._from_ship_or_defaults(v, 'docker_port'),
+                socket_path=self._from_ship_or_defaults(v, 'socket_path'),
                 ssh_tunnel=self._from_ship_or_defaults(v, 'ssh_tunnel'),
                 timeout=self._from_ship_or_defaults(v, 'timeout'),
                 tls=v.get('tls', False),

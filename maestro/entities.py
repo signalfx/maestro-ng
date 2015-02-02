@@ -100,11 +100,11 @@ class Ship(Entity):
                 host_port=self._docker_port,
                 silent=True,
                 identity_file=ssh_tunnel['key'])
-            
+
             # Make sure we use https through the tunnel, if tls is enabled
             proto = "https" if (tls or tls_verify) else "http"
             self._backend_url = '{:s}://localhost:{:d}'.format(
-                proto, self._tunnel.bind_port)            
+                proto, self._tunnel.bind_port)
 
             # Apparently bgtunnel isn't always ready right away and this
             # drastically cuts down on the timeouts
@@ -167,11 +167,10 @@ class Ship(Entity):
 
     def __repr__(self):
         if self._tunnel:
-            return '<ship:{}@{} via ssh://{}@{}:{}->{}>'.format(
+            return '{}@{} via ssh://{}@{}:{}->{}'.format(
                 self.name, self._ip, self._tunnel.ssh_user,
                 self._endpoint, self._tunnel.bind_port, self._docker_port)
-        return '<ship:{}@{} via {}>'.format(
-            self.name, self._ip, self._backend_url)
+        return '{}@{} via {}'.format(self.name, self._ip, self._backend_url)
 
 
 class Service(Entity):
@@ -206,10 +205,6 @@ class Service(Entity):
         self._wants_info = set([])
         self._needed_for = set([])
         self._containers = {}
-
-    def __repr__(self):
-        return '<service:%s [%d instances]>' % (self.name,
-                                                len(self._containers))
 
     @property
     def image(self):
@@ -701,8 +696,7 @@ class Container(Entity):
                 checks)) for state, checks in lifecycles.items()])
 
     def __repr__(self):
-        return '<container:%s/%s [on %s]>' % \
-            (self.name, self.service.name, self.ship.name)
+        return '{} (on {})'.format(self.name, self.ship.name)
 
     def __lt__(self, other):
         return self.name < other.name

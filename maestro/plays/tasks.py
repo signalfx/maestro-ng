@@ -220,10 +220,10 @@ class StartTask(Task):
 
         self.o.pending('starting container {}...'
                        .format(self.container.id[:7]))
-        
         # Invert dictionnary only for schema version 3
         if self.container._schema['schema'] == 3:
-            volumes = {v['bind']: {'bind': k, 'ro': v['ro']} for (k, v) in self.container.volumes.items() if v and 'bind' in v}
+            volumes = {v['bind']: {'bind': k, 'ro': v['ro']} for (k, v) 
+                    in self.container.volumes.items() if v and 'bind' in v}
         else:
             volumes = self.container.volumes
 

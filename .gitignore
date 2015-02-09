@@ -3,3 +3,4 @@
 /maestro.egg-info/
 *.pyc
 /.tox
+*.swp

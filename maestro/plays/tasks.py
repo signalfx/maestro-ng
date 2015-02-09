@@ -183,8 +183,11 @@ class StartTask(Task):
                 and map(lambda p: tuple(p['exposed'].split('/')),
                         self.container.ports.values()) \
                 or None
-            volumes = [volume['bind'] for volume in
-                       self.container.volumes.values()]
+
+            if self.container._schema['schema'] == 3:
+                volumes = [v for v in self.container.volumes.keys()]
+            else:
+                volumes = [volume['bind'] for volume in self.container.volumes.values()]
 
             self.o.pending('creating container from {}...'.format(
                 self.container.short_image))
@@ -217,9 +220,16 @@ class StartTask(Task):
 
         self.o.pending('starting container {}...'
                        .format(self.container.id[:7]))
+        # Invert dictionnary only for schema version 3
+        if self.container._schema['schema'] == 3:
+            volumes = {v['bind']: {'bind': k, 'ro': v['ro']} for (k, v) 
+                    in self.container.volumes.items() if v and 'bind' in v}
+        else:
+            volumes = self.container.volumes
+
         self.container.ship.backend.start(
             self.container.id,
-            binds=self.container.volumes,
+            binds=volumes,
             port_bindings=ports,
             privileged=self.container.privileged,
             network_mode=self.container.network_mode,

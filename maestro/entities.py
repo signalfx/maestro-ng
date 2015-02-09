@@ -577,8 +577,11 @@ class Container(Entity):
             if isinstance(spec, six.string_types):
                 result[src] = {'bind': spec, 'ro': False}
             elif type(spec) == dict and 'target' in spec:
-                result[src] = {'bind': spec['target'],
-                               'ro': spec.get('mode', 'rw') == 'ro'}
+                result[src] = {'bind': spec['target'], 'ro': spec.get('mode', 'rw') == 'ro' }
+            elif self._schema and self._schema.get('schema') == 3 and spec == None:
+                # Add support for volumes with no host binding
+                result[src] = {}
+                return
             else:
                 raise exceptions.InvalidVolumeConfigurationException(
                     'Invalid volume specification for container {}: {} -> {}'

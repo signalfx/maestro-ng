@@ -186,7 +186,7 @@ class StartTask(Task):
 
             if self.container._schema['schema'] == 3:
                 volumes = [v for v in self.container.volumes.keys()]
-            else
+            else:
                 volumes = [volume['bind'] for volume in self.container.volumes.values()]
 
             self.o.pending('creating container from {}...'.format(

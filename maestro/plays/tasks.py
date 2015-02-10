@@ -230,7 +230,9 @@ class StartTask(Task):
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.
         self.o.pending('waiting for initialization...')
-        check_running = lambda x: x and x['State']['Running']
+
+        def check_running(x):
+            return x and x['State']['Running']
         if not self._wait_for_status(check_running):
             raise exceptions.OrchestrationException(
                 'Container status could not be obtained after start!')

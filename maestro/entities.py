@@ -325,9 +325,19 @@ class Container(Entity):
             if type(v) == list:
                 self.env[k] = env_list_expand(v)
 
-        # If no volume source is specified, we assume it's the same path as the
-        # destination inside the container.
         self.volumes = self._parse_volumes(config.get('volumes', {}))
+        self.container_volumes = config.get('container_volumes', [])
+        if type(self.container_volumes) != list:
+            self.container_volumes = [self.container_volumes]
+        self.container_volumes = set(self.container_volumes)
+
+        # Check for conflicts
+        for volume in self.volumes.values():
+            if volume['bind'] in self.container_volumes:
+                raise exceptions.InvalidVolumeConfigurationException(
+                        'Conflict between bind-mounted volume ' +
+                        'and container-only volume on {}'
+                        .format(volume['bind']))
 
         # Get links
         self.links = dict(

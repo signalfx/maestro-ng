@@ -183,8 +183,13 @@ class StartTask(Task):
                 and map(lambda p: tuple(p['exposed'].split('/')),
                         self.container.ports.values()) \
                 or None
+
+
             volumes = [volume['bind'] for volume in
                        self.container.volumes.values()]
+
+            if len(self.container.container_volumes) <> 0:
+                volumes.extend(self.container.container_volumes)
 
             self.o.pending('creating container from {}...'.format(
                 self.container.short_image))

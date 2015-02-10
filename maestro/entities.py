@@ -328,6 +328,8 @@ class Container(Entity):
         # If no volume source is specified, we assume it's the same path as the
         # destination inside the container.
         self.volumes = self._parse_volumes(config.get('volumes', {}))
+        # This key is for container volume  only, with no host binding
+        self.container_volumes = self._parse_container_volumes(config.get('container_volumes', []));
 
         # Get links
         self.links = dict(
@@ -587,6 +589,27 @@ class Container(Entity):
         for src, spec in volumes.items():
             _parse_spec(src, spec)
         return result
+
+
+    def _parse_container_volumes(self, volumes_list):
+        """ Ensure that each volume only container are not associated with any host binding
+        Args:
+            volumes_list: A list of volumes container only
+        Returns: The volume list left unchanged or an empty list
+        """
+        if type(volumes_list) <> list:
+            return []
+        result = [];
+        for container_path in volumes_list:
+            for hostpath,binding in self.volumes.items():
+                if 'bind' in binding and binding['bind'] == container_path:
+                    raise exceptions.InvalidVolumeConfigurationException('Conflict found in volume declaration\
+                            conflict for container {}: {} already declared with host binding {}'
+                            .format(self.name, container_path, hostpath))
+                else:
+                    result.append(container_path);
+        return result
+
 
     def _parse_go_time(self, s):
         """Parse a time string found in the container status into a Python

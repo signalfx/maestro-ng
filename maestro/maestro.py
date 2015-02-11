@@ -56,7 +56,8 @@ class Conductor:
                                        self.services[kind],
                                        instance,
                                        self.schema,
-                                       self._config['name'])
+                                       self._config['name'],
+                                       self._config['services'])
 
         # Resolve dependencies between services.
         for kind, service in self._config.get('services', {}).items():

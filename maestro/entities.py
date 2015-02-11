@@ -281,7 +281,7 @@ class Container(Entity):
     executed inside a Docker container on its target ship/host."""
 
     def __init__(self, name, ship, service, config=None, schema=None,
-                 env_name='local'):
+                 env_name='local', services_config=None):
         """Create a new Container object.
 
         Args:
@@ -296,7 +296,6 @@ class Container(Entity):
         """
         Entity.__init__(self, name)
         config = config or {}
-
         self._status = None  # The container's status, cached.
         self._ship = ship
         self._service = service
@@ -328,6 +327,11 @@ class Container(Entity):
         # If no volume source is specified, we assume it's the same path as the
         # destination inside the container.
         self.volumes = self._parse_volumes(config.get('volumes', {}))
+        # This key is for container volume  only, with no host binding
+        self.container_volumes = self._parse_container_volumes(config.get('container_volumes', []));
+        # Contains the list of instances name (aka docker container name) which volumes should be mounted in this container
+        self.volumes_from = config.get('volumes_from', []);
+        self._check_volumes_from(services_config or {})
 
         # Get links
         self.links = dict(
@@ -442,6 +446,7 @@ class Container(Entity):
         """Returns the time at which the container finished executing."""
         status = self.status()
         return status and self._parse_go_time(status['State']['FinishedAt'])
+
 
     def status(self, refresh=False):
         """Retrieve the details about this container from the Docker daemon, or
@@ -587,6 +592,40 @@ class Container(Entity):
         for src, spec in volumes.items():
             _parse_spec(src, spec)
         return result
+
+
+    def _parse_container_volumes(self, volumes_list):
+        """ Ensure that each volume only container are not associated with any host binding
+        Args:
+            volumes_list: A list of volumes container only
+        Returns: The volume list left unchanged or an empty list
+        """
+        if type(volumes_list) != list:
+            return []
+        result = [];
+        for container_path in volumes_list:
+            for hostpath,binding in self.volumes.items():
+                if 'bind' in binding and binding['bind'] == container_path:
+                    raise exceptions.InvalidVolumeConfigurationException('Conflict found in volume declaration\
+                            conflict for container {}: {} already declared with host binding {}'
+                            .format(self.name, container_path, hostpath))
+                else:
+                    result.append(container_path);
+        return result
+
+    def _check_volumes_from(self, services_config):
+        """
+        Ensure that the right hand name of container is a dependency of this container ? and that its references
+        a container on the same ship
+        """
+        for vol_ref_name in self.volumes_from:
+            for instance in services_config.values():
+                if vol_ref_name in instance['instances']:
+                    if instance['instances'][vol_ref_name]['ship'] != self._ship.name:
+                        raise exceptions.InvalidVolumeConfigurationException('In container {}, volumes_from can only make reference to the same ship definition  {} -> {}'
+                                .format(self.name, self._ship.name, instance['instances'][vol_ref_name]['ship']))
+        return
+         
 
     def _parse_go_time(self, s):
         """Parse a time string found in the container status into a Python

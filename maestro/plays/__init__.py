@@ -350,6 +350,10 @@ class Restart(BaseOrchestrationPlay):
                 BaseOrchestrationPlay.LINE_FMT.format(
                     order + 1, container.name, container.service.name,
                     container.ship.address)))
+
+            for s in self._dependencies['s1']:
+                print("Set = ", s)
+
             self.register(tasks.RestartTask(
                 o, container, self._registries, self._refresh_images,
                 self._step_delay if order > 0 else 0, self._stop_start_delay,

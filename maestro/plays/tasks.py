@@ -183,8 +183,12 @@ class StartTask(Task):
                 and map(lambda p: tuple(p['exposed'].split('/')),
                         self.container.ports.values()) \
                 or None
+
             volumes = [volume['bind'] for volume in
                        self.container.volumes.values()]
+
+            if len(self.container.container_volumes) != 0:
+                volumes.extend(self.container.container_volumes)
 
             self.o.pending('creating container from {}...'.format(
                 self.container.short_image))
@@ -225,7 +229,8 @@ class StartTask(Task):
             network_mode=self.container.network_mode,
             restart_policy=self.container.restart_policy,
             dns=self.container.dns,
-            links=self.container.links)
+            links=self.container.links,
+            volumes_from=self.container.volumes_from)
 
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.

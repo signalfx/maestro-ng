@@ -184,12 +184,6 @@ class StartTask(Task):
                         self.container.ports.values()) \
                 or None
 
-            # Assemble the volumes list
-            volumes = [volume['bind'] for volume in
-                       self.container.volumes.values()]
-            if self.container.container_volumes:
-                volumes.extend(self.container.container_volumes)
-
             self.o.pending('creating container from {}...'.format(
                 self.container.short_image))
             self.container.ship.backend.create_container(
@@ -197,7 +191,7 @@ class StartTask(Task):
                 hostname=self.container.name,
                 name=self.container.name,
                 environment=self.container.env,
-                volumes=volumes,
+                volumes=self.container.get_volumes(),
                 mem_limit=self.container.mem_limit,
                 memswap_limit=self.container.memswap_limit,
                 cpu_shares=self.container.cpu_shares,
@@ -229,7 +223,8 @@ class StartTask(Task):
             network_mode=self.container.network_mode,
             restart_policy=self.container.restart_policy,
             dns=self.container.dns,
-            links=self.container.links)
+            links=self.container.links,
+            volumes_from=self.container.volumes_from)
 
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.

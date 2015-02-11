@@ -76,6 +76,27 @@ class Conductor:
                 for dependency in service.requires.union(service.wants_info):
                     container.env.update(dependency.get_link_variables())
 
+        # Check for host locality and volume conflicts on volumes_from
+        for container in self.containers.values():
+            for volumes_from in container.volumes_from:
+                if volumes_from not in self.containers:
+                    raise exceptions.InvalidVolumeConfigurationException(
+                            'Unknown container {} to get volumes from for {}!'
+                            .format(volumes_from, container.name))
+
+                other = self.containers[volumes_from]
+                if other.ship != container.ship:
+                    raise exceptions.InvalidVolumeConfigurationException(
+                            '{} and {} must be on the same host for '
+                            'volumes_from declaration in {}!'
+                            .format(other.name, container.name,
+                                    container.name))
+
+                if container.get_volumes().intersection(other.get_volumes()):
+                    raise exceptions.InvalidVolumeConfigurationException(
+                            'Volume conflicts between {} and {}!'
+                            .format(container.name, other.name))
+
         # Instantiate audit bindings
         self.auditor = audit.AuditorFactory.from_config(
             self._config.get('audit', []))

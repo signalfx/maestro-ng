@@ -339,6 +339,14 @@ class Container(Entity):
                         'and container-only volume on {}'
                         .format(volume['bind']))
 
+        # Contains the list of containers from which volumes should be mounted
+        # in this container. Host-locality and volume conflicts are checked by
+        # the conductor.
+        self.volumes_from = config.get('volumes_from', [])
+        if type(self.volumes_from) != list:
+            self.volumes_from = [self.volumes_from]
+        self.volumes_from = set(self.volumes_from)
+
         # Get links
         self.links = dict(
             (name, alias) for name, alias in
@@ -463,6 +471,14 @@ class Container(Entity):
                 pass
 
         return self._status
+
+    def get_volumes(self):
+        """Returns all the declared local volume targets within this container.
+        This does not includes volumes from other containers."""
+        volumes = set(self.container_volumes)
+        for volume in self.volumes.values():
+            volumes.add(volume['bind'])
+        return volumes
 
     def get_link_variables(self, add_internal=False):
         """Build and return a dictionary of environment variables providing

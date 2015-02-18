@@ -325,9 +325,27 @@ class Container(Entity):
             if type(v) == list:
                 self.env[k] = env_list_expand(v)
 
-        # If no volume source is specified, we assume it's the same path as the
-        # destination inside the container.
         self.volumes = self._parse_volumes(config.get('volumes', {}))
+        self.container_volumes = config.get('container_volumes', [])
+        if type(self.container_volumes) != list:
+            self.container_volumes = [self.container_volumes]
+        self.container_volumes = set(self.container_volumes)
+
+        # Check for conflicts
+        for volume in self.volumes.values():
+            if volume['bind'] in self.container_volumes:
+                raise exceptions.InvalidVolumeConfigurationException(
+                        'Conflict between bind-mounted volume ' +
+                        'and container-only volume on {}'
+                        .format(volume['bind']))
+
+        # Contains the list of containers from which volumes should be mounted
+        # in this container. Host-locality and volume conflicts are checked by
+        # the conductor.
+        self.volumes_from = config.get('volumes_from', [])
+        if type(self.volumes_from) != list:
+            self.volumes_from = [self.volumes_from]
+        self.volumes_from = set(self.volumes_from)
 
         # Get links
         self.links = dict(
@@ -453,6 +471,14 @@ class Container(Entity):
                 pass
 
         return self._status
+
+    def get_volumes(self):
+        """Returns all the declared local volume targets within this container.
+        This does not includes volumes from other containers."""
+        volumes = set(self.container_volumes)
+        for volume in self.volumes.values():
+            volumes.add(volume['bind'])
+        return volumes
 
     def get_link_variables(self, add_internal=False):
         """Build and return a dictionary of environment variables providing

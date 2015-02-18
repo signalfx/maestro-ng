@@ -61,3 +61,7 @@ class InvalidRestartPolicyConfigurationException(MaestroException):
 
 class InvalidVolumeConfigurationException(MaestroException):
     """Error thrown when a volume binding isn't configured properly."""
+
+
+class InvalidAuditorConfigurationException(MaestroException):
+    """Invalid configuration of one of the specified auditors."""

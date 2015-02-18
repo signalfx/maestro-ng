@@ -4,7 +4,8 @@
 __maestro:
   schema: 2
 
-name: demo
+{%- set name = 'demo' %}
+name: {{ name }}
 
 ships:
   # docker_port remains at default 4243 on all our hosts
@@ -24,6 +25,18 @@ audit:
     token: {{ env.MAESTRO_HIPCHAT_TOKEN }}
   - type: log
     file: maestro.auditlog
+  - type: http
+    endpoint: http://localhost:8888/v1/event
+    method: post
+    timeout: 0.5
+    payload:
+      environment: {{ name }}
+      eventData:
+        what: "{what}"
+        who: "{who}"
+        action: "{action}"
+    headers:
+      Authorization: Bearer f1bc2e79fa03f3317892d2a7c3eab8c8
 
 services:
   # 2-node ZooKeeper cluster.

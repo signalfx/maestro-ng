@@ -5,32 +5,43 @@
 # Docker container orchestration utility.
 
 import getpass
+import json
+import requests
+
+from . import exceptions
+from .version import name as maestro_name
 
 
 class BaseAuditor:
     """Base class for auditors that can save or notify about orchestration
     plays being executed."""
 
+    def _format_what(self, what):
+        if type(what) == list or type(what) == tuple:
+            return ', '.join(what)
+        return what
+
+    def _format_who(self, who=None):
+        return who or getpass.getuser()
+
     def _format_action(self, what, action=None, who=None):
-        if type(what) == list:
-            what = ', '.join(what)
-        who = who or getpass.getuser()
+        what = self._format_what(what)
+        who = self._format_who(who)
 
         if action:
+            action = action if action is not 'stop' else 'stopp'
             return '{} is {}ing {}.'.format(who, action, what)
         return '{} is acting on {}.'.format(who, what)
 
     def _format_success(self, what, action=None):
-        if type(what) == list:
-            what = ', '.join(what)
+        what = self._format_what(what)
 
         if action:
             return '{} of {} succeeded.'.format(action.title(), what)
         return 'Action on {} succeeded.'.format(what)
 
     def _format_error(self, what, action=None, message=None):
-        if type(what) == list:
-            what = ', '.join(what)
+        what = self._format_what(what)
 
         if action:
             s = 'Failed to {} {}!'.format(action, what)
@@ -44,6 +55,9 @@ class BaseAuditor:
     def action(self, what, action=None, who=None):
         raise NotImplementedError
 
+    def success(self, what, action=None):
+        raise NotImplementedError
+
     def error(self, what, action=None, message=None):
         raise NotImplementedError
 
@@ -52,7 +66,14 @@ class HipChatAuditor(BaseAuditor):
     """Auditor that sends notifications in a HipChat chat room."""
 
     def __init__(self, name, room, token):
-        self._name = name
+        if not room:
+            raise exceptions.InvalidAuditorConfigurationException(
+                    'Missing HipChat room name!')
+        if not token:
+            raise exceptions.InvalidAuditorConfigurationException(
+                    'Missing HipChat API token!')
+
+        self._name = name if name else maestro_name
         self._room = room
 
         import hipchat
@@ -87,13 +108,18 @@ class HipChatAuditor(BaseAuditor):
 
     @staticmethod
     def from_config(cfg):
-        return HipChatAuditor(cfg['name'], cfg['room'], cfg['token'])
+        return HipChatAuditor(cfg.get('name'), cfg.get('room'),
+                              cfg.get('token'))
 
 
 class LoggerAuditor(BaseAuditor):
     """Auditor that logs the notifications into a log file."""
 
     def __init__(self, filename):
+        if not filename:
+            raise exceptions.InvalidAuditorConfigurationException(
+                    'Missing audit log filename!')
+
         import logging
         formatter = logging.Formatter(
             fmt='%(asctime)s %(levelname)s: %(message)s')
@@ -115,7 +141,77 @@ class LoggerAuditor(BaseAuditor):
 
     @staticmethod
     def from_config(cfg):
-        return LoggerAuditor(cfg['file'])
+        return LoggerAuditor(cfg.get('file'))
+
+
+class WebHookAuditor(BaseAuditor):
+    """Auditor that makes HTTP calls, webhooks-style, with JSON payload."""
+
+    DEFAULT_TIMEOUT = 3
+    DEFAULT_HTTP_METHOD = 'POST'
+
+    def __init__(self, endpoint, payload=None, headers=None,
+                 method=DEFAULT_HTTP_METHOD, timeout=DEFAULT_TIMEOUT):
+        if not endpoint:
+            raise exceptions.InvalidAuditorConfigurationException(
+                    'Missing webhook endpoint!')
+
+        self._endpoint = endpoint
+        self._payload = payload
+        self._headers = {'Content-Type': 'application/json; charset=utf-8'}
+        if headers:
+            self._headers.update(headers)
+
+        self._method = method.upper()
+        if self._method not in ['GET', 'POST']:
+            raise exceptions.InvalidAuditorConfigurationException(
+                    'Invalid HTTP method {}!'.format(method))
+        self._timeout = timeout
+
+    def _prepare_payload(self, what, action, who, message):
+        what = self._format_what(what)
+        who = self._format_who(who)
+
+        def r(fn, on):
+            if type(on) == dict:
+                d = {}
+                for k, v in on.items():
+                    v2 = r(fn, v)
+                    if v2:
+                        d[k] = v2
+                return d
+            if type(on) == list or type(on) == tuple:
+                return filter(None, map(fn, on))
+            return fn(on)
+
+        return r(lambda s: s.format(what=what, action=action, who=who,
+                                    message=message),
+                 self._payload)
+
+    def action(self, what, action=None, who=None):
+        payload = self._prepare_payload(what, action, who,
+                                        self._format_action(what, action, who))
+        if not payload:
+            payload = None
+
+        method = getattr(requests, self._method.lower())
+        method(self._endpoint, headers=self._headers, data=json.dumps(payload),
+               timeout=self._timeout)
+
+    def success(self, what, action=None):
+        pass
+
+    def error(self, what, action=None, message=None):
+        pass
+
+    @staticmethod
+    def from_config(cfg):
+        return WebHookAuditor(
+            cfg['endpoint'],
+            cfg.get('payload', {}),
+            cfg.get('headers'),
+            cfg.get('method', WebHookAuditor.DEFAULT_HTTP_METHOD),
+            cfg.get('timeout', WebHookAuditor.DEFAULT_TIMEOUT))
 
 
 class MultiplexAuditor(BaseAuditor):
@@ -151,12 +247,16 @@ class AuditorFactory:
     AUDITORS = {
         'hipchat': HipChatAuditor,
         'log': LoggerAuditor,
+        'http': WebHookAuditor,
     }
 
     @staticmethod
     def from_config(cfg):
         auditors = set([])
         for auditor in cfg:
+            if auditor['type'] not in AuditorFactory.AUDITORS:
+                raise exceptions.InvalidAuditorConfigurationException(
+                        'Unknown auditor type {}'.format(auditor['type']))
             auditors.add(AuditorFactory.AUDITORS[auditor['type']]
                          .from_config(auditor))
         return MultiplexAuditor(auditors)

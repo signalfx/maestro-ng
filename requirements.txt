@@ -5,4 +5,3 @@ six
 bgtunnel
 python-simple-hipchat
 requests
-json

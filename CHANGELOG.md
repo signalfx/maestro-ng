@@ -1,6 +1,21 @@
 ChangeLog
 =========
 
+Maestro 0.2.5
+-------------
+
+_February 19th, 2015_
+
+* Added support for specifying the container's work directory (#111)
+* Improvements to the pull task so it correctly reports errors (#76)
+* Improvements to error reporting by providing a meaningful traceback
+* Allow connection to local Docker daemons via UNIX socket (#106, #113)
+* Added basic JSON-sending webhook auditor (#118)
+* Added support for `volumes_from` and container-only volumes (#114)
+* Set `DOCKER_IMAGE` and `DOCKER_TAG` environment variables inside the
+  started containers as running programs might find this information
+  useful
+
 Maestro 0.2.4.1
 ---------------
 

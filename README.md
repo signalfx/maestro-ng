@@ -228,6 +228,12 @@ be placed on (by name). Additionally, it may define:
     host>: <destination in container>`. Each target can also be
     specified as a map `{target: <destination>, mode: <mode>}`, where
     `mode` is `ro` (read-only) or `rw` (read-write);
+  - `container_volumes`, a path, or list of paths inside the container
+    to be used as container-only volumes with no host bind-mount. This
+    is mostly used for data-containers;
+  - `volumes_from`, a container or list of containers running on the
+    same _ship_ to get volumes from. This is useful to get the volumes
+    of a data-container into an application container;
   - `env`, for environment variables, as a map of `<variable name>:
     <value>` (variables defined at the instance level override variables
     defined at the service level);
@@ -513,6 +519,24 @@ Note that it is currently not possible to bind-mount the same host
 location into two distinct places inside the container as this is not
 supported by `docker-py` (it's a dictionary keyed on the host location).
 
+Container-only volumes can be specified with the `container_volumes`
+setting on each instance, as a path or list of paths:
+
+```yaml
+container_volumes:
+  - /inside/the/container/1
+  - /inside/the/container/2
+```
+
+Finally, you can get the volumes of one or more containers into a
+container with the `volumes_from` feature of Docker, as long as the
+containers run on the same ship:
+
+```yaml
+# other1 and other2 run on the same ship as this container
+volumes_from: [ other1, other2 ]
+```
+
 ## Lifecycle checks
 
 When controlling containers (your service instances), Maestro can
@@ -634,6 +658,9 @@ With inspiration from Docker's _links_ feature, Maestro utilizes
 environment variables to pass information down to each container. Each
 container is guaranteed to get the following environment variables:
 
+* `DOCKER_IMAGE`: the full name of the image this container is started
+  from.
+* `DOCKER_TAG`: the tag of the image this container is started from.
 * `SERVICE_NAME`: the friendly name of the service the container is an
   instance of. Note that it is possible to have multiple clusters of the
   same kind of application by giving them distinct friendly names.

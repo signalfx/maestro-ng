@@ -335,9 +335,9 @@ class Container(Entity):
         for volume in self.volumes.values():
             if volume['bind'] in self.container_volumes:
                 raise exceptions.InvalidVolumeConfigurationException(
-                        'Conflict between bind-mounted volume ' +
+                        'Conflict in {} between bind-mounted volume '
                         'and container-only volume on {}'
-                        .format(volume['bind']))
+                        .format(self.name, volume['bind']))
 
         # Contains the list of containers from which volumes should be mounted
         # in this container. Host-locality and volume conflicts are checked by

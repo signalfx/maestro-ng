@@ -1,0 +1,21 @@
+__maestro:
+  schema: 2
+
+name: test-volumes
+ships:
+  ship: {ip: localhost}
+services:
+  service:
+    image: ubuntu
+    instances:
+      instance-1:
+        ship: ship
+        volumes:
+          /out: /in1
+        container_volumes:
+          - /in2
+      instance-2:
+        ship: ship
+        volumes:
+          /out: /in1
+        volumes_from: instance-1

@@ -92,10 +92,13 @@ class Conductor:
                             .format(other.name, container.name,
                                     container.name))
 
-                if container.get_volumes().intersection(other.get_volumes()):
+                conflicts = container.get_volumes().intersection(
+                        other.get_volumes())
+                if conflicts:
                     raise exceptions.InvalidVolumeConfigurationException(
-                            'Volume conflicts between {} and {}!'
-                            .format(container.name, other.name))
+                            'Volume conflicts between {} and {}: {}!'
+                            .format(container.name, other.name,
+                                    ', '.join(conflicts)))
 
         # Instantiate audit bindings
         self.auditor = audit.AuditorFactory.from_config(

@@ -201,6 +201,15 @@ class ContainerTest(unittest.TestCase):
         container = self._cntr(config={'workdir': '/tmp'})
         self.assertEqual(container.workdir, '/tmp')
 
+    def test_volume_conflict_container(self):
+        self.assertRaisesRegexp(
+                exceptions.InvalidVolumeConfigurationException,
+                'Conflict in {} between bind-mounted volume '
+                'and container-only volume on /in1'
+                .format(ContainerTest.CONTAINER),
+                lambda: self._cntr(config={'volumes': {'/out': '/in1'},
+                                           'container_volumes': ['/in1']}))
+
 
 class BaseConfigFileUsingTest(unittest.TestCase):
 
@@ -217,6 +226,33 @@ class ConductorTest(BaseConfigFileUsingTest):
         c = maestro.Conductor(config)
         self.assertIsNot(c.registries, None)
         self.assertEqual(c.registries, {})
+
+    def test_volumes_parsing(self):
+        config = self._get_config('test_volumes')
+        c = maestro.Conductor(config)
+        instance1 = c.containers['instance-1']
+        instance2 = c.containers['instance-2']
+        self.assertEqual(instance1.get_volumes(),
+                set(['/in1', '/in2']))
+        self.assertEqual(instance2.get_volumes(),
+                set(['/in3']))
+        self.assertEqual(instance2.volumes_from,
+                set([instance1.name]))
+
+    def test_volume_conflict_volumes_from(self):
+        config = self._get_config('test_volume_conflict_volumes_from')
+        self.assertRaisesRegexp(
+                exceptions.InvalidVolumeConfigurationException,
+                'Volume conflicts between instance-2 and instance-1: /in1!',
+                lambda: maestro.Conductor(config))
+
+    def test_volumes_from_unknown(self):
+        config = self._get_config('test_volumes_from_unknown')
+        self.assertRaisesRegexp(
+                exceptions.InvalidVolumeConfigurationException,
+                'Unknown container instance-2 to get volumes from '
+                'for instance-1!',
+                lambda: maestro.Conductor(config))
 
 
 class ConfigTest(BaseConfigFileUsingTest):

@@ -40,7 +40,12 @@ automatically installed by `setuptools` if you follow the instructions
 below.
 
 * PyYAML (you may need to install this manually, e.g. `apt-get install python-yaml`)
+* Jinja2
+* requests
 * A recent [docker-py](http://github.com/dotcloud/docker-py)
+
+If you plan on using the HipChat auditor, you'll also need
+`python-simple-hipchat`.
 
 ## Installation
 

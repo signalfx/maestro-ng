@@ -183,21 +183,16 @@ def create_parser():
     return parser
 
 
-def main(args=None, config=None):
-    options = create_parser().parse_args(args)
-
-    # Only helps with Python3
-    if not options.command:
-        options.command = 'status'
-
-    if config is None:
-        config = load_config_from_file(options.file)
-
+def execute(options, config):
     # Shutup urllib3, wherever it comes from.
     (logging.getLogger('requests.packages.urllib3.connectionpool')
             .setLevel(logging.WARN))
     (logging.getLogger('urllib3.connectionpool')
             .setLevel(logging.WARN))
+
+    # Only helps with Python3
+    if not options.command:
+        options.command = 'status'
 
     try:
         c = maestro.Conductor(config)
@@ -211,6 +206,13 @@ def main(args=None, config=None):
     except:
         traceback.print_exc()
     return 1
+
+
+def main(args=None, config=None):
+    options = create_parser().parse_args(args)
+    if config is None:
+        config = load_config_from_file(options.file)
+    return execute(options, config)
 
 
 if __name__ == '__main__':

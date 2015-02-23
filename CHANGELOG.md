@@ -1,6 +1,15 @@
 ChangeLog
 =========
 
+Maestro 0.2.5.1
+---------------
+
+_February 23rd, 2015_
+
+Simple point-fix release to include the separation of main() and
+execute() in the module entrypoint to make building scripts that execute
+MaestroNG easier.
+
 Maestro 0.2.5
 -------------
 

@@ -354,7 +354,8 @@ class LoginTask(Task):
             self.container.ship.backend.login(**registry)
         except Exception as e:
             raise exceptions.OrchestrationException(
-                'Login to {} failed: {}'.format(registry, e))
+                'Login to {} as {} failed: {}'
+                .format(registry['registry'], registry['username'], e))
 
     @staticmethod
     def registry_for_container(container, registries={}):

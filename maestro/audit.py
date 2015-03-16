@@ -68,10 +68,10 @@ class HipChatAuditor(BaseAuditor):
     def __init__(self, name, room, token):
         if not room:
             raise exceptions.InvalidAuditorConfigurationException(
-                    'Missing HipChat room name!')
+                'Missing HipChat room name!')
         if not token:
             raise exceptions.InvalidAuditorConfigurationException(
-                    'Missing HipChat API token!')
+                'Missing HipChat API token!')
 
         self._name = name if name else maestro_name
         self._room = room
@@ -118,7 +118,7 @@ class LoggerAuditor(BaseAuditor):
     def __init__(self, filename):
         if not filename:
             raise exceptions.InvalidAuditorConfigurationException(
-                    'Missing audit log filename!')
+                'Missing audit log filename!')
 
         import logging
         formatter = logging.Formatter(
@@ -154,7 +154,7 @@ class WebHookAuditor(BaseAuditor):
                  method=DEFAULT_HTTP_METHOD, timeout=DEFAULT_TIMEOUT):
         if not endpoint:
             raise exceptions.InvalidAuditorConfigurationException(
-                    'Missing webhook endpoint!')
+                'Missing webhook endpoint!')
 
         self._endpoint = endpoint
         self._payload = payload
@@ -165,7 +165,7 @@ class WebHookAuditor(BaseAuditor):
         self._method = method.upper()
         if self._method not in ['GET', 'POST']:
             raise exceptions.InvalidAuditorConfigurationException(
-                    'Invalid HTTP method {}!'.format(method))
+                'Invalid HTTP method {}!'.format(method))
         self._timeout = timeout
 
     def _prepare_payload(self, what, action, who, message):
@@ -256,7 +256,7 @@ class AuditorFactory:
         for auditor in cfg:
             if auditor['type'] not in AuditorFactory.AUDITORS:
                 raise exceptions.InvalidAuditorConfigurationException(
-                        'Unknown auditor type {}'.format(auditor['type']))
+                    'Unknown auditor type {}'.format(auditor['type']))
             auditors.add(AuditorFactory.AUDITORS[auditor['type']]
                          .from_config(auditor))
         return MultiplexAuditor(auditors)

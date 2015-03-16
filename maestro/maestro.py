@@ -81,24 +81,24 @@ class Conductor:
             for volumes_from in container.volumes_from:
                 if volumes_from not in self.containers:
                     raise exceptions.InvalidVolumeConfigurationException(
-                            'Unknown container {} to get volumes from for {}!'
-                            .format(volumes_from, container.name))
+                        'Unknown container {} to get volumes from for {}!'
+                        .format(volumes_from, container.name))
 
                 other = self.containers[volumes_from]
                 if other.ship != container.ship:
                     raise exceptions.InvalidVolumeConfigurationException(
-                            '{} and {} must be on the same host for '
-                            'volumes_from declaration in {}!'
-                            .format(other.name, container.name,
-                                    container.name))
+                        '{} and {} must be on the same host for '
+                        'volumes_from declaration in {}!'
+                        .format(other.name, container.name,
+                                container.name))
 
                 conflicts = container.get_volumes().intersection(
-                        other.get_volumes())
+                    other.get_volumes())
                 if conflicts:
                     raise exceptions.InvalidVolumeConfigurationException(
-                            'Volume conflicts between {} and {}: {}!'
-                            .format(container.name, other.name,
-                                    ', '.join(conflicts)))
+                        'Volume conflicts between {} and {}: {}!'
+                        .format(container.name, other.name,
+                                ', '.join(conflicts)))
 
         # Instantiate audit bindings
         self.auditor = audit.AuditorFactory.from_config(

@@ -617,12 +617,28 @@ Options:
 
 **Script execution** makes Maestro execute the given command, using the
 return code to denote the success or failure of the test (a return code
-of zero indicates success, as per the Unix convention). For example:
+of zero indicates success, as per the Unix convention). The command is
+executed a certain number of attempts (defaulting to 180), with a delay
+between each attempt of 1 second. For example:
 
 ```yaml
 type: exec
 command: "python my_cool_script.py"
+attempts: 30
 ```
+
+The command's execution environment is extended with the same
+environment that your running container would have, which means it
+contains all the environment information about the container's
+configuration, ports, dependencies, etc. You can then use Maestro guest
+utility functions to easily grok that information from the environment
+(in Python). See "How Maestro orchestrates and service
+auto-configuration" and "Guest utils helper functions" below for more
+information.
+
+Note that the current working directory is never changed by Maestro
+directly; paths to your scripts will be resolved from wherever you run
+Maestro, not from where the environment YAML file lives.
 
 ## Restart policy
 

@@ -286,10 +286,10 @@ class LifecycleHelperTest(unittest.TestCase):
     def test_parse_checker_exec(self):
         container = self._get_container()
         c = lifecycle.LifecycleHelperFactory.from_config(container,
-            {'type': 'exec', 'command': 'exit 1'})
+            {'type': 'exec', 'command': 'python foo.py -arg'})
         self.assertIsNot(c, None)
         self.assertIsInstance(c, lifecycle.ScriptExecutor)
-        self.assertEqual(c.command, 'exit 1')
+        self.assertEqual(c.command, ['python', 'foo.py', '-arg'])
 
     def test_parse_checker_tcp(self):
         container = self._get_container()

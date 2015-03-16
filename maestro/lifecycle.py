@@ -2,11 +2,13 @@
 #
 # Docker container orchestration utility.
 
+import os
+import re
+import requests
+import shlex
 import socket
 import subprocess
 import time
-import requests
-import re
 
 from . import exceptions
 
@@ -20,26 +22,47 @@ class BaseLifecycleHelper:
         raise NotImplementedError
 
 
-class TCPPortPinger(BaseLifecycleHelper):
+class RetryingLifecycleHelper(BaseLifecycleHelper):
+
+    DEFAULT_MAX_ATTEMPTS = 180
+
+    def __init__(self, attempts, delay=1):
+        self.attempts = int(attempts or
+                            RetryingLifecycleHelper.DEFAULT_MAX_ATTEMPTS)
+        self.delay = int(delay)
+
+    def test(self):
+        retries = self.attempts
+        while retries > 0:
+            if self._test():
+                return True
+            retries -= 1
+            if retries > 0:
+                time.sleep(self.delay)
+        return False
+
+    def _test(self):
+        raise NotImplementedError
+
+
+class TCPPortPinger(RetryingLifecycleHelper):
     """
     Lifecycle state helper that "pings" a particular TCP port.
     """
 
-    DEFAULT_MAX_WAIT = 300
-
-    def __init__(self, host, port, attempts=1):
+    def __init__(self, host, port, attempts):
         """Create a new TCP port pinger for the given host and port. The given
         number of attempts will be made, until the port is open or we give
         up."""
+        RetryingLifecycleHelper.__init__(self, attempts)
         self.host = host
         self.port = int(port)
-        self.attempts = int(attempts)
 
     def __repr__(self):
         return 'PortPing(tcp://{}:{}, {} attempts)'.format(
             self.host, self.port, self.attempts)
 
-    def __ping_port(self):
+    def _test(self):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(1)
@@ -48,17 +71,6 @@ class TCPPortPinger(BaseLifecycleHelper):
             return True
         except Exception:
             return False
-
-    def test(self):
-        retries = self.attempts
-        while retries > 0:
-            if self.__ping_port():
-                return True
-
-            retries -= 1
-            if retries > 0:
-                time.sleep(1)
-        return False
 
     @staticmethod
     def from_config(container, config):
@@ -72,29 +84,37 @@ class TCPPortPinger(BaseLifecycleHelper):
             raise exceptions.InvalidLifecycleCheckConfigurationException(
                 'Port {} is not TCP!'.format(config['port']))
 
-        return TCPPortPinger(
-            container.ship.ip, int(parts[0]),
-            attempts=config.get('max_wait', TCPPortPinger.DEFAULT_MAX_WAIT))
+        return TCPPortPinger(container.ship.ip, int(parts[0]),
+                             attempts=config.get('max_wait'))
 
 
-class ScriptExecutor(BaseLifecycleHelper):
+class ScriptExecutor(RetryingLifecycleHelper):
     """
     Lifecycle state helper that executes a script and uses the exit code as the
     success value.
     """
 
-    def __init__(self, command):
-        self.command = command
+    def __init__(self, command, env, attempts):
+        RetryingLifecycleHelper.__init__(self, attempts)
+        self.command = shlex.split(command)
+        self.container_env = env
 
     def __repr__(self):
-        return 'ScriptExec({})'.format(self.command)
+        return 'ScriptExec({}, {} attempts)'.format(self.command,
+                                                    self.attempts)
 
-    def test(self):
-        return subprocess.call(self.command, shell=True) == 0
+    def __create_env(self):
+        env = dict((k, v) for k, v in os.environ.items())
+        env.update(self.container_env)
+        return env
+
+    def _test(self):
+        return subprocess.call(self.command, env=self.__create_env()) == 0
 
     @staticmethod
     def from_config(container, config):
-        return ScriptExecutor(config['command'])
+        return ScriptExecutor(config['command'], container.env,
+                              attempts=config.get('attempts'))
 
 
 class Sleep(BaseLifecycleHelper):

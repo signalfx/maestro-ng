@@ -364,6 +364,15 @@ class LoginTask(Task):
             return None
 
         registry, repo_name = image['repository'].split('/', 1)
+        if registry not in registries:
+            # If the registry defined name doesn't match, try to find a
+            # matching registry by registry FQDN.
+            for name, info in registries.items():
+                fqdn = urlparse.urlparse(info['registry']).netloc
+                if registry == fqdn or registry == fqdn.split(':')[0]:
+                    registry = name
+                    break
+
         return registries.get(registry)
 
 

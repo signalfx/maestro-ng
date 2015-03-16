@@ -1,0 +1,34 @@
+__maestro:
+  schema: 2
+
+name: test_find_registry
+
+registries:
+  quay.io:
+    registry: https://quay.io/v1
+    username: user
+    password: secret
+  foo2:
+    registry: https://foo1.registry/v1
+    username: user
+    password: secret
+
+ships:
+  ship1: {ip: "localhost"}
+
+services:
+  service1:
+    image: quay.io/user/foo1
+    instances:
+      foo1:
+        ship: ship1
+  service2:
+    image: foo1.registry/user/foo2
+    instances:
+      foo2:
+        ship: ship1
+  service3:
+    image: foo2.registry/user/foo2
+    instances:
+      foo3:
+        ship: ship1

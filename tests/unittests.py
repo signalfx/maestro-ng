@@ -3,7 +3,7 @@
 import os
 import unittest
 
-from maestro import entities, exceptions, maestro, lifecycle
+from maestro import entities, exceptions, maestro, lifecycle, plays
 from maestro.__main__ import load_config_from_file, create_parser
 
 
@@ -392,6 +392,31 @@ class LifecycleHelperTest(unittest.TestCase):
         c = lifecycle.LifecycleHelperFactory.from_config(container,
             {'type': 'http', 'port': 'server','match_regex':'abc[^d]'})
         self.assertFalse(c._test_response(FakeEmptyResponse()))
+
+
+class LoginTaskTest(BaseConfigFileUsingTest):
+
+    def test_find_registry_for_container_by_name(self):
+        config = self._get_config('test_find_registry')
+        c = maestro.Conductor(config)
+        container = c.containers['foo1']
+        registry = plays.tasks.LoginTask.registry_for_container(container, c.registries)
+        self.assertEqual(registry, c.registries['quay.io'])
+
+    def test_find_registry_for_container_by_fqdn(self):
+        config = self._get_config('test_find_registry')
+        c = maestro.Conductor(config)
+        container = c.containers['foo2']
+        registry = plays.tasks.LoginTask.registry_for_container(container, c.registries)
+        self.assertEqual(registry, c.registries['foo2'])
+
+    def test_find_registry_for_container_not_found(self):
+        config = self._get_config('test_find_registry')
+        c = maestro.Conductor(config)
+        container = c.containers['foo3']
+        registry = plays.tasks.LoginTask.registry_for_container(container, c.registries)
+        self.assertEqual(registry, None)
+
 
 #host,port,match_regex=None,path='/',scheme='http',method='get',max_wait=DEFAULT_MAX_WAIT,**requests_options
 if __name__ == '__main__':

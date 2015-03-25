@@ -254,6 +254,20 @@ class ConductorTest(BaseConfigFileUsingTest):
                 'for instance-1!',
                 lambda: maestro.Conductor(config))
 
+    def test_env_name(self):
+        config = self._get_config('test_envname')
+        c = maestro.Conductor(config)
+        self.assertEqual(c.env_name, 'test')
+        foo1 = c.containers['foo-1']
+        self.assertEqual(foo1.env['MAESTRO_ENVIRONMENT_NAME'], 'test')
+
+    def test_missing_env_name(self):
+        config = self._get_config('test_missing_envname')
+        self.assertRaisesRegexp(
+                exceptions.EnvironmentConfigurationException,
+                'Environment name is missing',
+                lambda: maestro.Conductor(config))
+
 
 class ConfigTest(BaseConfigFileUsingTest):
 

@@ -29,6 +29,9 @@ class Conductor:
 
     def __init__(self, config):
         self._config = config
+        if 'name' not in config:
+            raise exceptions.EnvironmentConfigurationException(
+                'Environment name is missing')
 
         self.ships = (shipproviders.ShipsProviderFactory
                       .from_config(config).ships())
@@ -56,7 +59,7 @@ class Conductor:
                                        self.services[kind],
                                        instance,
                                        self.schema,
-                                       self._config['name'])
+                                       self.env_name)
 
         # Resolve dependencies between services.
         for kind, service in self._config.get('services', {}).items():
@@ -107,6 +110,10 @@ class Conductor:
     @property
     def schema(self):
         return self._config.get('__maestro', {'schema': 1})
+
+    @property
+    def env_name(self):
+        return self._config['name']
 
     def _order_dependencies(self, pending=[], ordered=[], forward=True):
         """Order the given set of containers into an order respecting the

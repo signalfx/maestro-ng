@@ -1,0 +1,9 @@
+name: test
+ships:
+  ship1: {ip: "localhost"}
+services:
+  foo:
+    image: foo
+    instances:
+      foo-1:
+        ship: ship1

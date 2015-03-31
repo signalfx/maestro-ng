@@ -56,7 +56,7 @@ class Ship(Entity):
     executed there.
     """
 
-    DEFAULT_DOCKER_PORT = 4243
+    DEFAULT_DOCKER_PORT = 2375
     DEFAULT_DOCKER_TLS_PORT = 2376
     DEFAULT_DOCKER_VERSION = '1.10'
     DEFAULT_DOCKER_TIMEOUT = 5

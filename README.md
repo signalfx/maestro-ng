@@ -838,8 +838,13 @@ identify a registry name (for example
 `my-private-registry/my-image:tag`, the address of the registry is
 `my-private-registry`) and look for a corresponding entry in the
 `registries` section of the environment description file to look for
-authentication credentials, if they are needed to access the images from
-that registry.
+authentication credentials. Note that Maestro will also look at each
+registry's address FQDN for a match as a fallback.
+
+You can also put your credentials into `${HOME}/.dockercfg` in the
+appropriate format expected by Docker and `docker-py`. Maestro, via the
+`docker-py` library, will also be looking at the contents of this file
+for credentials to registries you are already logged in against.
 
 If credentials are found, Maestro will login to the registry before
 attempting to pull the image.

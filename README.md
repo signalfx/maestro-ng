@@ -185,19 +185,17 @@ ships:
       port: 22 # That's the default
 ```
 
-You can also connect to a Docker daemon secured by TLS.  Note
-that if you want to use verification, you have to
-give the IP (or something that is resolvable inside
-the container) as IP, and the name in the server
+You can also connect to a Docker daemon secured by TLS.  Note that if
+you want to use verification, you have to give the IP (or something that
+is resolvable inside the container) as IP, and the name in the server
 certificate as endpoint.
 
-Not using verification works too (just don't mention
-`tls_verify` and `tls_ca_cert`), but a warning from
-inside `urllib3` will make maestroe's output unreadable.
+Not using verification works too (just don't mention `tls_verify` and
+`tls_ca_cert`), but a warning from inside `urllib3` will make maestroe's
+output unreadable.
 
-In the example below, "docker1" is the CN in the server
-certificate.  All certificates and keys have been
-created as explained in
+In the example below, "docker1" is the CN in the server certificate.
+All certificates and keys have been created as explained in
 https://docs.docker.com/articles/https/
 
 ```yaml
@@ -215,9 +213,14 @@ ships:
 Services are also named. Their name is used for commands that act on
 specific services instead of the whole environment, and is also used in
 dependency declarations. Each service must define the Docker image its
-instances will be using, and of course a description of each instance.
-It can also define environment variables that will apply to all
-of that service's instances.
+instances will be using via the `image` parameter, and of course a
+description of each instance. It can also define environment variables
+that will apply to all of that service's instances through the `env`
+dictionary, dependencies through the `requires` and `wants_info` lists
+(see below in _Defining dependencies_). It is also possible to exclude a
+service from non-specific actions (when Maestro is executed without a
+list of services or containers as arguments) by setting the `omit: true`
+parameter on the service.
 
 Each service instance must at least define the _ship_ its container will
 be placed on (by name). Additionally, it may define:

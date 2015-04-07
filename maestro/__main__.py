@@ -18,6 +18,7 @@ from . import exceptions, maestro
 from . import name, version
 
 DEFAULT_MAESTRO_FILE = 'maestro.yaml'
+DEFAULT_MAESTRO_COMMAND = 'status'
 
 
 def load_config_from_file(filename):
@@ -192,12 +193,13 @@ def execute(options, config):
 
     # Only helps with Python3
     if not options.command:
-        options.command = 'status'
+        options.command = DEFAULT_MAESTRO_COMMAND
 
     try:
         c = maestro.Conductor(config)
         if options.command != 'complete' and not options.things:
-            options.things = c.services.keys()
+            options.things = [s.name for s in c.services.values()
+                              if options.command == 'status' or not s.omit]
             options.with_dependencies = not options.ignore_dependencies
         getattr(c, options.command)(**vars(options))
         return 0

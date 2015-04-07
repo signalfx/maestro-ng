@@ -182,7 +182,7 @@ class Service(Entity):
     services need to be started.
     """
 
-    def __init__(self, name, image, schema=None, env=None):
+    def __init__(self, name, image, omit=True, schema=None, env=None):
         """Instantiate a new named service/component of the platform using a
         given Docker image.
 
@@ -193,12 +193,15 @@ class Service(Entity):
             name (string): the name of this service.
             image (string): the name of the Docker image the instances of this
                 service should use.
+            omit (boolean): Whether to include this service in no-argument
+                commands or omit it.
             schema (dict): Maestro schema versioning information.
             env (dict): a dictionary of environment variables to use as the
                 base environment for all instances of this service.
         """
         Entity.__init__(self, name)
         self._image = image
+        self._omit = omit
         self._schema = schema
         self.env = env or {}
         self._requires = set([])
@@ -209,6 +212,10 @@ class Service(Entity):
     @property
     def image(self):
         return self._image
+
+    @property
+    def omit(self):
+        return self._omit
 
     @property
     def dependencies(self):

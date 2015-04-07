@@ -49,6 +49,7 @@ class Conductor:
 
         for kind, service in self._config.get('services', {}).items():
             self.services[kind] = entities.Service(kind, service['image'],
+                                                   service.get('omit', False),
                                                    self.schema,
                                                    service.get('env', {}))
 

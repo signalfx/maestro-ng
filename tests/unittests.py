@@ -48,7 +48,8 @@ class ContainerTest(unittest.TestCase):
     def _cntr(service_name=SERVICE, service_env=None, image=IMAGE,
               ship_name=SHIP, ship_ip=SHIP_IP,
               container_name=CONTAINER, config=None, schema=SCHEMA):
-        service = entities.Service(service_name, image, schema, service_env)
+        service = entities.Service(service_name, image, schema=schema,
+                                   env=service_env)
         return entities.Container(container_name,
                                   entities.Ship(ship_name, ship_ip),
                                   service, config=config, schema=schema)

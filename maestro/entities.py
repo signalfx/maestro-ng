@@ -537,7 +537,7 @@ class Container(Entity):
         if parts[1] == 'udp':
             return False
 
-        return lifecycle.TCPPortPinger(self.ship.ip, int(parts[0])).test()
+        return lifecycle.TCPPortPinger(self.ship.ip, int(parts[0]), 1).test()
 
     def _parse_bytes(self, s):
         if not s or not isinstance(s, six.string_types):

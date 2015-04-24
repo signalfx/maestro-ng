@@ -462,7 +462,7 @@ class RemoveTask(Task):
 
         self.o.pending('removing container {}...'.format(
             self.container.shortid))
-        self.container.ship.backend.remove_container(self.container.id)
+        self.container.ship.backend.remove_container(self.container.id, v=True)
 
         if self._standalone:
             self.o.commit(CONTAINER_STATUS_FMT.format(

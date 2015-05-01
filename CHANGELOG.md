@@ -1,6 +1,32 @@
 ChangeLog
 =========
 
+Maestro 0.2.6
+-------------
+
+_May 1st, 2015_
+
+With this release, MaestroNG switches from the GNU GPLv3 to the Apache
+Software License v2, with permissions from the various contributors.
+
+* The official Docker port, 2375, is now the default port used by
+  Maestro.
+* Improvements to the script execution as a lifecycle check; the script
+  is executed multiple times until success or until the maximum number
+  of attempts is reached, much like for TCP port pinging. The
+  environment of the script also contains the environment variables the
+  container would have when running.
+* Fall back to looking up configured image registries by their FQDN
+  (#93).
+* Added support for `omit: true` on a service, which instructs Maestro
+  not to act on this service in "unspecified" commands, unless of course
+  the service is required for another one to run (#108).
+* Fix documentation on Maestro's use of authentication credentials
+  (#65).
+* Fix output of `status -F` command where port status wouldn't be shown.
+* Remove container volumes when removing containers (#122).
+* Miscellanious flake8 and unit test fixups.
+
 Maestro 0.2.5.1
 ---------------
 

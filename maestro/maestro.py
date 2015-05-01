@@ -1,4 +1,5 @@
 # Copyright (C) 2013-2014 SignalFuse, Inc.
+# Copyright (C) 2015 SignalFx, Inc.
 #
 # Docker container orchestration utility.
 

@@ -383,6 +383,11 @@ class Container(Entity):
         self.mem_limit = self._parse_bytes(limits.get('memory'))
         self.memswap_limit = self._parse_bytes(limits.get('swap'))
 
+        # Additional LXC configuration options. See the LXC documentation for a
+        # reference of the available settings. Those are only supported if the
+        # remote Docker daemon uses the lxc execution driver.
+        self.lxc_conf = config.get('lxc_conf', {})
+
         # Work directory for the container
         self.workdir = config.get('workdir')
 

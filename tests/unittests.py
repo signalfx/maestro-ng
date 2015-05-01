@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 
+# Copyright (C) 2013-2014 SignalFuse, Inc.
+# Copyright (C) 2015 SignalFx, Inc.
+#
+# Unit tests for Maestro, Docker container orchestration utility.
+
 import os
 import unittest
 
 from maestro import entities, exceptions, maestro, lifecycle, plays
-from maestro.__main__ import load_config_from_file, create_parser
+from maestro.__main__ import load_config_from_file
 
 
 class EntityTest(unittest.TestCase):
@@ -86,7 +91,8 @@ class ContainerTest(unittest.TestCase):
     def test_env_propagates_from_service(self):
         service_env = {'ENV': 'value'}
         container_env = {'OTHER_ENV': 'other-value'}
-        container = self._cntr(service_env=service_env, config={'env': container_env})
+        container = self._cntr(service_env=service_env,
+                               config={'env': container_env})
         for k, v in service_env.items():
             self.assertIn(k, container.env)
             self.assertEqual(v, container.env[k])
@@ -192,11 +198,11 @@ class ContainerTest(unittest.TestCase):
                 '/outside': {'bind': '/inside'}}}))
 
     def test_volumes_old_schema(self):
-        container = self._cntr(config={'volumes':
-            {'/inside': '/outside'}
-        }, schema={'schema': 1})
+        container = self._cntr(
+            config={'volumes': {'/inside': '/outside'}},
+            schema={'schema': 1})
         self.assertEqual(container.volumes,
-                {'/outside': {'bind': '/inside', 'ro': False}})
+                         {'/outside': {'bind': '/inside', 'ro': False}})
 
     def test_workdir(self):
         container = self._cntr(config={'workdir': '/tmp'})
@@ -234,11 +240,11 @@ class ConductorTest(BaseConfigFileUsingTest):
         instance1 = c.containers['instance-1']
         instance2 = c.containers['instance-2']
         self.assertEqual(instance1.get_volumes(),
-                set(['/in1', '/in2']))
+                         set(['/in1', '/in2']))
         self.assertEqual(instance2.get_volumes(),
-                set(['/in3']))
+                         set(['/in3']))
         self.assertEqual(instance2.volumes_from,
-                set([instance1.name]))
+                         set([instance1.name]))
 
     def test_volume_conflict_volumes_from(self):
         config = self._get_config('test_volume_conflict_volumes_from')
@@ -295,30 +301,32 @@ class LifecycleHelperTest(unittest.TestCase):
     def _get_container(self):
         ship = entities.Ship('ship', 'ship.ip')
         service = entities.Service('foo', 'stackbrew/ubuntu')
-        return entities.Container('foo1', ship, service,
+        return entities.Container(
+            'foo1', ship, service,
             config={'ports': {'server': '4242/tcp', 'data': '4243/udp'}})
 
     def test_parse_checker_exec(self):
         container = self._get_container()
-        c = lifecycle.LifecycleHelperFactory.from_config(container,
-            {'type': 'exec', 'command': 'python foo.py -arg'})
+        c = lifecycle.LifecycleHelperFactory.from_config(
+            container, {'type': 'exec', 'command': 'python foo.py -arg'})
         self.assertIsNot(c, None)
         self.assertIsInstance(c, lifecycle.ScriptExecutor)
         self.assertEqual(c.command, ['python', 'foo.py', '-arg'])
 
     def test_parse_checker_tcp(self):
         container = self._get_container()
-        c = lifecycle.LifecycleHelperFactory.from_config(container,
-            {'type': 'tcp', 'port': 'server'})
+        c = lifecycle.LifecycleHelperFactory.from_config(
+            container, {'type': 'tcp', 'port': 'server'})
         self.assertIsInstance(c, lifecycle.TCPPortPinger)
         self.assertEqual(c.host, container.ship.ip)
         self.assertEqual(c.port, 4242)
-        self.assertEqual(c.attempts, lifecycle.TCPPortPinger.DEFAULT_MAX_WAIT)
+        self.assertEqual(c.attempts,
+                         lifecycle.TCPPortPinger.DEFAULT_MAX_ATTEMPTS)
 
-    def test_parse_checker_tcp(self):
+    def test_parse_checker_tcp_with_max_wait(self):
         container = self._get_container()
-        c = lifecycle.LifecycleHelperFactory.from_config(container,
-            {'type': 'tcp', 'port': 'server', 'max_wait': 2})
+        c = lifecycle.LifecycleHelperFactory.from_config(
+            container, {'type': 'tcp', 'port': 'server', 'max_wait': 2})
         self.assertIsInstance(c, lifecycle.TCPPortPinger)
         self.assertEqual(c.host, container.ship.ip)
         self.assertEqual(c.port, 4242)
@@ -326,59 +334,73 @@ class LifecycleHelperTest(unittest.TestCase):
 
     def test_parse_checker_tcp_unknown_port(self):
         container = self._get_container()
-        self.assertRaises(exceptions.InvalidLifecycleCheckConfigurationException,
+        self.assertRaises(
+            exceptions.InvalidLifecycleCheckConfigurationException,
             lifecycle.LifecycleHelperFactory.from_config,
             container, {'type': 'tcp', 'port': 'test-does-not-exist'})
 
     def test_parse_checker_tcp_invalid_port(self):
         container = self._get_container()
-        self.assertRaises(exceptions.InvalidLifecycleCheckConfigurationException,
+        self.assertRaises(
+            exceptions.InvalidLifecycleCheckConfigurationException,
             lifecycle.LifecycleHelperFactory.from_config,
             container, {'type': 'tcp', 'port': 'data'})
 
     def test_parse_unknown_checker_type(self):
-        self.assertRaises(KeyError,
+        self.assertRaises(
+            KeyError,
             lifecycle.LifecycleHelperFactory.from_config,
             self._get_container(), {'type': 'test-does-not-exist'})
 
     def test_parse_checker_http_defaults(self):
         container = self._get_container()
-        c = lifecycle.LifecycleHelperFactory.from_config(container,
-            {'type': 'http', 'port': 'server'})
+        c = lifecycle.LifecycleHelperFactory.from_config(
+            container, {'type': 'http', 'port': 'server'})
         self.assertIsInstance(c, lifecycle.HttpRequestLifecycle)
         self.assertEqual(c.host, container.ship.ip)
         self.assertEqual(c.port, 4242)
-        self.assertEqual(c.max_wait, lifecycle.HttpRequestLifecycle.DEFAULT_MAX_WAIT)
-        self.assertEqual(c.match_regex,None)
-        self.assertEqual(c.path,'/')
-        self.assertEqual(c.scheme,'http')
-        self.assertEqual(c.method,'get')
-        self.assertEqual(c.requests_options,{})
+        self.assertEqual(c.max_wait,
+                         lifecycle.HttpRequestLifecycle.DEFAULT_MAX_WAIT)
+        self.assertEqual(c.match_regex, None)
+        self.assertEqual(c.path, '/')
+        self.assertEqual(c.scheme, 'http')
+        self.assertEqual(c.method, 'get')
+        self.assertEqual(c.requests_options, {})
 
         self.assertTrue(c._test_response)
 
     def test_parse_checker_http_explicits(self):
         container = self._get_container()
-        c = lifecycle.LifecycleHelperFactory.from_config(container,
-            {'type': 'http', 'port': 'server','match_regex':'abc[^d]','path':'/blah','scheme':'https','method':'put','max_wait': 2,'requests_options':{'verify':False}})
+        c = lifecycle.LifecycleHelperFactory.from_config(
+            container,
+            {
+                'type': 'http',
+                'port': 'server',
+                'match_regex': 'abc[^d]',
+                'path': '/blah',
+                'scheme': 'https',
+                'method': 'put',
+                'max_wait': 2,
+                'requests_options': {'verify': False}
+            })
         self.assertIsInstance(c, lifecycle.HttpRequestLifecycle)
         self.assertEqual(c.host, container.ship.ip)
         self.assertEqual(c.port, 4242)
         self.assertEqual(c.max_wait, 2)
         self.assertFalse(c.match_regex.search('abcd'))
         self.assertTrue(c.match_regex.search('abce'))
-        self.assertEqual(c.path,'/blah')
-        self.assertEqual(c.scheme,'https')
-        self.assertEqual(c.method,'put')
-        self.assertEqual(c.requests_options,{'verify':False})
+        self.assertEqual(c.path, '/blah')
+        self.assertEqual(c.scheme, 'https')
+        self.assertEqual(c.method, 'put')
+        self.assertEqual(c.requests_options, {'verify': False})
 
     def test_parse_checker_http_status_match(self):
         class FakeEmptyResponse(object):
             status_code = 200
 
         container = self._get_container()
-        c = lifecycle.LifecycleHelperFactory.from_config(container,
-            {'type': 'http', 'port': 'server',})
+        c = lifecycle.LifecycleHelperFactory.from_config(
+            container, {'type': 'http', 'port': 'server'})
         self.assertTrue(c._test_response(FakeEmptyResponse()))
 
     def test_parse_checker_http_status_fail(self):
@@ -386,8 +408,8 @@ class LifecycleHelperTest(unittest.TestCase):
             status_code = 500
 
         container = self._get_container()
-        c = lifecycle.LifecycleHelperFactory.from_config(container,
-            {'type': 'http', 'port': 'server',})
+        c = lifecycle.LifecycleHelperFactory.from_config(
+            container, {'type': 'http', 'port': 'server'})
         self.assertFalse(c._test_response(FakeEmptyResponse()))
 
     def test_parse_checker_http_regex_match(self):
@@ -395,8 +417,9 @@ class LifecycleHelperTest(unittest.TestCase):
             text = 'blah abce blah'
 
         container = self._get_container()
-        c = lifecycle.LifecycleHelperFactory.from_config(container,
-            {'type': 'http', 'port': 'server','match_regex':'abc[^d]'})
+        c = lifecycle.LifecycleHelperFactory.from_config(
+            container,
+            {'type': 'http', 'port': 'server', 'match_regex': 'abc[^d]'})
         self.assertTrue(c._test_response(FakeEmptyResponse()))
 
     def test_parse_checker_http_regex_fail(self):
@@ -404,8 +427,9 @@ class LifecycleHelperTest(unittest.TestCase):
             text = 'blah abcd blah'
 
         container = self._get_container()
-        c = lifecycle.LifecycleHelperFactory.from_config(container,
-            {'type': 'http', 'port': 'server','match_regex':'abc[^d]'})
+        c = lifecycle.LifecycleHelperFactory.from_config(
+            container,
+            {'type': 'http', 'port': 'server', 'match_regex': 'abc[^d]'})
         self.assertFalse(c._test_response(FakeEmptyResponse()))
 
 
@@ -415,24 +439,26 @@ class LoginTaskTest(BaseConfigFileUsingTest):
         config = self._get_config('test_find_registry')
         c = maestro.Conductor(config)
         container = c.containers['foo1']
-        registry = plays.tasks.LoginTask.registry_for_container(container, c.registries)
+        registry = plays.tasks.LoginTask.registry_for_container(
+            container, c.registries)
         self.assertEqual(registry, c.registries['quay.io'])
 
     def test_find_registry_for_container_by_fqdn(self):
         config = self._get_config('test_find_registry')
         c = maestro.Conductor(config)
         container = c.containers['foo2']
-        registry = plays.tasks.LoginTask.registry_for_container(container, c.registries)
+        registry = plays.tasks.LoginTask.registry_for_container(
+            container, c.registries)
         self.assertEqual(registry, c.registries['foo2'])
 
     def test_find_registry_for_container_not_found(self):
         config = self._get_config('test_find_registry')
         c = maestro.Conductor(config)
         container = c.containers['foo3']
-        registry = plays.tasks.LoginTask.registry_for_container(container, c.registries)
+        registry = plays.tasks.LoginTask.registry_for_container(
+            container, c.registries)
         self.assertEqual(registry, None)
 
 
-#host,port,match_regex=None,path='/',scheme='http',method='get',max_wait=DEFAULT_MAX_WAIT,**requests_options
 if __name__ == '__main__':
     unittest.main()

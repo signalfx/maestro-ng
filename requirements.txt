@@ -5,3 +5,4 @@ six
 bgtunnel
 python-simple-hipchat
 requests
+netifaces

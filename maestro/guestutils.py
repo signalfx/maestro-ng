@@ -4,10 +4,9 @@
 # Utility functions for service start scripts that help work with Maestro
 # orchestration.
 
+import netifaces
 import os
 import re
-
-from . import entities
 
 
 class MaestroEnvironmentError(Exception):
@@ -47,9 +46,7 @@ def get_container_host_address():
 
 def get_container_internal_address():
     """Return the internal, private IP address assigned to the container."""
-    ship = entities.Ship('host', get_container_host_address())
-    details = ship.backend.inspect_container(get_container_name())
-    return str(details['NetworkSettings']['IPAddress'])
+    return netifaces.ifaddresses('eth0')[netifaces.AF_INET][0]['addr']
 
 
 def get_port(name, default=None):

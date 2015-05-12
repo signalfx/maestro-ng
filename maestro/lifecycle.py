@@ -104,13 +104,13 @@ class ScriptExecutor(RetryingLifecycleHelper):
         return 'ScriptExec({}, {} attempts)'.format(self.command,
                                                     self.attempts)
 
-    def __create_env(self):
+    def _create_env(self):
         env = dict((k, v) for k, v in os.environ.items())
         env.update(self.container_env)
-        return env
+        return dict((str(k), str(v)) for k, v in env.items())
 
     def _test(self):
-        return subprocess.call(self.command, env=self.__create_env()) == 0
+        return subprocess.call(self.command, env=self._create_env()) == 0
 
     @staticmethod
     def from_config(container, config):

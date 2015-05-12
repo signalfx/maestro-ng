@@ -303,7 +303,16 @@ class LifecycleHelperTest(unittest.TestCase):
         service = entities.Service('foo', 'stackbrew/ubuntu')
         return entities.Container(
             'foo1', ship, service,
-            config={'ports': {'server': '4242/tcp', 'data': '4243/udp'}})
+            config={'ports': {'server': '4242/tcp', 'data': '4243/udp'},
+                    'env': {'foo': 'bar', 'wid': 42}})
+
+    def test_script_env_all_strings(self):
+        container = self._get_container()
+        c = lifecycle.LifecycleHelperFactory.from_config(
+            container, {'type': 'exec', 'command': 'python foo.py -arg'})
+        env = c._create_env()
+        self.assertEqual(type(env['wid']), str)
+        self.assertEqual(env['wid'], '42')
 
     def test_parse_checker_exec(self):
         container = self._get_container()

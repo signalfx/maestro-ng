@@ -49,10 +49,13 @@ def columns():
     if not sys.stdout.isatty():
         return DEFAULT_TERM_COLUMNS
 
-    win = curses.initscr()
-    _, cols = win.getmaxyx()
-    curses.endwin()
-    return cols
+    try:
+        win = curses.initscr()
+        _, cols = win.getmaxyx()
+        curses.endwin()
+        return cols
+    except:
+        return DEFAULT_TERM_COLUMNS
 
 
 def _default_printer(s):

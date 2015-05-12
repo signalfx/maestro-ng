@@ -1,6 +1,18 @@
 ChangeLog
 =========
 
+Maestro 0.2.6.1
+---------------
+
+_May 12th, 2015_
+
+* guestutils: don't attempt to contact the Docker daemon running on the
+  host for get_container_internal_address(). It's not guaranteed that
+  the Docker daemon is available, or that it's even running on the
+  default port via TCP. Rely on the `netifaces` module instead.
+* Fix lifecycle script check execution when container environment
+  contains non-string values.
+
 Maestro 0.2.6
 -------------
 

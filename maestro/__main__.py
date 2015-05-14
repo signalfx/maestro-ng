@@ -14,6 +14,10 @@ import os
 import sys
 import traceback
 import yaml
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
 
 from . import exceptions, maestro
 from . import name, version
@@ -48,7 +52,7 @@ def load_config_from_file(filename):
                 'Error reading environment description file {}!'.format(
                     filename))
 
-    return yaml.load(template.render(env=os.environ))
+    return yaml.load(template.render(env=os.environ), Loader=Loader)
 
 
 def create_parser():

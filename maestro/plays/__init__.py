@@ -195,8 +195,9 @@ class FullStatus(BaseOrchestrationPlay):
 
             try:
                 o.pending('checking container...')
+                status = container.status()
 
-                if container.is_running():
+                if status and status['State']['Running']:
                     o.commit(green(tasks.CONTAINER_STATUS_FMT.format(
                         container.shortid_and_tag)))
                     o.commit(green('running{}'.format(
@@ -205,8 +206,13 @@ class FullStatus(BaseOrchestrationPlay):
                     o.commit(red('down{}'.format(
                         time_ago(container.finished_at))))
 
-                print()
-                print('     {}'.format(container.image))
+                o.commit('\n')
+
+                image_info = termoutput.OutputFormatter(prefix='     ')
+                image_info.commit(container.image)
+                if status:
+                    image_info.commit(' ({})'.format(status['Image'][:7]))
+                image_info.commit('\n')
 
                 for name, port in container.ports.items():
                     o = termoutput.OutputFormatter(prefix='     >>')

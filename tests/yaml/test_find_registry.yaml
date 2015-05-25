@@ -12,6 +12,10 @@ registries:
     registry: https://foo1.registry/v1
     username: user
     password: secret
+  foo4:
+    registry: https://foo4.registry/v1
+    username: user
+    password: secret
 
 ships:
   ship1: {ip: "localhost"}
@@ -31,4 +35,9 @@ services:
     image: foo2.registry/user/foo2
     instances:
       foo3:
+        ship: ship1
+  service4:
+    image: foo4/bar
+    instances:
+      foo4:
         ship: ship1

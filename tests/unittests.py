@@ -468,6 +468,14 @@ class LoginTaskTest(BaseConfigFileUsingTest):
             container, c.registries)
         self.assertEqual(registry, None)
 
+    def test_find_registry_by_image_name(self):
+        config = self._get_config('test_find_registry')
+        c = maestro.Conductor(config)
+        container = c.containers['foo4']
+        registry = plays.tasks.LoginTask.registry_for_container(
+                container, c.registries)
+        self.assertEqual(registry, c.registries['foo4'])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,7 +5,6 @@
 #
 # Setuptools install description file.
 
-import pypandoc
 from setuptools import setup, find_packages
 
 with open('maestro/version.py') as f:
@@ -14,10 +13,16 @@ with open('maestro/version.py') as f:
 with open('requirements.txt') as f:
     requirements = [line.strip() for line in f.readlines()]
 
-# Convert the README to reStructuredText for PyPi
-long_description = pypandoc.convert(source='README.md',
-                                    format='markdown',
-                                    to='rst')
+try:
+    import pypandoc
+    # Convert the README to reStructuredText for PyPi
+    long_description = pypandoc.convert(source='README.md',
+                                        format='markdown',
+                                        to='rst')
+except ImportError:
+    # No pandoc/pypandoc, just use raw
+    with open('README.md') as readme:
+        long_description = readme.read()
 
 setup(
     name=name, # flake8: noqa

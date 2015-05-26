@@ -1,6 +1,26 @@
 ChangeLog
 =========
 
+Maestro 0.2.6.2
+---------------
+
+_May 26th, 2015_
+
+This is the first MaestroNG release to be made available on the Python
+Package Index. A few tweaks were made to make this possible:
+
+* The pip package name was changed to `maestro-ng`. You might want to
+  uninstall and re-install Maestro instead of upgrading to avoid
+  conflicts.
+* The package's README is now parsed and converted to reStructuredText
+  in the `setup.py` so it displays correctly on PyPI.
+
+The following Maestro changes are also included in this small
+point-release:
+
+* Use yaml.CLoader to speed up YAML parsing, when possible
+* Display image SHA in `status -F` output of running containers
+
 Maestro 0.2.6.1
 ---------------
 

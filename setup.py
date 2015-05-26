@@ -5,11 +5,8 @@
 #
 # Setuptools install description file.
 
-import os
+import pypandoc
 from setuptools import setup, find_packages
-
-with open('README.md') as readme:
-    long_description = readme.read()
 
 with open('maestro/version.py') as f:
     exec(f.read())
@@ -17,9 +14,14 @@ with open('maestro/version.py') as f:
 with open('requirements.txt') as f:
     requirements = [line.strip() for line in f.readlines()]
 
+# Convert the README to reStructuredText for PyPi
+long_description = pypandoc.convert(source='README.md',
+                                    format='markdown',
+                                    to='rst')
+
 setup(
-    name=name,
-    version=version,
+    name=name, # flake8: noqa
+    version=version, # flake8: noqa
     description='Orchestrator for multi-host Docker deployments',
     long_description=long_description,
     zip_safe=True,
@@ -40,8 +42,8 @@ setup(
     },
 
     author='Maxime Petazzoni',
-    author_email='max@signalfuse.com',
-    license='GNU Lesser General Public License v3',
+    author_email='max@signalfx.com',
+    license='Apache Software License v2',
     keywords='maestro docker orchestration deployment',
-    url='http://github.com/signalfuse/maestro-ng',
+    url='https://github.com/signalfuse/maestro-ng',
 )

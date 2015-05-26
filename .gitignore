@@ -1,5 +1,5 @@
 /build/
 /dist/
-/maestro.egg-info/
+/maestro_ng.egg-info/
 *.pyc
 /.tox

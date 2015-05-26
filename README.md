@@ -39,17 +39,27 @@ You'll also need the following Python modules, although these will be
 automatically installed by `setuptools` if you follow the instructions
 below.
 
+* A recent [docker-py](http://github.com/dotcloud/docker-py)
 * PyYAML (you may need to install this manually, e.g. `apt-get install python-yaml`)
 * Jinja2
-* requests
-* A recent [docker-py](http://github.com/dotcloud/docker-py)
+* Python Requests
+* `bgtunnel`
+* `six`
 
 If you plan on using the HipChat auditor, you'll also need
 `python-simple-hipchat`.
 
 ## Installation
 
-You can install Maestro via _Pip_:
+Maestro is distributed on the Python Package Index. You can install
+Maestro via _Pip_:
+
+```
+$ pip install --user --upgrade maestro-ng
+```
+
+If you want the bleeding edge, you can install directly from the Git
+repository:
 
 ```
 $ pip install --user --upgrade git+git://github.com/signalfuse/maestro-ng

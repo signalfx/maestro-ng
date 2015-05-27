@@ -222,6 +222,8 @@ class StartTask(Task):
             port_bindings=ports,
             lxc_conf=self.container.lxc_conf,
             privileged=self.container.privileged,
+            cap_add=self.container.cap_add,
+            cap_drop=self.container.cap_drop,
             network_mode=self.container.network_mode,
             restart_policy=self.container.restart_policy,
             dns=self.container.dns,

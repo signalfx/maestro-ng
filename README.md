@@ -257,6 +257,9 @@ be placed on (by name). Additionally, it may define:
     defined at the service level);
   - `privileged`, a boolean specifying whether the container should run
     in privileged mode or not (defaults to `false`);
+  - `cap_add`, Linux capabilities to add to the container (see the
+    documentation for [docker run](https://docs.docker.com/reference/run/#runtime-privilege-linux-capabilities-and-lxc-configuration));
+  - `cap_drop`, Linux capabilities to drop from the container;
   - `stop_timeout`, the number of seconds Docker will wait between
     sending `SIGTERM` and `SIGKILL` (defaults to 10);
   - `limits`:

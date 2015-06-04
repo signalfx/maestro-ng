@@ -446,13 +446,14 @@ class Container(Entity):
         when present) of the image used by this service."""
         return self._image[self._image.find('/')+1:]
 
-    def get_image_details(self):
+    def get_image_details(self, image=None):
         """Return a dictionary detailing the image used by this service, with
         its repository name and the requested tag (defaulting to latest if not
         specified)."""
-        p = self._image.rsplit(':', 1)
+        image = image or self._image
+        p = image.rsplit(':', 1)
         if len(p) > 1 and '/' in p[1]:
-            p[0] = self._image
+            p[0] = image
             p.pop()
         return {'repository': p[0], 'tag': len(p) > 1 and p[1] or 'latest'}
 
@@ -460,7 +461,9 @@ class Container(Entity):
     def shortid_and_tag(self):
         """Returns a string representing the tag of the image this container
         runs on and the short ID of the running container."""
-        return '{}:{}'.format(self.get_image_details()['tag'], self.shortid)
+        status = self.status()
+        image = status and status['Config']['Image']
+        return '{}:{}'.format(self.get_image_details(image)['tag'], self.shortid)
 
     @property
     def started_at(self):

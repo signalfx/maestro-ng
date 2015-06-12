@@ -363,6 +363,10 @@ class Container(Entity):
         # Should this container run with -privileged?
         self.privileged = config.get('privileged', False)
 
+        # Add or drop privileges
+        self.cap_add = config.get('cap_add', None)
+        self.cap_drop = config.get('cap_drop', None)
+
         # Network mode
         self.network_mode = config.get('net')
 

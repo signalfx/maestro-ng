@@ -15,7 +15,7 @@ def raise_with_tb(info=None):
     raise info[0], info[1], info[2]
 """)
 else:
-    def raise_with_tb(info):
+    def raise_with_tb(info=None):
         info = info or sys.exc_info()
         raise info[1].with_traceback(info[2])
 

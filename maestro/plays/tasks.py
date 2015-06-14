@@ -419,7 +419,7 @@ class PullTask(Task):
         information for one of the image layers, and return the average of the
         download progress of all layers as an indication of the overall
         progress of the pull."""
-        last = json.loads(last)
+        last = json.loads(last.decode('utf-8'))
         if 'error' in last:
             raise exceptions.OrchestrationException(
                 'Pull of image {} failed: {}'.format(

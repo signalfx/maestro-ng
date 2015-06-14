@@ -74,6 +74,10 @@ def create_parser():
     subparsers = parser.add_subparsers(
         dest='command',
         metavar='{{{}}}'.format(','.join(maestro.AVAILABLE_MAESTRO_COMMANDS)))
+    # Needed with Python >= 3.3 to force one of the subparsers to be found on
+    # the command-line, otherwise the command and none of its arguments are
+    # present in the options Namespace.
+    subparsers.required = True
 
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument(
@@ -195,10 +199,6 @@ def execute(options, config):
             .setLevel(logging.WARN))
     (logging.getLogger('urllib3.connectionpool')
             .setLevel(logging.WARN))
-
-    # Only helps with Python3
-    if not options.command:
-        options.command = DEFAULT_MAESTRO_COMMAND
 
     try:
         c = maestro.Conductor(config)

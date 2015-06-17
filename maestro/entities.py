@@ -735,11 +735,20 @@ class Container(Entity):
     def _parse_lifecycle(self, lifecycles):
         """Parse the lifecycle checks configured for this container and
         instantiate the corresponding check helpers, as configured."""
-        return dict([
-            (state, map(
-                lambda c: (lifecycle.LifecycleHelperFactory
-                           .from_config(self, c)),
-                checks)) for state, checks in lifecycles.items()])
+        checkers = {}
+
+        for state, checks in lifecycles.items():
+            if not type(checks) == list:
+                raise exceptions.InvalidLifecycleCheckConfigurationException(
+                    ('Invalid {} lifecycle checks configuration; '
+                     'expected list of checks, got {}!')
+                    .format(state, type(checks)))
+
+            checkers[state] = list(
+                map(lambda c: (lifecycle.LifecycleHelperFactory
+                               .from_config(self, c)), checks))
+
+        return checkers
 
     def __repr__(self):
         return '{} (on {})'.format(self.name, self.ship.name)

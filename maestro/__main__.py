@@ -205,7 +205,8 @@ def execute(options, config):
         if options.command != 'complete' and not options.things:
             options.things = [s.name for s in c.services.values()
                               if options.command == 'status' or not s.omit]
-            options.with_dependencies = not options.ignore_dependencies
+            options.with_dependencies = options.command == 'deptree' \
+                or not options.ignore_dependencies
         getattr(c, options.command)(**vars(options))
         return 0
     except KeyboardInterrupt:

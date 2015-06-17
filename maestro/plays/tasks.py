@@ -224,6 +224,7 @@ class StartTask(Task):
             privileged=self.container.privileged,
             cap_add=self.container.cap_add,
             cap_drop=self.container.cap_drop,
+            extra_hosts=self.container.extra_hosts,
             network_mode=self.container.network_mode,
             restart_policy=self.container.restart_policy,
             dns=self.container.dns,

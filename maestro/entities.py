@@ -367,6 +367,9 @@ class Container(Entity):
         self.cap_add = config.get('cap_add', None)
         self.cap_drop = config.get('cap_drop', None)
 
+        # Add extra hosts
+        self.extra_hosts = config.get('extra_hosts', None)
+
         # Network mode
         self.network_mode = config.get('net')
 

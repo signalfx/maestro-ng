@@ -110,7 +110,7 @@ named and composed of three main mandatory sections: the _registries_
 that define authentication credentials that might be needed to pull the
 Docker images for the defined _services_ from their registries, the
 _ships_, hosts that will execute the Docker containers, and the
-_services_, which define what service make up the environment, the
+_services_, which define what services make up the environment, the
 dependencies between these services and the instances of each of these
 services that need to run. Here's the outline:
 
@@ -124,9 +124,9 @@ registries:
 ship_defaults:
   # defaults for some of the ship attributes (see below)
 ships:
-  # Ships definitions (see below)
+  # Ship definitions (see below)
 services:
-  # Services definition (see below)
+  # Service definitions (see below)
 ```
 
 The first element, `__maestro`, is used to pass in some information to
@@ -134,11 +134,11 @@ Maestro that does not directly relate to your enviroment description,
 but helps Maestro understand it. In particular, the `schema` version
 is used to note what version of the YAML "schema" Maestro will be using
 when parsing the enviroment description. This is used when backwards
-incompatible changes are introduces by Maestro to provide an easier
+incompatible changes are introduced by Maestro to provide an easier
 upgrade path.
 
-The _registries_ define for each Docker registry Maestro might need to
-pull images from the authentication credentials needed to access them
+The _registries_ define each Docker registry Maestro might need to
+pull images from and the authentication credentials needed to access them
 (see below _Working with image registries_). For each registry, the full
 registry URL, a `username` and a `password` are required, and depending
 on the registry the `email` might be as well. For example:
@@ -360,9 +360,9 @@ services:
       www-1: { ... }
 ```
 
-Defining a dependency also makes Maestro inject into the instances of
-the service environment variables that describe where the instances of
-the service it depends on can be found (similarly to Docker links). See
+Defining a dependency also makes Maestro inject environment variables
+into the instances of these services that describe where the instances of
+the services it depends on can be found (similarly to Docker links). See
 "How Maestro orchestrates" below for more details on these variables.
 
 It is also possible to define "soft" dependencies that do not impact the

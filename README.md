@@ -260,6 +260,7 @@ be placed on (by name). Additionally, it may define:
   - `cap_add`, Linux capabilities to add to the container (see the
     documentation for [docker run](https://docs.docker.com/reference/run/#runtime-privilege-linux-capabilities-and-lxc-configuration));
   - `cap_drop`, Linux capabilities to drop from the container;
+  - `extra_hosts`, map a custom host to an IP for the container. Example: `<hostname>: <ip address>`;
   - `stop_timeout`, the number of seconds Docker will wait between
     sending `SIGTERM` and `SIGKILL` (defaults to 10);
   - `limits`:

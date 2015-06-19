@@ -125,6 +125,8 @@ ship_defaults:
   # defaults for some of the ship attributes (see below)
 ships:
   # Ship definitions (see below)
+include_services:
+  # Load services from a different configuration file
 services:
   # Service definitions (see below)
 ```
@@ -332,6 +334,32 @@ services:
           name: on-failure
           maximum_retry_count: 3
 ```
+
+You can also create separate files to put your services in. First of all, defines your services in a file:
+
+```yaml
+---
+
+mysql:
+  image: mysql
+  instances:
+    mysql-server-1: { ... }
+
+web:
+  image: nginx
+  requires: [ mysql ]
+  instances:
+    www-1: { ... }
+```
+
+Then you can include this YAML file with the `include_services` keyword in your `maestro.yaml` file:
+
+```yaml
+include_services:
+  - webservice.yaml
+  - monitoring.yaml
+```
+
 
 ## Defining dependencies
 

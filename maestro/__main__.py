@@ -216,10 +216,24 @@ def execute(options, config):
     return 1
 
 
+def parse_include_services(options, config):
+    """Load services from seperate config files."""
+    services = config.get('services', {})
+
+    includes = config.pop('include_services', [])
+
+    for path in includes:
+        path = os.path.join(os.path.dirname(options.file), path)
+        services.update(load_config_from_file(path))
+
+    return config
+
+
 def main(args=None, config=None):
     options = create_parser().parse_args(args)
     if config is None:
         config = load_config_from_file(options.file)
+        parse_include_services(options, config)
     return execute(options, config)
 
 

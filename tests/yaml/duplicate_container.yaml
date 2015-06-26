@@ -1,0 +1,14 @@
+name: test-duplicate-container
+ships:
+  l1: {ip: "127.0.0.1"}
+  l2: {ip: "127.0.0.2"}
+services:
+  webapp:
+    image: foo
+    instances:
+      w1:
+        ship: l1
+        ports: {http: 3344}
+      w1:
+        ship: l2
+        ports: {http: 3344}

@@ -7,9 +7,9 @@
 
 import os
 import unittest
+import yaml
 
-from maestro import entities, exceptions, maestro, lifecycle, plays
-from maestro.__main__ import load_config_from_file
+from maestro import entities, exceptions, loader, lifecycle, maestro, plays
 
 
 class EntityTest(unittest.TestCase):
@@ -223,10 +223,15 @@ class BaseConfigFileUsingTest(unittest.TestCase):
     def _get_config(self, name):
         path = os.path.join(os.path.dirname(__file__),
                             'yaml/{}.yaml'.format(name))
-        return load_config_from_file(path)
+        return loader.load(path)
 
 
 class ConductorTest(BaseConfigFileUsingTest):
+
+    def test_duplicate_container_name(self):
+        self.assertRaises(
+                yaml.constructor.ConstructorError,
+                lambda: self._get_config('duplicate_container'))
 
     def test_empty_registry_list(self):
         config = self._get_config('empty_registries')

@@ -8,51 +8,14 @@
 from __future__ import print_function
 
 import argparse
-import jinja2
 import logging
-import os
 import sys
 import traceback
-import yaml
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
 
-from . import exceptions, maestro
-from . import name, version
+from . import loader, maestro, name, version
 
 DEFAULT_MAESTRO_FILE = 'maestro.yaml'
 DEFAULT_MAESTRO_COMMAND = 'status'
-
-
-def load_config_from_file(filename):
-    """Load a config from the given file.
-
-    Args:
-        filename (string): Path to the YAML environment description
-            configuration file to load. Use '-' for stdin.
-
-    Returns:
-        A python data structure corresponding to the YAML configuration.
-    """
-    if filename == '-':
-        template = jinja2.Template(sys.stdin.read())
-    else:
-        env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(os.path.dirname(filename)),
-            extensions=['jinja2.ext.with_'])
-        try:
-            template = env.get_template(os.path.basename(filename))
-        except jinja2.exceptions.TemplateNotFound:
-            raise exceptions.MaestroException(
-                'Environment description file {} not found!'.format(filename))
-        except:
-            raise exceptions.MaestroException(
-                'Error reading environment description file {}!'.format(
-                    filename))
-
-    return yaml.load(template.render(env=os.environ), Loader=Loader)
 
 
 def create_parser():
@@ -216,10 +179,15 @@ def execute(options, config):
     return 1
 
 
+# Deprecated, for backwards compatibility only.
+# TODO(mpetazzoni): remove in subsequent release.
+load_config_from_file = loader.load
+
+
 def main(args=None, config=None):
     options = create_parser().parse_args(args)
     if config is None:
-        config = load_config_from_file(options.file)
+        config = loader.load(options.file)
     return execute(options, config)
 
 

@@ -1,8 +1,8 @@
-docker-py>=0.5.3
+docker-py>=1.2.3
 pyyaml
 jinja2
 six
 bgtunnel
 python-simple-hipchat
-requests
+requests>=2.7.0
 netifaces

@@ -1,0 +1,90 @@
+# This is an example of a Maestro environment description file. It starts up a
+# multi-node ZooKeeper cluster to serve a multi-node Kafka broker cluster than
+# can be used for pub/sub and messaging.
+__maestro:
+  schema: 2
+
+{%- set name = 'zk-kafka' %}
+name: {{ name }}
+
+ships:
+  ship: {ip: 192.168.10.2, docker_port: 4243, timeout: 5}
+
+audit:
+  - type: log
+    file: /tmp/maestro.auditlog
+
+services:
+  # 3-node ZooKeeper cluster.
+  {%- with servers = {'ship': [('zk-node-1', 1), ('zk-node-2', 2), ('zk-node-3', 3)]} %}
+  zookeeper:
+    image: quay.io/signalfuse/zookeeper:3.4.6-2
+    env:
+      {#- Unfortunately Jinja2 doesn't allow us to be less verbose here. #}
+      {%- set serverids = [] %}
+      {%- for ship, details in servers.items() %}
+        {%- for name, server_id in details %}
+          {%- set DO = serverids.append('{}:{}'.format(name, server_id)) %}
+        {%- endfor %}
+      {%- endfor %}
+      {%- if serverids|length > 1 %}
+      ZOOKEEPER_SERVER_IDS: {{ serverids|join(',') }}
+      {%- endif %}
+    instances:
+      {%- for ship, details in servers.items() %}
+      {%- for name, server_id in details %}
+      {{ name }}:
+        ship: {{ ship }}
+        ports:
+          client: {{ 2181 + loop.index0 }}
+          peer: {{ 2888 + loop.index0 }}
+          leader_election: {{ 3888 + loop.index0 }}
+        lifecycle:
+          running: [{type: tcp, port: client, max_wait: 10}]
+        volumes:
+          /home/vagrant/data/zookeeper/{{ server_id }}: /var/lib/zookeeper
+        env:
+          SERVER_ID: {{ server_id }}
+      {%- endfor %}
+      {%- endfor %}
+  {%- endwith %}
+
+  # 3-node Kafka cluster.
+  {%- with servers = {'ship': [('kafka-1', 1), ('kafka-2', 2), ('kafka-3', 3)]} %}
+  kafka:
+    image: quay.io/signalfuse/kafka:855340a-10
+    requires: [ zookeeper ]
+    env:
+      ZOOKEEPER_BASE: /{{ name }}/kafka
+      RETENTION_HOURS: 24
+      REPLICATION: 3
+      AUTO_LEADER_REBALANCE: true
+    instances:
+      {%- for ship, details in servers.items() %}
+      {%- for name, broker_id in details %}
+      {{ name }}:
+        ship: {{ ship }}
+        ports:
+          broker: {{ 9092 + loop.index0 }}
+        lifecycle:
+          running: [{type: tcp, port: broker}]
+        volumes:
+          /home/vagrant/data/kafka/{{ broker_id }}: /var/lib/kafka
+        env:
+          BROKER_ID: {{ broker_id }}
+        stop_timeout: 60
+      {%- endfor %}
+      {%- endfor %}
+  {%- endwith %}
+
+  envtest:
+    image: stackbrew/ubuntu
+    wants_info: [ zookeeper, kafka ]
+    omit: true
+    instances:
+      envtest:
+        ship: ship
+        env:
+          FOO: "bar test"
+        workdir: /tmp
+        command: "bash -c 'echo Here is the environment of a service depending on ZooKeeper and Kafka: && env'"

@@ -107,7 +107,7 @@ class Conductor:
 
         # Instantiate audit bindings
         self.auditor = audit.AuditorFactory.from_config(
-            self._config.get('audit', []))
+            self._config.get('audit'))
 
     @property
     def schema(self):

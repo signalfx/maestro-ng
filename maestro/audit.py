@@ -251,11 +251,12 @@ class AuditorFactory:
 
     @staticmethod
     def from_config(cfg):
-        auditors = set([])
+        cfg = cfg or []
+        auditors = []
         for auditor in cfg:
             if auditor['type'] not in AuditorFactory.AUDITORS:
                 raise exceptions.InvalidAuditorConfigurationException(
                     'Unknown auditor type {}'.format(auditor['type']))
-            auditors.add(AuditorFactory.AUDITORS[auditor['type']]
-                         .from_config(auditor))
+            auditors.append(AuditorFactory.AUDITORS[auditor['type']]
+                            .from_config(auditor))
         return MultiplexAuditor(auditors)

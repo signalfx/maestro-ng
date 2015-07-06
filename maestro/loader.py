@@ -55,20 +55,20 @@ def load(filename):
     Returns:
         A python data structure corresponding to the YAML configuration.
     """
-    if filename == '-':
-        template = jinja2.Template(sys.stdin.read())
-    else:
-        env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(os.path.dirname(filename)),
-            extensions=['jinja2.ext.with_'])
-        try:
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(os.path.dirname(filename)),
+        extensions=['jinja2.ext.with_'])
+    try:
+        if filename == '-':
+            template = env.from_string(sys.stdin.read())
+        else:
             template = env.get_template(os.path.basename(filename))
-        except jinja2.exceptions.TemplateNotFound:
-            raise exceptions.MaestroException(
-                'Environment description file {} not found!'.format(filename))
-        except:
-            raise exceptions.MaestroException(
-                'Error reading environment description file {}!'.format(
-                    filename))
+    except jinja2.exceptions.TemplateNotFound:
+        raise exceptions.MaestroException(
+            'Environment description file {} not found!'.format(filename))
+    except Exception as e:
+        raise exceptions.MaestroException(
+            'Error reading environment description file {}: {}!'
+            .format(filename, e))
 
     return yaml.load(template.render(env=os.environ), Loader=MaestroYamlLoader)

@@ -46,11 +46,12 @@ class BaseOrchestrationPlay:
                         _SHIP_CSIZE, _SHIP_CSIZE))
 
     def __init__(self, containers=[], forward=True, ignore_dependencies=False,
-                 concurrency=None):
+                 concurrency=None, auditor=None):
         self._containers = containers
         self._forward = forward
         self._ignore_dependencies = ignore_dependencies
         self._concurrency = threading.Semaphore(concurrency or len(containers))
+        self._auditor = auditor
 
         self._dependencies = dict(
             (c.name, self._gather_dependencies(c)) for c in containers)
@@ -93,7 +94,7 @@ class BaseOrchestrationPlay:
 
             try:
                 self._concurrency.acquire(blocking=True)
-                task.run()
+                task.run(auditor=self._auditor)
                 self._concurrency.release()
                 self._done.add(task.container)
             except Exception:
@@ -251,10 +252,11 @@ class Start(BaseOrchestrationPlay):
     application to become available before moving to the next one."""
 
     def __init__(self, containers=[], registries={}, refresh_images=False,
-                 ignore_dependencies=True, concurrency=None, reuse=False):
+                 ignore_dependencies=True, concurrency=None, reuse=False,
+                 auditor=None):
         BaseOrchestrationPlay.__init__(
             self, containers, ignore_dependencies=ignore_dependencies,
-            concurrency=concurrency)
+            concurrency=concurrency, auditor=auditor)
 
         self._registries = registries
         self._refresh_images = refresh_images
@@ -275,10 +277,10 @@ class Pull(BaseOrchestrationPlay):
        images for the given services and containers."""
 
     def __init__(self, containers=[], registries={},
-                 ignore_dependencies=True, concurrency=None):
+                 ignore_dependencies=True, concurrency=None, auditor=None):
         BaseOrchestrationPlay.__init__(
             self, containers, ignore_dependencies=ignore_dependencies,
-            concurrency=concurrency)
+            concurrency=concurrency, auditor=auditor)
 
         self._registries = registries
 
@@ -297,11 +299,11 @@ class Stop(BaseOrchestrationPlay):
     that dependent services are stopped first."""
 
     def __init__(self, containers=[], ignore_dependencies=True,
-                 concurrency=None):
+                 concurrency=None, auditor=None):
         BaseOrchestrationPlay.__init__(
             self, containers, forward=False,
             ignore_dependencies=ignore_dependencies,
-            concurrency=concurrency)
+            concurrency=concurrency, auditor=auditor)
 
     def _run(self):
         for order, container in enumerate(self._containers):
@@ -316,10 +318,10 @@ class Clean(BaseOrchestrationPlay):
     """A Maestro orchestration play that will remove stopped containers from
     Docker."""
 
-    def __init__(self, containers=[], concurrency=None):
+    def __init__(self, containers=[], concurrency=None, auditor=None):
         BaseOrchestrationPlay.__init__(
             self, containers, ignore_dependencies=False,
-            concurrency=concurrency)
+            concurrency=concurrency, auditor=auditor)
 
     def _run(self):
         for order, container in enumerate(self._containers):
@@ -327,7 +329,7 @@ class Clean(BaseOrchestrationPlay):
                 BaseOrchestrationPlay.LINE_FMT.format(
                     order + 1, container.name, container.service.name,
                     container.ship.address)))
-            self.register(tasks.RemoveTask(o, container))
+            self.register(tasks.CleanTask(o, container))
 
 
 class Restart(BaseOrchestrationPlay):
@@ -338,11 +340,12 @@ class Restart(BaseOrchestrationPlay):
 
     def __init__(self, containers=[], registries={}, refresh_images=False,
                  ignore_dependencies=True, concurrency=None, step_delay=0,
-                 stop_start_delay=0, reuse=False, only_if_changed=False):
+                 stop_start_delay=0, reuse=False, only_if_changed=False,
+                 auditor=None):
         BaseOrchestrationPlay.__init__(
             self, containers, forward=False,
             ignore_dependencies=ignore_dependencies,
-            concurrency=concurrency)
+            concurrency=concurrency, auditor=auditor)
 
         self._registries = registries
         self._refresh_images = refresh_images

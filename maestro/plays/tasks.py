@@ -25,7 +25,7 @@ TASK_RESULT_FMT = '{:<10s}'
 class Task:
     """Base class for tasks acting on containers."""
 
-    def __init__(self, o, container):
+    def __init__(self, action, o, container):
         """Initialize the base task parameters.
 
         Args:
@@ -33,6 +33,7 @@ class Task:
                 output.
             container (entities.Container): the container the task operates on.
         """
+        self.action = action
         self.o = o
         self.container = container
 
@@ -76,7 +77,20 @@ class Task:
 
         return True
 
-    def run(self):
+    def run(self, auditor=None):
+        if auditor:
+            auditor.action(self.container.name, self.action)
+
+        try:
+            self._run()
+            if auditor:
+                auditor.success(self.container.name, self.action)
+        except Exception as e:
+            if auditor:
+                auditor.error(self.container.name, self.action, message=e)
+            exceptions.raise_with_tb()
+
+    def _run(self):
         raise NotImplementedError
 
 
@@ -84,9 +98,9 @@ class StatusTask(Task):
     """Check for and display a container's status."""
 
     def __init__(self, o, container):
-        Task.__init__(self, o, container)
+        Task.__init__(self, 'status', o, container)
 
-    def run(self):
+    def _run(self):
         self.o.reset()
         self.o.pending('checking...')
 
@@ -115,12 +129,12 @@ class StartTask(Task):
 
     def __init__(self, o, container, registries={}, refresh=False,
                  reuse=False):
-        Task.__init__(self, o, container)
+        Task.__init__(self, 'start', o, container)
         self._registries = registries
         self._refresh = refresh
         self._reuse = reuse
 
-    def run(self):
+    def _run(self):
         self.o.reset()
         error = None
         try:
@@ -142,7 +156,8 @@ class StartTask(Task):
                     ('Halting start sequence because {} failed to start!'
                         .format(self.container)),
                     self.container.ship.backend.logs(self.container.id)]
-                raise exceptions.OrchestrationException('\n'.join(error))
+                raise exceptions.OrchestrationException(
+                    '\n'.join(error).strip())
         except Exception:
             self.o.commit(red('failed to start container!'))
             raise
@@ -166,9 +181,9 @@ class StartTask(Task):
             # application were already running.
             return None
 
+        # Otherwise we need to start it.
         if (not self._reuse) or (not self.container.status()):
-            # Otherwise we need to start it.
-            RemoveTask(self.o, self.container, standalone=False).run()
+            CleanTask(self.o, self.container, standalone=False).run()
 
             # Check if the image is available, or if we need to pull it down.
             image = self.container.get_image_details()
@@ -250,9 +265,9 @@ class StopTask(Task):
     """Stop a container."""
 
     def __init__(self, o, container):
-        Task.__init__(self, o, container)
+        Task.__init__(self, 'stop', o, container)
 
-    def run(self):
+    def _run(self):
         self.o.reset()
         self.o.pending('checking container...')
         try:
@@ -292,7 +307,7 @@ class RestartTask(Task):
     def __init__(self, o, container, registries={}, refresh=False,
                  step_delay=0, stop_start_delay=0, reuse=False,
                  only_if_changed=False):
-        Task.__init__(self, o, container)
+        Task.__init__(self, 'restart', o, container)
         self._registries = registries
         self._refresh = refresh
         self._step_delay = step_delay
@@ -300,7 +315,7 @@ class RestartTask(Task):
         self._reuse = reuse
         self._only_if_changed = only_if_changed
 
-    def run(self):
+    def _run(self):
         self.o.reset()
 
         if self._refresh:
@@ -344,10 +359,10 @@ class LoginTask(Task):
     """
 
     def __init__(self, o, container, registries={}):
-        Task.__init__(self, o, container)
+        Task.__init__(self, 'login', o, container)
         self._registries = registries
 
-    def run(self):
+    def _run(self):
         registry = LoginTask.registry_for_container(self.container,
                                                     self._registries)
         if not registry:
@@ -385,12 +400,12 @@ class PullTask(Task):
     """Pull (download) the image a container is based on."""
 
     def __init__(self, o, container, registries={}, standalone=True):
-        Task.__init__(self, o, container)
+        Task.__init__(self, 'pull', o, container)
         self._registries = registries
         self._standalone = standalone
         self._progress = {}
 
-    def run(self):
+    def _run(self):
         self.o.reset()
 
         # First, attempt to login if we can/need to.
@@ -443,14 +458,14 @@ class PullTask(Task):
         return total
 
 
-class RemoveTask(Task):
+class CleanTask(Task):
     """Remove a container from Docker if it exists."""
 
     def __init__(self, o, container, standalone=True):
-        Task.__init__(self, o, container)
+        Task.__init__(self, 'clean', o, container)
         self._standalone = standalone
 
-    def run(self):
+    def _run(self):
         self.o.reset()
         status = self.container.status()
         if not status:

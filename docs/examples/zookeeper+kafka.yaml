@@ -36,9 +36,15 @@ services:
       {{ name }}:
         ship: {{ ship }}
         ports:
-          client: {{ 2181 + loop.index0 }}
-          peer: {{ 2888 + loop.index0 }}
-          leader_election: {{ 3888 + loop.index0 }}
+          client:
+            exposed: 2181
+            external: {{ 2181 + loop.index0 }}
+          peer:
+            exposed: 2888
+            external: {{ 2888 + loop.index0 }}
+          leader_election:
+            exposed: 3888
+            external: {{ 3888 + loop.index0 }}
         lifecycle:
           running: [{type: tcp, port: client, max_wait: 10}]
         volumes:

@@ -49,14 +49,17 @@ class ContainerTest(unittest.TestCase):
     SHIP = 'ship'
     SHIP_IP = '10.0.0.1'
     SCHEMA = {'schema': 2}
+    DOCKER_VERSION = '1.12'
 
     def _cntr(service_name=SERVICE, service_env=None, image=IMAGE,
               ship_name=SHIP, ship_ip=SHIP_IP,
-              container_name=CONTAINER, config=None, schema=SCHEMA):
+              container_name=CONTAINER, config=None, schema=SCHEMA,
+              api_version=DOCKER_VERSION):
         service = entities.Service(service_name, image, schema=schema,
                                    env=service_env)
         return entities.Container(container_name,
-                                  entities.Ship(ship_name, ship_ip),
+                                  entities.Ship(ship_name, ship_ip,
+                                                api_version=api_version),
                                   service, config=config, schema=schema)
 
     def test_image_propagates_from_service(self):

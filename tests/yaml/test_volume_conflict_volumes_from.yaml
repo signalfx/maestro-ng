@@ -3,7 +3,8 @@ __maestro:
 
 name: test-volumes
 ships:
-  ship: {ip: localhost}
+  ship:
+    ip: localhost
 services:
   service:
     image: ubuntu

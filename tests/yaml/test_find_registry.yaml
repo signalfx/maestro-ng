@@ -18,7 +18,8 @@ registries:
     password: secret
 
 ships:
-  ship1: {ip: "localhost"}
+  ship1:
+    ip: localhost
 
 services:
   service1:

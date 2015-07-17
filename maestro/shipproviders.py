@@ -48,6 +48,7 @@ class StaticShipsProvider(ShipsProvider):
                 docker_port=self._from_ship_or_defaults(v, 'docker_port'),
                 socket_path=self._from_ship_or_defaults(v, 'socket_path'),
                 ssh_tunnel=self._from_ship_or_defaults(v, 'ssh_tunnel'),
+                api_version=self._from_ship_or_defaults(v, 'api_version'),
                 timeout=self._from_ship_or_defaults(v, 'timeout'),
                 tls=v.get('tls', False),
                 tls_cert=v.get('tls_cert', None),

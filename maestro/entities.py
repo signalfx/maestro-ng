@@ -64,13 +64,16 @@ class Ship(Entity):
 
     DEFAULT_DOCKER_PORT = 2375
     DEFAULT_DOCKER_TLS_PORT = 2376
-    DEFAULT_DOCKER_VERSION = '1.15'
+    DEFAULT_API_VERSION = '1.15'
+    # Deprecated -- will be removed in next release
+    DEFAULT_DOCKER_VERSION = DEFAULT_API_VERSION
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, endpoint=None, docker_port=None,
-                 socket_path=None, timeout=None, ssh_tunnel=None, tls=None,
-                 tls_verify=False, tls_ca_cert=None, tls_cert=None,
-                 tls_key=None, ssl_version=None):
+                 socket_path=None, api_version=None, timeout=None,
+                 ssh_tunnel=None, tls=None, tls_verify=False,
+                 tls_ca_cert=None, tls_cert=None, tls_key=None,
+                 ssl_version=None):
         """Instantiate a new ship.
 
         Args:
@@ -78,6 +81,7 @@ class Ship(Entity):
             ip (string): the IP address of resolvable host name of the host.
             docker_port (int): the port the Docker daemon listens on.
             socket_path (string): the path to the unix socket the Docker daemon listens on.
+            api_version (string): the API version of the Docker daemon.
             ssh_tunnel (dict): configuration for SSH tunneling to the remote
                 Docker daemon.
         """
@@ -134,7 +138,7 @@ class Ship(Entity):
 
         self._backend = docker.Client(
             base_url=self._backend_url,
-            version=Ship.DEFAULT_DOCKER_VERSION,
+            version=api_version or Ship.DEFAULT_API_VERSION,
             timeout=timeout or Ship.DEFAULT_DOCKER_TIMEOUT,
             tls=self._tls)
 

@@ -1,6 +1,8 @@
 name: test
 ships:
-  ship1: {ip: "localhost"}
+  ship1:
+    ip: localhost
+    docker_version: "1.12"
 services:
   foo:
     image: foo

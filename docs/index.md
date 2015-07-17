@@ -95,7 +95,7 @@ registries:
 ```
 
 The ship defaults allow you to specify certain ship attribute defaults,
-like `timeout`, `docker_port`, or `ssh_timeout`.
+like `timeout`, `docker_port`, `docker_version` or `ssh_timeout`.
 
 ```yaml
 ship_defaults:
@@ -112,6 +112,10 @@ with the Docker daemon running there (for example via a private
 network), you can override the Docker daemon endpoint address with the
 `endpoint` parameter. If not specified, Maestro will simply use the
 ship's `ip` parameter.
+
+You can specify the API version of the Docker daemon with the
+`docker_version` parameter. Note that by default, the version is
+automatically retrieved from the Docker daemon.
 
 You can also use an SSH tunnel to secure the communication with the
 target Docker daemon (especially if you don't want to Docker daemon to

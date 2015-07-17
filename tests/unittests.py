@@ -21,13 +21,13 @@ class EntityTest(unittest.TestCase):
 class ShipTest(unittest.TestCase):
 
     def test_simple_ship(self):
-        ship = entities.Ship('foo', '10.0.0.1')
+        ship = entities.Ship('foo', '10.0.0.1', docker_version='1.12')
         self.assertEqual(ship.name, 'foo')
         self.assertEqual(ship.ip, '10.0.0.1')
         self.assertEqual(ship.endpoint, '10.0.0.1')
 
     def test_ship_endpoint(self):
-        ship = entities.Ship('foo', '10.0.0.1', '192.168.10.1')
+        ship = entities.Ship('foo', '10.0.0.1', '192.168.10.1', docker_version='1.12')
         self.assertEqual(ship.name, 'foo')
         self.assertEqual(ship.ip, '10.0.0.1')
         self.assertEqual(ship.endpoint, '192.168.10.1')
@@ -49,14 +49,16 @@ class ContainerTest(unittest.TestCase):
     SHIP = 'ship'
     SHIP_IP = '10.0.0.1'
     SCHEMA = {'schema': 2}
+    DOCKER_VERSION = '1.12'
 
     def _cntr(service_name=SERVICE, service_env=None, image=IMAGE,
               ship_name=SHIP, ship_ip=SHIP_IP,
-              container_name=CONTAINER, config=None, schema=SCHEMA):
+              container_name=CONTAINER, config=None, schema=SCHEMA,
+              docker_version=DOCKER_VERSION):
         service = entities.Service(service_name, image, schema=schema,
                                    env=service_env)
         return entities.Container(container_name,
-                                  entities.Ship(ship_name, ship_ip),
+                                  entities.Ship(ship_name, ship_ip, docker_version=docker_version),
                                   service, config=config, schema=schema)
 
     def test_image_propagates_from_service(self):
@@ -304,7 +306,7 @@ class ConfigTest(BaseConfigFileUsingTest):
 class LifecycleHelperTest(unittest.TestCase):
 
     def _get_container(self):
-        ship = entities.Ship('ship', 'ship.ip')
+        ship = entities.Ship('ship', 'ship.ip', docker_version='1.12')
         service = entities.Service('foo', 'stackbrew/ubuntu')
         return entities.Container(
             'foo1', ship, service,

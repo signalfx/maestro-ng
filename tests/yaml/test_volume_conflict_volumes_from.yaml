@@ -3,7 +3,9 @@ __maestro:
 
 name: test-volumes
 ships:
-  ship: {ip: localhost}
+  ship:
+    ip: localhost
+    docker_version: "1.12"
 services:
   service:
     image: ubuntu

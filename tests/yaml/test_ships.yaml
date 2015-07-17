@@ -3,6 +3,8 @@ ships:
   ship1:
     ip: 10.0.0.1
     endpoint: 192.168.10.1
+    docker_version: "1.12"
   ship2:
     ip: 10.0.0.2
     docker_port: 1234
+    docker_version: "1.12"

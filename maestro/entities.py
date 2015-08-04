@@ -4,6 +4,7 @@
 # Docker container orchestration utility.
 
 import bgtunnel
+import collections
 import datetime
 import time
 import os
@@ -18,6 +19,10 @@ try:
 except ImportError:
     # Fall back to <= 0.3.1 location
     from docker.client import APIError
+
+from docker.utils import create_host_config
+from docker.utils.types import LogConfigTypesEnum
+
 
 import multiprocessing.pool
 import re
@@ -390,6 +395,10 @@ class Container(Entity):
         self.mem_limit = self._parse_bytes(limits.get('memory'))
         self.memswap_limit = self._parse_bytes(limits.get('swap'))
 
+        # Get logging config.
+        self.log_config = self._parse_log_config(
+            config.get('log_driver'), config.get('log_opt'))
+
         # Additional LXC configuration options. See the LXC documentation for a
         # reference of the available settings. Those are only supported if the
         # remote Docker daemon uses the lxc execution driver.
@@ -397,6 +406,32 @@ class Container(Entity):
 
         # Work directory for the container
         self.workdir = config.get('workdir')
+
+        # Reformat port structure
+        ports = collections.defaultdict(list) if self.ports else None
+        if ports is not None:
+            for port in self.ports.values():
+                ports[port['exposed']].append(
+                    (port['external'][0], port['external'][1].split('/')[0]))
+
+        # host_config now contains all settings previously passed in container
+        # start().
+        self.host_config = create_host_config(
+            log_config=self.log_config, 
+            mem_limit=self.mem_limit, 
+            memswap_limit=self.memswap_limit,
+            binds=self.volumes,
+            port_bindings=ports,
+            lxc_conf=self.lxc_conf,
+            privileged=self.privileged,
+            cap_add=self.cap_add,
+            cap_drop=self.cap_drop,
+            extra_hosts=self.extra_hosts,
+            network_mode=self.network_mode,
+            restart_policy=self.restart_policy,
+            dns=self.dns,
+            links=self.links,
+            volumes_from=list(self.volumes_from))
 
         # Seed the service name, container name and host address as part of the
         # container's environment.
@@ -636,6 +671,35 @@ class Container(Entity):
         for src, spec in volumes.items():
             _parse_spec(src, spec)
         return result
+    
+    
+    def _parse_log_config(self, log_driver, log_opt):
+        """ Parse the log config found in the container's configuration.
+        
+        Args:
+            log_driver (enum): Should be a valid value as defined by 
+                docker/docker-py, e.g. json-file, syslog, none. 
+            log_opt (dict): Should be a valid dictionary with additional log driver
+                settings. Values are not interpreted.
+        Returns: A dictionary that can be passed to to docker-py via the
+            host_config.LogConfig variable.
+        """
+        if log_driver:
+            if log_driver not in LogConfigTypesEnum._values:
+                raise exceptions.InvalidLogConfigurationException(
+                    "log_driver must be one of ({0})".format(
+                    ', '.join(LogConfigTypesEnum._values)
+                ))
+            if log_opt and not type(log_opt) == dict:
+                raise exceptions.InvalidLogConfigurationException(
+                    "log_opt must be a dictionary")
+            if log_opt:
+                return {"Type": log_driver, "Config": log_opt}
+            else:
+                return {"Type": log_driver}
+            
+        return None
+            
 
     def _parse_go_time(self, s):
         """Parse a time string found in the container status into a Python

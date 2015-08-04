@@ -123,6 +123,36 @@ class ContainerTest(unittest.TestCase):
         container = self._cntr(config={'limits': {'swap': '42k'}})
         self.assertEqual(container.memswap_limit, 42*1024)
 
+    def test_log_config_default(self):
+        self.assertTrue("LogConfig" not in self._cntr().host_config)
+
+    def test_log_config_syslog(self):
+        container = self._cntr(config={'log_driver': 'syslog'})
+        self.assertTrue("LogConfig" in container.host_config)
+        self.assertEqual(container.host_config['LogConfig'],
+                         {'Type': 'syslog', 'Config': {}})
+
+    def test_log_config_syslog_with_opts(self):
+        container = self._cntr(config={'log_driver': 'syslog', 'log_opt': {
+            'syslog-address': 'tcp://127.0.0.1:514'
+        }})
+        self.assertTrue("LogConfig" in container.host_config)
+        self.assertEqual(container.host_config['LogConfig'], {
+            'Type': 'syslog', 'Config': {
+                'syslog-address': 'tcp://127.0.0.1:514'
+            }})
+
+    def test_log_config_wrong_driver_type(self):
+        self.assertRaises(
+            exceptions.InvalidLogConfigurationException,
+            lambda: self._cntr(config={'log_driver': 'notvalid'}))
+
+    def test_log_config_wrong_opt_type(self):
+        self.assertRaises(
+            exceptions.InvalidLogConfigurationException,
+            lambda: self._cntr(
+                config={'log_driver': 'syslog', "log_opt": 'shouldbeadict'}))
+
     def test_restart_policy_default(self):
         self.assertEqual(self._cntr().restart_policy,
                          {'Name': 'no', 'MaximumRetryCount': 0})

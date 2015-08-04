@@ -66,3 +66,8 @@ class InvalidVolumeConfigurationException(MaestroException):
 
 class InvalidAuditorConfigurationException(MaestroException):
     """Invalid configuration of one of the specified auditors."""
+
+
+class InvalidLogConfigurationException(MaestroException):
+    """Error thrown when a log_driver or log_opt is in an invalid format."""
+    pass

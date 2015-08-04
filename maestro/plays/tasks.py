@@ -208,9 +208,8 @@ class StartTask(Task):
                 name=self.container.name,
                 environment=self.container.env,
                 volumes=list(self.container.get_volumes()),
-                mem_limit=self.container.mem_limit,
-                memswap_limit=self.container.memswap_limit,
                 cpu_shares=self.container.cpu_shares,
+                host_config=self.container.host_config,
                 ports=ports,
                 detach=True,
                 working_dir=self.container.workdir,
@@ -232,19 +231,7 @@ class StartTask(Task):
         self.o.pending('starting container {}...'
                        .format(self.container.id[:7]))
         self.container.ship.backend.start(
-            self.container.id,
-            binds=self.container.volumes,
-            port_bindings=ports,
-            lxc_conf=self.container.lxc_conf,
-            privileged=self.container.privileged,
-            cap_add=self.container.cap_add,
-            cap_drop=self.container.cap_drop,
-            extra_hosts=self.container.extra_hosts,
-            network_mode=self.container.network_mode,
-            restart_policy=self.container.restart_policy,
-            dns=self.container.dns,
-            links=self.container.links,
-            volumes_from=list(self.container.volumes_from))
+            self.container.id)
 
         # Waiting one second and checking container state again to make sure
         # initialization didn't fail.

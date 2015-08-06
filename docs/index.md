@@ -658,9 +658,10 @@ a set of environment variables is added:
 * `<SERVICE_NAME>_<CONTAINER_NAME>_HOST`: the external IP address of the
   host of the container, which is the address the application inside the
   container can be reached with accross the network.
-* For each port declared by the dependent container:
-  - `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_PORT`, containing the
-    external, addressable port number.
+* For each port declared by the dependent container, a
+  `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_PORT` environment
+  variable, containing the external, addressable port number, is
+  provided.
 
 Each container of a service also gets these two variables for each
 instance of that service so it knows about its peers. It also gets the
@@ -726,7 +727,7 @@ passed on the command-line (to force refresh the images), Maestro will
 attempt to pull the image.
 
 To do so, it will first analyze the name of the image and try to
-identify a registry name (for example
+identify a registry name (for example, in
 `my-private-registry/my-image:tag`, the address of the registry is
 `my-private-registry`) and look for a corresponding entry in the
 `registries` section of the environment description file to look for

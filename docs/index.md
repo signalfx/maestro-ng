@@ -72,10 +72,10 @@ services:
 ```
 
 The first element, `__maestro`, is used to pass in some information to
-Maestro that does not directly relate to your enviroment description,
+Maestro that does not directly relate to your environment description,
 but helps Maestro understand it. In particular, the `schema` version
 is used to note what version of the YAML "schema" Maestro will be using
-when parsing the enviroment description. This is used when backwards
+when parsing the environment description. This is used when backwards
 incompatible changes are introduced by Maestro to provide an easier
 upgrade path.
 
@@ -114,7 +114,7 @@ network), you can override the Docker daemon endpoint address with the
 ship's `ip` parameter.
 
 You can also use an SSH tunnel to secure the communication with the
-target Docker daemon (especially if you don't want to Docker daemon to
+target Docker daemon (especially if you don't want the Docker daemon to
 listen on anything else than `localhost`, and rely on SSH key-based
 authentication instead). Here again, if the `endpoint` parameter is
 specified, it will be used as the target host for the SSH connection.
@@ -143,7 +143,7 @@ is resolvable inside the container) as IP, and the name in the server
 certificate as endpoint.
 
 Not using verification works too (just don't mention `tls_verify` and
-`tls_ca_cert`), but a warning from inside `urllib3` will make maestroe's
+`tls_ca_cert`), but a warning from inside `urllib3` will make Maestro's
 output unreadable.
 
 In the example below, "docker1" is the CN in the server certificate.
@@ -184,19 +184,19 @@ be placed on (by name). Additionally, it may define:
   - `lifecycle`, for lifecycle state checks, which Maestro uses to
     confirm a service correctly started or stopped (see Lifecycle checks
     below);
-  - `volumes`, for container volume mappings, as a map of `<source from
-    host>: <destination in container>`. Each target can also be
-    specified as a map `{target: <destination>, mode: <mode>}`, where
-    `mode` is `ro` (read-only) or `rw` (read-write);
+  - `volumes`, for container volume mappings, as a map of
+    `<source from host>: <destination in container>`. Each target can
+    also be specified as a map `{target: <destination>, mode: <mode>}`,
+    where `mode` is `ro` (read-only) or `rw` (read-write);
   - `container_volumes`, a path, or list of paths inside the container
     to be used as container-only volumes with no host bind-mount. This
     is mostly used for data-containers;
   - `volumes_from`, a container or list of containers running on the
     same _ship_ to get volumes from. This is useful to get the volumes
     of a data-container into an application container;
-  - `env`, for environment variables, as a map of `<variable name>:
-    <value>` (variables defined at the instance level override variables
-    defined at the service level);
+  - `env`, for environment variables, as a map of 
+    `<variable name>: <value>` (variables defined at the instance
+    level override variables defined at the service level);
   - `privileged`, a boolean specifying whether the container should run
     in privileged mode or not (defaults to `false`);
   - `cap_add`, Linux capabilities to add to the container (see the
@@ -332,8 +332,8 @@ services:
 ## Port mapping syntax
 
 Maestro supports several syntaxes for specifying port mappings. Unless
-the syntax supports and/or specifies it, Maestro will make the following
-assumptions:
+the syntax supports and/or specifies otherwise, Maestro will make the
+following assumptions:
 
  * the exposed and external ports are the same (_exposed_ means the port
    bound to inside the container, _external_ means the port mapped by
@@ -560,6 +560,7 @@ services:
 ```
 
 Options:
+
  - `port`, named port for an instance or explicit numbered port
  - `host`, IP or resolvable hostname (defaults to ship.ip)
  - `match_regex`, regular expression to test response against (defaults
@@ -657,9 +658,10 @@ a set of environment variables is added:
 * `<SERVICE_NAME>_<CONTAINER_NAME>_HOST`: the external IP address of the
   host of the container, which is the address the application inside the
   container can be reached with accross the network.
-* For each port declared by the dependent container:
-  - `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_PORT`, containing the
-    external, addressable port number.
+* For each port declared by the dependent container, a
+  `<SERVICE_NAME>_<CONTAINER_NAME>_<PORT_NAME>_PORT` environment
+  variable, containing the external, addressable port number, is
+  provided.
 
 Each container of a service also gets these two variables for each
 instance of that service so it knows about its peers. It also gets the
@@ -725,7 +727,7 @@ passed on the command-line (to force refresh the images), Maestro will
 attempt to pull the image.
 
 To do so, it will first analyze the name of the image and try to
-identify a registry name (for example
+identify a registry name (for example, in
 `my-private-registry/my-image:tag`, the address of the registry is
 `my-private-registry`) and look for a corresponding entry in the
 `registries` section of the environment description file to look for

@@ -72,10 +72,10 @@ services:
 ```
 
 The first element, `__maestro`, is used to pass in some information to
-Maestro that does not directly relate to your enviroment description,
+Maestro that does not directly relate to your environment description,
 but helps Maestro understand it. In particular, the `schema` version
 is used to note what version of the YAML "schema" Maestro will be using
-when parsing the enviroment description. This is used when backwards
+when parsing the environment description. This is used when backwards
 incompatible changes are introduced by Maestro to provide an easier
 upgrade path.
 

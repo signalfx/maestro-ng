@@ -560,6 +560,7 @@ services:
 ```
 
 Options:
+
  - `port`, named port for an instance or explicit numbered port
  - `host`, IP or resolvable hostname (defaults to ship.ip)
  - `match_regex`, regular expression to test response against (defaults

@@ -403,8 +403,8 @@ class Conductor:
             o.pending(
                 'Requesting logs for {}. This may take a while...'
                 .format(container.name))
-            logs = container.ship.backend.logs(container.id).decode('utf-8')
-            logs = logs.split('\n')[-int(n or len(logs)):]
+            logs = container.ship.backend.logs(
+                container.id, tail=n).decode('utf-8').splitlines()
 
         o.pending('\033[2K')
         for line in logs:

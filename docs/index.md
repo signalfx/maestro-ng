@@ -212,6 +212,8 @@ be placed on (by name). Additionally, it may define:
       container;
     - `swap`, the swap limit of the container (in bytes, or with one
       of the `k`, `m` or `g` suffixes, also valid in uppercase);
+  - `log_driver`, one of the supported log drivers, e.g. syslog or json-file.
+  - `log_opt`, a set of key value pairs that provide additional logging parameters. E.g. the syslog-address to redirect syslog output to another address.
   - `command`, to specify or override the command executed by the
     container;
   - `net`, to specify the container's network mode (one of `bridge` --

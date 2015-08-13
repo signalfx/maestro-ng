@@ -398,17 +398,34 @@ class Conductor:
             o.pending(
                 'Now streaming logs for {}. New output will appear below.'
                 .format(container.name))
-            logs = container.ship.backend.attach(container.id, stream=True)
+
+            while True:
+                logs = container.ship.backend.attach(container.id, stream=True)
+                o.pending('\033[2K')
+                for line in logs:
+                    print(line.rstrip())
+
+                o.pending('{} has died, waiting for respawn...'
+                          .format(container.name))
+
+                events = container.ship.backend.events(decode=True)
+                for e in events:
+                    if e['status'] == 'start':
+                        spec = container.ship.backend.inspect_container(
+                            e['id'])
+                        if spec['Name'][1:] == container.name:
+                            container.id = e['id']
+                            break
         else:
             o.pending(
                 'Requesting logs for {}. This may take a while...'
                 .format(container.name))
-            logs = container.ship.backend.logs(container.id).decode('utf-8')
-            logs = logs.split('\n')[-int(n or len(logs)):]
+            logs = container.ship.backend.logs(
+                container.id, tail=n).decode('utf-8').splitlines()
 
-        o.pending('\033[2K')
-        for line in logs:
-            print(line.rstrip())
+            o.pending('\033[2K')
+            for line in logs:
+                print(line.rstrip())
 
     def deptree(self, things, recursive, **kwargs):
         """Display the dependency tree of the given services."""

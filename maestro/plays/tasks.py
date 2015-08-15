@@ -410,8 +410,9 @@ class PullTask(Task):
         # Pull the image (this may be a no-op, but that's fine).
         for dlstatus in self.container.ship.backend.pull(
                 stream=True, insecure_registry=insecure, **image):
-            percentage = self._update_pull_progress(dlstatus)
-            self.o.pending('... {:.1f}%'.format(percentage))
+            if dlstatus:
+                percentage = self._update_pull_progress(dlstatus)
+                self.o.pending('... {:.1f}%'.format(percentage))
 
         if self._standalone:
             self.o.commit(CONTAINER_STATUS_FMT.format(''))

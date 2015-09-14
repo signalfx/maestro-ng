@@ -76,7 +76,7 @@ fi
 log "Building and uploading release wheel..."
 python setup.py bdist_wheel
 if [ -z "${NO_PUBLISH}" ] ; then
-  twine upload
+  twine upload dist/maestro_ng-${1}-py2.py3-none-any.whl
 else
   warn "Skipped release deploy"
 fi

@@ -1,6 +1,35 @@
 ChangeLog
 =========
 
+Maestro 0.2.7
+-------------
+
+_September 14th, 2015_
+
+This release contains lots of improvements to keep Maestro moving
+forward and compatible with Docker and its fast-moving pace! Starting
+from this release the documentation has also moved to ReadTheDocs.org
+and will progressively be updated to fit into their page structure.
+
+* Display image tag of the running image for running containers.
+* Add support for `cap_add` and `cap_drop` parameters.
+* Lots of Python3 compatibility fixes; using MaestroNG with Python3
+  should now be possible.
+* Use the same Jinja2 extensions and environment when reading an
+  environment file from STDIN than when reading from file, allowing for
+  the same references to environment variables and uses of includes.
+* Rework auditing to track individual events (more verbose).
+* Bump docker-py requirement to 1.3.0 and use a default Docker API
+  version of 1.15 (instead of 1.10, which is no longer supported by the
+  most recent versions of Docker).
+* Control of the API version used when talking to a Docker daemon is now
+  possible via the `api_version` parameter to the Ship's constructor.
+* Add support for Docker logging drivers via the support of the
+  `logconfig` parameters.
+* Optimize `maestro logs` command, even continuing to follow the logs if
+  the underlying container gets restarted.
+* Fix concurrent pulling of the same image on the same ship.
+
 Maestro 0.2.6.2
 ---------------
 

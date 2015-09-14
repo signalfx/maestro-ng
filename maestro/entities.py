@@ -20,7 +20,6 @@ except ImportError:
     # Fall back to <= 0.3.1 location
     from docker.client import APIError
 
-from docker.utils import create_host_config
 from docker.utils.types import LogConfigTypesEnum
 
 
@@ -420,7 +419,7 @@ class Container(Entity):
 
         # host_config now contains all settings previously passed in container
         # start().
-        self.host_config = create_host_config(
+        self.host_config = self._ship.backend.create_host_config(
             log_config=self.log_config, 
             mem_limit=self.mem_limit, 
             memswap_limit=self.memswap_limit,

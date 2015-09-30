@@ -137,7 +137,7 @@ class Ship(Entity):
 
         self._backend = docker.Client(
             base_url=self._backend_url,
-            version=api_version or Ship.DEFAULT_API_VERSION,
+            version=str(api_version or Ship.DEFAULT_API_VERSION),
             timeout=timeout or Ship.DEFAULT_DOCKER_TIMEOUT,
             tls=self._tls)
 

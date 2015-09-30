@@ -674,14 +674,13 @@ class Container(Entity):
         for src, spec in volumes.items():
             _parse_spec(src, spec)
         return result
-    
-    
+
     def _parse_log_config(self, log_driver, log_opt):
         """ Parse the log config found in the container's configuration.
-        
+
         Args:
-            log_driver (enum): Should be a valid value as defined by 
-                docker/docker-py, e.g. json-file, syslog, none. 
+            log_driver (enum): Should be a valid value as defined by
+                docker/docker-py, e.g. json-file, syslog, none.
             log_opt (dict): Should be a valid dictionary with additional log driver
                 settings. Values are not interpreted.
         Returns: A dictionary that can be passed to to docker-py via the
@@ -700,9 +699,8 @@ class Container(Entity):
                 return {"Type": log_driver, "Config": log_opt}
             else:
                 return {"Type": log_driver}
-            
+
         return None
-            
 
     def _parse_go_time(self, s):
         """Parse a time string found in the container status into a Python

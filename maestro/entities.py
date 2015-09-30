@@ -724,7 +724,7 @@ class Container(Entity):
         """
         if not s:
             return None
-        t = datetime.datetime.strptime(s.split('.')[0], '%Y-%m-%dT%H:%M:%S')
+        t = datetime.datetime.strptime(s[:-1].split('.')[0], '%Y-%m-%dT%H:%M:%S')
         return t if t.year > 1 else None
 
     def _parse_ports(self, ports):

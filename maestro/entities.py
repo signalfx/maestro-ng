@@ -418,8 +418,8 @@ class Container(Entity):
         # host_config now contains all settings previously passed in container
         # start().
         self.host_config = self._ship.backend.create_host_config(
-            log_config=self.log_config, 
-            mem_limit=self.mem_limit, 
+            log_config=self.log_config,
+            mem_limit=self.mem_limit,
             memswap_limit=self.memswap_limit,
             binds=self.volumes,
             port_bindings=ports,
@@ -694,6 +694,7 @@ class Container(Entity):
                 raise exceptions.InvalidLogConfigurationException(
                     "log_opt must be a dictionary")
             if log_opt:
+                log_opt = dict((k, str(v)) for k, v in log_opt.items())
                 return {"Type": log_driver, "Config": log_opt}
             else:
                 return {"Type": log_driver}

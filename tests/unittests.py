@@ -6,6 +6,7 @@
 # Unit tests for Maestro, Docker container orchestration utility.
 
 import os
+import six
 import unittest
 import yaml
 
@@ -155,6 +156,15 @@ class ContainerTest(unittest.TestCase):
             exceptions.InvalidLogConfigurationException,
             lambda: self._cntr(
                 config={'log_driver': 'syslog', "log_opt": 'shouldbeadict'}))
+
+    def test_log_config_converts_options_to_string(self):
+        container = self._cntr(config={'log_driver': 'json-file', 'log_opt': {
+            'max-size': '2M', 'max-file': 2
+        }})
+        self.assertTrue("LogConfig" in container.host_config)
+        self.assertEqual(len(container.host_config['LogConfig']['Config']), 2)
+        for value in container.host_config['LogConfig']['Config'].values():
+            self.assertTrue(isinstance(value, six.string_types))
 
     def test_restart_policy_default(self):
         self.assertEqual(self._cntr().restart_policy,

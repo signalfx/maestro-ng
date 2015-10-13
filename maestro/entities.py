@@ -63,9 +63,7 @@ class Ship(Entity):
 
     DEFAULT_DOCKER_PORT = 2375
     DEFAULT_DOCKER_TLS_PORT = 2376
-    DEFAULT_API_VERSION = '1.15'
-    # Deprecated -- will be removed in next release
-    DEFAULT_DOCKER_VERSION = DEFAULT_API_VERSION
+    DEFAULT_API_VERSION = 1.15
     DEFAULT_DOCKER_TIMEOUT = 5
 
     def __init__(self, name, ip, endpoint=None, docker_port=None,

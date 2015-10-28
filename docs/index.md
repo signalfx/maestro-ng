@@ -46,15 +46,20 @@ through their environment.
 
 ## Environment description
 
-The environment is described using YAML. The format is still a bit in
-flux but the base has been set and should remain fairly stable. It is
-named and composed of three main mandatory sections: the _registries_
-that define authentication credentials that might be needed to pull the
-Docker images for the defined _services_ from their registries, the
-_ships_, hosts that will execute the Docker containers, and the
-_services_, which define what services make up the environment, the
-dependencies between these services and the instances of each of these
-services that need to run. Here's the outline:
+The environment is described using YAML. (The format is still a bit in flux but
+the base has been set and should remain fairly stable.) It is composed of three
+main mandatory sections: _registries_, _ships_, and _services_.
+
+1. The _registries_ section defines authentication credentials that Maestro can
+   use to pull Docker images for your _services_.
+
+2. The _ships_ section describes hosts that will run the Docker containers.
+
+3. The _services_ section defines which services make up the environment, the
+   dependencies between them, and instances of your
+   services that you want to run.
+
+Here's the outline:
 
 ```yaml
 __maestro:
@@ -71,19 +76,20 @@ services:
   # Service definitions (see below)
 ```
 
-The first element, `__maestro`, is used to pass in some information to
-Maestro that does not directly relate to your environment description,
-but helps Maestro understand it. In particular, the `schema` version
-is used to note what version of the YAML "schema" Maestro will be using
-when parsing the environment description. This is used when backwards
-incompatible changes are introduced by Maestro to provide an easier
-upgrade path.
+### Metadata
 
-The _registries_ define each Docker registry Maestro might need to
-pull images from and the authentication credentials needed to access them
-(see below _Working with image registries_). For each registry, the full
-registry URL, a `username` and a `password` are required, and depending
-on the registry the `email` might be as well. For example:
+The `__maestro` section contains information that helps Maestro understand your
+environment description. In particular, the `schema` version specifies what
+version of the YAML "schema" Maestro should use when parsing the environment
+description. This provides an easier upgrade path when Maestro introduces
+backwards incompatible changes.
+
+### Registries
+
+The _registries_ section defines the Docker registries that Maestro can pull
+images from and the authentication credentials needed to access them (see below
+_Working with image registries_). For each registry, you must provide the full
+registry URL, a `username`, a `password`, and possibly `email`. For example:
 
 ```yaml
 registries:
@@ -94,7 +100,9 @@ registries:
     email: maestro-robot@domain.com
 ```
 
-The ship defaults allow you to specify certain ship attribute defaults,
+### Ship defaults
+
+The ship defaults sections specify certain ship attribute defaults,
 like `timeout`, `docker_port`, `api_version` or `ssh_timeout`.
 
 ```yaml
@@ -102,31 +110,34 @@ ship_defaults:
   timeout: 60
 ```
 
-The _ships_ are simple to define. They are named (but that name doesn't
-need to match their DNS resolvable host name), and need an `ip`
-address/hostname. If the Docker daemon doesn't listen its default port
-of 2375, the `docker_port` can be overriden.
+### Ships
 
-If the address of the machine is not the one you want to use to interact
-with the Docker daemon running there (for example via a private
-network), you can override the Docker daemon endpoint address with the
-`endpoint` parameter. If not specified, Maestro will simply use the
-ship's `ip` parameter.
+A _ship_ is a host that runs your Docker containers. They have names (which
+don't need to match their DNS resolvable host name) and IP addressses/hostnames
+(`ip`). They may also define:
 
-You can specify the API version of the Docker daemon with the
-`api_version` parameter. If you set it to `auto`, the version is
-automatically retrieved from the Docker daemon and the latest available
-version is used.
+- `api_version`: The API version of the Docker daemon. If you set it to `auto`,
+  the version is automatically retrieved from the Docker daemon and the latest
+  available version is used.
 
-You can also use an SSH tunnel to secure the communication with the
-target Docker daemon (especially if you don't want the Docker daemon to
-listen on anything else than `localhost`, and rely on SSH key-based
-authentication instead). Here again, if the `endpoint` parameter is
-specified, it will be used as the target host for the SSH connection.
+- `docker_port`: A custom port, used if the Docker daemon doesn't listen on the
+  default port of 2375.
 
-If the Docker daemon is listening on a unix domain socket in the local
-filesystem, you can specify `socket_path` to connect to it directly.
-This is useful when the Docker daemon is running locally.
+- `endpoint`: The Docker daemon endpoint address. Override this if the address
+  of the machine is not the one you want to use to interact with the Docker
+  daemon running there (for example via a private network). Defaults to the
+  ship's `ip` parameter.
+
+- `ssh_tunnel`: An SSH tunnel to secure the communication with the target
+  Docker daemon (especially if you don't want the Docker daemon to listen on
+  anything else than `localhost`, and rely on SSH key-based authentication
+  instead). Here again, if the `endpoint` parameter is specified, it will be
+  used as the target host for the SSH connection.
+
+- `socket_path`: If the Docker daemon is listening on a unix domain socket in
+  the local filesystem, you can specify `socket_path` to connect to it
+  directly.  This is useful when the Docker daemon is running locally.
+
 
 ```yaml
 ships:
@@ -167,20 +178,24 @@ ships:
         tls_cert: cert.pem
 ```
 
-Services are also named. Their name is used for commands that act on
-specific services instead of the whole environment, and is also used in
-dependency declarations. Each service must define the Docker image its
-instances will be using via the `image` parameter, and of course a
-description of each instance. It can also define environment variables
-that will apply to all of that service's instances through the `env`
-dictionary, dependencies through the `requires` and `wants_info` lists
-(see below in _Defining dependencies_). It is also possible to exclude a
-service from non-specific actions (when Maestro is executed without a
-list of services or containers as arguments) by setting the `omit: true`
-parameter on the service.
+### Services
 
-Each service instance must at least define the _ship_ its container will
-be placed on (by name). Additionally, it may define:
+Services have a name (used for commands that act on specific services instead
+of the whole environment and in dependency declarations), a Docker image
+(`image`), and a description of each instance.  Services may also define:
+
+- `env`: Environment variables that will apply to all of that service's
+  instances.
+
+- `omit`: If `true`, excludes the service from non-specific actions (when
+  Maestro is executed without a list of services or containers as arguments).
+
+- `requires`: Defines dependencies (see below in _Defining dependencies_).
+
+- `wants_info`: Defines dependencies (see below in _Defining dependencies_).
+
+Instances must define the _ship_ its container will
+be placed on (by name). Additionally, they may define:
 
   - `image`, to override the service-level image repository name, if
     needed (useful for canary deployments for example);
@@ -227,6 +242,8 @@ be placed on (by name). Additionally, it may define:
   - `restart`, to specify the restart policy (see Restart Policy below);
   - `dns`, to specify one (as a single IP address) or more DNS servers
     (as a list) to be declared inside the container.
+
+For example:
 
 ```yaml
 services:
@@ -293,8 +310,8 @@ they depend on so that at no point in time a service may run without its
 dependencies -- unless this was forced by the user with the `-o` flag of
 course.
 
-Defining dependencies is done by giving a list of the dependent service
-names in the service block:
+You can define dependencies by listing the names of dependent service
+in `requires`:
 
 ```yaml
 services:
@@ -315,7 +332,7 @@ into the instances of these services that describe where the instances of
 the services it depends on can be found (similarly to Docker links). See
 "How Maestro orchestrates" below for more details on these variables.
 
-It is also possible to define "soft" dependencies that do not impact the
+You can also define "soft" dependencies that do not impact the
 start/stop orders but that still make Maestro inject these variables.
 This can be useful if you know your application gracefully handles its
 dependencies not being present at start time, through reconnects and
@@ -513,7 +530,7 @@ volumes_from: [ other1, other2 ]
 When controlling containers (your service instances), Maestro can
 perform additional checks to confirm that the service reached the
 desired lifecycle state, in addition to looking at the state of the
-container itself. A common use-case for example is to check for a given
+container itself. A common use-case of this is to check for a given
 service port to become available to confirm that the application
 correctly started and is accepting connections.
 

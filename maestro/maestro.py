@@ -47,19 +47,18 @@ class Conductor:
         self.containers = {}
 
         for kind, service in self._config.get('services', {}).items():
-            self.services[kind] = entities.Service(kind, service['image'],
-                                                   service.get('omit', False),
-                                                   self.schema,
-                                                   service.get('env', {}))
+            self.services[kind] = \
+                entities.Service(
+                    kind, service['image'], service.get('omit', False),
+                    self.schema, service.get('env', {}), self.env_name,
+                    service.get('lifecycle', {}))
 
             for name, instance in service['instances'].items():
                 self.containers[name] = \
-                    entities.Container(name,
-                                       self.ships[instance['ship']],
-                                       self.services[kind],
-                                       instance,
-                                       self.schema,
-                                       self.env_name)
+                    entities.Container(
+                        name, self.ships[instance['ship']],
+                        self.services[kind], instance,
+                        self.schema)
 
         # Resolve dependencies between services.
         for kind, service in self._config.get('services', {}).items():

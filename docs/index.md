@@ -180,22 +180,24 @@ ships:
 
 ### Services
 
-Services have a name (used for commands that act on specific services instead
-of the whole environment and in dependency declarations), a Docker image
-(`image`), and a description of each instance.  Services may also define:
+Services have a name (used for commands that act on specific services
+instead of the whole environment and in dependency declarations), a
+Docker image (`image`), and a description of each instance.  Services
+may also define:
 
 - `env`: Environment variables that will apply to all of that service's
   instances.
-
 - `omit`: If `true`, excludes the service from non-specific actions (when
   Maestro is executed without a list of services or containers as arguments).
-
 - `requires`: Defines dependencies (see below in _Defining dependencies_).
-
 - `wants_info`: Defines dependencies (see below in _Defining dependencies_).
+- `lifecycle`: for lifecycle state checks, which Maestro uses to confirm
+  a service correctly started or stopped (see Lifecycle checks below).
+- `instances`: the definition of all instances for the service, as a
+  dictionary keyed by the container/instance name.
 
-Instances must define the _ship_ its container will
-be placed on (by name). Additionally, they may define:
+Each instance must, at minimum, define the _ship_ its container will be
+placed on (by name). Additionally, it may define:
 
   - `image`, to override the service-level image repository name, if
     needed (useful for canary deployments for example);
@@ -214,7 +216,7 @@ be placed on (by name). Additionally, they may define:
   - `volumes_from`, a container or list of containers running on the
     same _ship_ to get volumes from. This is useful to get the volumes
     of a data-container into an application container;
-  - `env`, for environment variables, as a map of 
+  - `env`, for environment variables, as a map of
     `<variable name>: <value>` (variables defined at the instance
     level override variables defined at the service level);
   - `privileged`, a boolean specifying whether the container should run
@@ -233,7 +235,9 @@ be placed on (by name). Additionally, they may define:
     - `swap`, the swap limit of the container (in bytes, or with one
       of the `k`, `m` or `g` suffixes, also valid in uppercase);
   - `log_driver`, one of the supported log drivers, e.g. syslog or json-file.
-  - `log_opt`, a set of key value pairs that provide additional logging parameters. E.g. the syslog-address to redirect syslog output to another address.
+  - `log_opt`, a set of key value pairs that provide additional logging
+    parameters. E.g. the syslog-address to redirect syslog output to
+    another address;
   - `command`, to specify or override the command executed by the
     container;
   - `net`, to specify the container's network mode (one of `bridge` --
@@ -539,34 +543,53 @@ for the `running` target state; all must pass for the instance to be
 considered correctly up and running. Similarly, after stopping a
 container, Maestro will execute all `stopped` target state checks.
 
-Checks are defined via the `lifecycle` dictionary for each defined
-instance. The following checks are available: TCP port pinging, and
-script execution (using the return code). Keep in mind that if no
-`running` lifecycle checks are defined, Maestro considers the service up
-as soon as the container is up and will keep going with the
-orchestration play immediately.
+Checks can be defined via the `lifecycle` dictionary at the service
+level or for each declared instance. If both are present, all defined
+checks are executed (container-level lifecycle checks don't override
+service-level checks, they add to them).
 
-**TCP port pinging** makes Maestro attempt to connect to the configured
-port (by name), once per second until it succeeds or the `max_wait`
-value is reached (defaults to 300 seconds).
+```yaml
+services:
+  zookeeper:
+    image: zookeeper:3.4.5
+    lifecycle:
+      running:
+        - {type: tcp, port: client, max_wait: 10}
+    instances:
+      zk1:
+        ship: host1
+        lifecycle:
+          running:
+            - {type: exec, cmd: "python ./ruok.py", attempts: 10}
+```
+
+In the example above, Maestro will first perform a TCP port ping on the
+client port; when that succeeds, it will execute the hypothetical
+`ruok.py` script, which we can imagine to send the `ruok` command to the
+ZooKeeper instance, expecting the `imok` response back to declare the
+service healthy and operational.
+
+### TCP port pinging
+
+TCP port pinging (`type: tcp`) makes Maestro attempt to connect to the
+configured port (by name), once per second until it succeeds or the
+`max_wait` value is reached (defaults to 300 seconds).
 
 Assuming your instance declares a `client` named port, you can make
 Maestro wait up to 10 seconds for this port to become available by doing
 the following:
 
 ```yaml
-services:
-  zookeeper:
-    image: zookeeper:3.4.5
-    ports: {client: 2181}
-    lifecycle:
-      running:
-        - {type: tcp, port: client, max_wait: 10}
+type: tcp
+port: client
+max_wait: 10
 ```
 
-**HTTP Request** makes Maestro execute web requests to a target, once
-per second until it succeeds or the `max_wait` value is reached
-(defaults to 300 seconds).
+### HTTP request
+
+This check (`type: http`) makes Maestro execute web requests to a
+target, once per second until it succeeds or the `max_wait` value is
+reached (defaults to 300 seconds).
 
 Assuming your instance declares a `admin` named port that runs a
 webserver, you can make Maestro wait up to 10 seconds for an HTTP
@@ -574,13 +597,9 @@ request to this port for the default path "/" to succeed by doing the
 following:
 
 ```yaml
-services:
-  frontend:
-    image: frontend
-    ports: {admin: 8080}
-    lifecycle:
-      running:
-        - {type: http, port: admin, max_wait: 10}
+type: http
+port: admin
+max_wait: 10
 ```
 
 Options:
@@ -599,11 +618,14 @@ Options:
    to python's requests.request() method (e.g. verify=False to disable
    certificate validation)
 
-**Script execution** makes Maestro execute the given command, using the
-return code to denote the success or failure of the test (a return code
-of zero indicates success, as per the Unix convention). The command is
-executed a certain number of attempts (defaulting to 180), with a delay
-between each attempt of 1 second. For example:
+### Script execution
+
+**Script execution** (`type: exec`) makes Maestro execute the given
+command, using the return code to denote the success or failure of the
+test (a return code of zero indicates success, as per the Unix
+convention). The command is executed a certain number of attempts
+(defaulting to 180), with a delay between each attempt of 1 second. For
+example:
 
 ```yaml
 type: exec

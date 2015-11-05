@@ -189,7 +189,8 @@ class Service(Entity):
     services need to be started.
     """
 
-    def __init__(self, name, image, omit=True, schema=None, env=None):
+    def __init__(self, name, image, omit=True, schema=None, env=None,
+                 env_name='local', lifecycle=None):
         """Instantiate a new named service/component of the platform using a
         given Docker image.
 
@@ -205,12 +206,21 @@ class Service(Entity):
             schema (dict): Maestro schema versioning information.
             env (dict): a dictionary of environment variables to use as the
                 base environment for all instances of this service.
+            env_name (string): name of the Maestro environment.
+            lifecycle (dict): a dictionary of lifecycle checks configurations.
         """
         Entity.__init__(self, name)
         self._image = image
         self._omit = omit
         self._schema = schema
-        self.env = env or {}
+
+        self._env = env or {}
+        self._env.update({
+            'MAESTRO_ENVIRONMENT_NAME': env_name,
+            'SERVICE_NAME': self.name,
+        })
+        self._lifecycle = lifecycle or {}
+
         self._requires = set([])
         self._wants_info = set([])
         self._needed_for = set([])
@@ -223,6 +233,14 @@ class Service(Entity):
     @property
     def omit(self):
         return self._omit
+
+    @property
+    def env(self):
+        return self._env
+
+    @property
+    def lifecycle(self):
+        return self._lifecycle
 
     @property
     def dependencies(self):
@@ -294,8 +312,7 @@ class Container(Entity):
     """A Container represents an instance of a particular service that will be
     executed inside a Docker container on its target ship/host."""
 
-    def __init__(self, name, ship, service, config=None, schema=None,
-                 env_name='local'):
+    def __init__(self, name, ship, service, config=None, schema=None):
         """Create a new Container object.
 
         Args:
@@ -306,7 +323,6 @@ class Container(Entity):
             config (dict): the YAML-parsed dictionary containing this
                 instance's configuration (ports, environment, volumes, etc.)
             schema (dict): Maestro schema versioning information.
-            env_name (string): the name of the Maestro environment.
         """
         Entity.__init__(self, name)
         config = config or {}
@@ -327,9 +343,17 @@ class Container(Entity):
         # Parse the port specs.
         self.ports = self._parse_ports(config.get('ports', {}))
 
-        # Get environment variables.
+        # Gather environment variables.
         self.env = dict(service.env)
         self.env.update(config.get('env', {}))
+        # Seed the service name, container name and host address as part of the
+        # container's environment.
+        self.env.update({
+            'CONTAINER_NAME': self.name,
+            'CONTAINER_HOST_ADDRESS': self.ship.ip,
+            'DOCKER_IMAGE': self.image,
+            'DOCKER_TAG': self.get_image_details()['tag'],
+        })
 
         def env_list_expand(elt):
             return type(elt) != list and elt \
@@ -434,19 +458,13 @@ class Container(Entity):
             links=self.links,
             volumes_from=list(self.volumes_from))
 
-        # Seed the service name, container name and host address as part of the
-        # container's environment.
-        self.env.update({
-            'MAESTRO_ENVIRONMENT_NAME': env_name,
-            'SERVICE_NAME': self.service.name,
-            'CONTAINER_NAME': self.name,
-            'CONTAINER_HOST_ADDRESS': self.ship.ip,
-            'DOCKER_IMAGE': self.image,
-            'DOCKER_TAG': self.get_image_details()['tag'],
-        })
-
         # With everything defined, build lifecycle state helpers as configured
-        self._lifecycle = self._parse_lifecycle(config.get('lifecycle', {}))
+        lifecycle = dict(self.service.lifecycle)
+        for state, checks in config.get('lifecycle', {}).items():
+            if state not in lifecycle:
+                lifecycle[state] = []
+            lifecycle[state].extend(checks)
+        self._lifecycle = self._parse_lifecycle(lifecycle)
 
     @property
     def ship(self):

@@ -50,5 +50,5 @@ setup(
     author_email='max@signalfx.com',
     license='Apache Software License v2',
     keywords='maestro docker orchestration deployment',
-    url='https://github.com/signalfuse/maestro-ng',
+    url='https://github.com/signalfx/maestro-ng',
 )

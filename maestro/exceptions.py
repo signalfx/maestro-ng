@@ -45,6 +45,18 @@ class OrchestrationException(MaestroException):
     pass
 
 
+class ContainerOrchestrationException(OrchestrationException):
+    """Error during the execution of an orchestration task for a particular
+    container."""
+    def __init__(self, container, message, *args):
+        self.container = container
+        self.message = message
+        super(OrchestrationException, self).__init__(message, args)
+
+    def __str__(self):
+        return '{}: {}'.format(self.container.name, self.message)
+
+
 class InvalidPortSpecException(MaestroException):
     """Error thrown when a port spec is in an invalid format."""
     pass

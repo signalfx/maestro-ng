@@ -156,8 +156,8 @@ class StartTask(Task):
                     ('Halting start sequence because {} failed to start!'
                         .format(self.container)),
                     self.container.ship.backend.logs(self.container.id)]
-                raise exceptions.OrchestrationException(
-                    '\n'.join(error).strip())
+                raise exceptions.ContainerOrchestrationException(
+                    self.container, '\n'.join(error).strip())
         except Exception:
             self.o.commit(red('failed to start container!'))
             raise
@@ -217,7 +217,8 @@ class StartTask(Task):
 
         self.o.pending('waiting for container...')
         if not self._wait_for_status(lambda x: x):
-            raise exceptions.OrchestrationException(
+            raise exceptions.ContainerOrchestrationException(
+                self.container,
                 'Container status could not be obtained after creation!')
         self.o.commit(green(CONTAINER_STATUS_FMT.format(
             self.container.shortid_and_tag)))
@@ -240,7 +241,8 @@ class StartTask(Task):
         def check_running(x):
             return x and x['State']['Running']
         if not self._wait_for_status(check_running):
-            raise exceptions.OrchestrationException(
+            raise exceptions.ContainerOrchestrationException(
+                self.container,
                 'Container status could not be obtained after start!')
 
         # Wait up for the container's application to come online.
@@ -360,7 +362,8 @@ class LoginTask(Task):
         try:
             self.container.ship.backend.login(**registry)
         except Exception as e:
-            raise exceptions.OrchestrationException(
+            raise exceptions.ContainerOrchestrationException(
+                self.container,
                 'Login to {} as {} failed: {}'
                 .format(registry['registry'], registry['username'], e))
 
@@ -425,7 +428,8 @@ class PullTask(Task):
         progress of the pull."""
         last = json.loads(last.decode('utf-8'))
         if 'error' in last:
-            raise exceptions.OrchestrationException(
+            raise exceptions.ContainerOrchestrationException(
+                self.container,
                 'Pull of image {} failed: {}'.format(
                     self.container.image,
                     last['errorDetail']['message']))

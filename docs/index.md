@@ -1,53 +1,142 @@
 # MaestroNG, an orchestrator of Docker-based deployments
 
-Note: MaestroNG's documentation is in the process of being migrated to
-ReadTheDocs. Individual, organized sections will be created
-progressively, as they are restructured and taken out of this main
-document (which used to be the project's README).
+MaestroNG is a library and tool for orchestrating multi-host Docker-based
+environments. It's easy to use whether you are controlling a few containers in
+a local virtual machine, or hundreds of containers spread across as many hosts.
 
-## Introduction
+Maestro basically does two things for you:
 
-MaestroNG is an orchestrator of Docker-based, multi-hosts environments.
-Working from a description of your environment, MaestroNG offers
-service-level and container-level controls that rely on Maestro's
-understanding of your declared service dependencies, and placement of
-your containers in your fleet of hosts.
+1. Starts and runs your services in an order that respects the dependencies you
+   define.
 
-Maestro aims at being simple to use whether you are controlling a few
-containers in a local virtual machine, or hundreds of containers spread
-across as many hosts.
+1. Provides containers the environment variables that they need to run.
 
-## Orchestration
-
-The orchestration features of Maestro obviously rely on the
-collaboration of the Docker containers that you are controlling with
-Maestro. Maestro basically takes care of two things:
-
-1. Controlling the start (and stop) order of services during environment
-   bring up and tear down according to the defined dependencies between
-   services.
-1. Passing extra environment variables to each container to pass all the
-   information it may need to operate in that environment, in particular
-   information about its dependencies.
-
-The most common way to integrate your application with Maestro is to
-make your container's entrypoint a simple Python init script that acts
-as the glue between Maestro, the information that it passes through the
-container's environment, and your application. To make this easier to
-write and put together, Maestro provides a set of [Guest
+The simplest way to use Maestro with your application is to write a Python
+script that connects them together. Maestro provides a set of [Guest
 functions](guest-functions.md) that know how to grok this environment
-information.
+information to make this easier.
 
-----
+## Quickstart
 
-Let's first look at how environments and services are described, then
-we'll discuss what information Maestro passes down to the containers
-through their environment.
+Let's get a quick app running with Flask, Redis, and Maestro. Make sure to
+install Maestro if you haven't already.
+
+```
+$ pip install maestro-ng
+```
+
+The first thing we'll do is write our `maestro.yaml` file which tells Maestro
+how to start and run our services:
+
+```yaml
+name: demo
+
+ships:
+  localhost:
+    ip: 192.168.10.2
+
+services:
+  redis:
+    image: redis
+    instances:
+      redis-1:
+        ship: localhost
+        ports:
+            redis: 6379
+        lifecycle:
+            running: [{type: tcp, port: redis}]
+  web:
+    image: ceasar/web
+    requires: [redis]
+    instances:
+      web-1:
+        ship: localhost
+        ports:
+            http: 5000
+        lifecycle:
+            running: [{type: tcp, port: http}]
+```
+
+So what exactly does this do?
+
+1. The `name` section simply gives a name to our environment.
+
+1. The `ships` section tells Maestro about the machines that we want our Docker
+   containers to run on. In this case, we only have one machine, our computer.
+
+1. The `services` section tells Maestro about the services we want to run. In
+   this case, we have two: `redis`, a key-value store, and `web`, a Flask
+   application. We want both services to run on `localhost`, and we want to
+   expose their default ports (6379 for Redis and 5000 to Flask) so that Flask
+   can reach Redis, and we can reach Flask. We also tell Maestro that `web`
+   depends on `redis`, so that Maestro doesn't start `web` until `redis` is
+   running. The `lifecycle` sections tell Maestro how to check if a service is
+   running successfully. In this case, our services are running correctly if
+   Maestro can reach them at their exposed ports.
+
+Next, we'll create our Flask app in ``app.py``, which simply print the number
+of times the index has been visited:
+
+```python
+import os
+
+from flask import Flask
+from maestro.guestutils import get_node_list, get_port
+from redis import Redis
+
+
+app = Flask(__name__)
+redis_host, redis_port = get_node_list('redis', ports=['redis'], minimum=1)[0].split(':')
+redis = Redis(host=redis_host, port=int(redis_port))
+
+@app.route('/')
+def hello():
+    redis.incr('hits')
+    return 'Hello World! I have been seen %s times.' % redis.get('hits')
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=get_port('http'), debug=True)
+```
+
+Notice this makes use of two functions form
+[`maestro.guestutils`](guest-functions.md), `get_node_list()` and `get_port()`.
+`get_node_list()` provides a list of hostnames for the given service, and
+`get_port()` gets the port number for the given port name within an instance.
+
+Next we'll create our `Dockerfile` which tells Docker how to create an image
+that runs our Flask app.
+
+```
+FROM python:2.7
+ADD . /code
+WORKDIR /code
+RUN pip install -r requirements.txt
+CMD ["python", "app.py"]
+```
+
+Now, just run `maestro start` to start your application:
+
+```
+$ maestro start
+  #  INSTANCE                                 SERVICE              SHIP                                     CONTAINER                  STATUS
+  1. redis-1                                  redis                localhost                                latest:1fd96e7             started
+  2. web-1                                    web                  localhost                                latest:f03f1c3             started
+```
+
+Note that Maestro started `redis-1` before starting `web-1`.
+
+Finally, test it out!
+
+```
+$ curl http://signalfuse.dev:5000/; echo
+Hello World! I have been seen 1 times.
+$ curl http://signalfuse.dev:5000/; echo
+Hello World! I have been seen 2 times.
+```
 
 ## Environment description
 
-The environment is described using YAML. (The format is still a bit in flux but
-the base has been set and should remain fairly stable.) It is composed of three
+The environment is described using YAML. It consists of three
 main mandatory sections: _registries_, _ships_, and _services_.
 
 1. The _registries_ section defines authentication credentials that Maestro can

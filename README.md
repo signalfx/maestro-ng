@@ -89,8 +89,9 @@ $ pip install --upgrade git+git://github.com/signalfx/maestro-ng
 
 ## Documentation
 
-The full documentation is available on
-[ReadTheDocs](http://maestro-ng.readthedocs.org/).
+The [MaestroNG documentation](http://maestro-ng.readthedocs.org/) is
+available on ReadTheDocs. For a overview of recent changes, see the
+[ChangeLog](docs/changes.md).
 
 ## License
 

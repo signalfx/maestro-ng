@@ -4,3 +4,5 @@
 /site/
 *.pyc
 /.tox
+
+docs/_build

@@ -1,6 +1,6 @@
 # MaestroNG
 
-[![Build Status](https://travis-ci.org/signalfuse/maestro-ng.png)](https://travis-ci.org/signalfuse/maestro-ng) [![Docs](https://readthedocs.org/projects/maestro-ng/badge/?version=latest)](http://maestro-ng.readthedocs.org)
+[![Build Status](https://travis-ci.org/signalfx/maestro-ng.png)](https://travis-ci.org/signalfx/maestro-ng) [![Docs](https://readthedocs.org/projects/maestro-ng/badge/?version=latest)](http://maestro-ng.readthedocs.org)
 
 _MaestroNG is an orchestrator of Docker-based, multi-hosts environments._
 
@@ -64,7 +64,7 @@ If you want the bleeding edge, you can install directly from the Git
 repository:
 
 ```
-$ pip install --user --upgrade git+git://github.com/signalfuse/maestro-ng
+$ pip install --user --upgrade git+git://github.com/signalfx/maestro-ng
 ```
 
 ### Note for MacOS users
@@ -84,7 +84,7 @@ If you encounter this problem, simply install the package without the
 `--user` flag:
 
 ```
-$ pip install --upgrade git+git://github.com/signalfuse/maestro-ng
+$ pip install --upgrade git+git://github.com/signalfx/maestro-ng
 ```
 
 ## Documentation

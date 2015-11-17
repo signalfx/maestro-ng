@@ -1,5 +1,6 @@
 
 .. _Working with image registries: registries.rst
+.. _docker run: https://docs.docker.com/reference/run/#runtime-privilege-linux-capabilities-and-lxc-configuration
 
 Environment description
 ================================================================================
@@ -186,18 +187,19 @@ be placed on (by name). Additionally, they may define:
   (variables defined at the instance level override variables defined at the
   service level);
 
-- ``privileged``, a boolean specifying whether the container should run
-    in privileged mode or not (defaults to ``false``);
+- ``privileged``, a boolean specifying whether the container should run in
+  privileged mode or not (defaults to ``false``);
 
-- ``cap_add``, Linux capabilities to add to the container (see the
-    documentation for [docker run](https://docs.docker.com/reference/run/#runtime-privilege-linux-capabilities-and-lxc-configuration));
+- ``cap_add``, Linux capabilities to add to the container (see the documentation
+  for `docker run`_;
 
 - ``cap_drop``, Linux capabilities to drop from the container;
 
-- ``extra_hosts``, map a custom host to an IP for the container. Example: ``<hostname>: <ip address>``;
+- ``extra_hosts``, map a custom host to an IP for the container. Example:
+  ``<hostname>: <ip address>``;
 
-- ``stop_timeout``, the number of seconds Docker will wait between
-    sending ``SIGTERM`` and ``SIGKILL`` (defaults to 10);
+- ``stop_timeout``, the number of seconds Docker will wait between sending
+  ``SIGTERM`` and ``SIGKILL`` (defaults to 10);
 
 - ``limits``:
 

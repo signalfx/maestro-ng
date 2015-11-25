@@ -10,6 +10,7 @@ import sys
 import threading
 
 from . import tasks
+from .. import audit
 from .. import exceptions
 from .. import termoutput
 from ..termoutput import columns, green, red, supports_color, time_ago
@@ -52,6 +53,7 @@ class BaseOrchestrationPlay:
         self._ignore_dependencies = ignore_dependencies
         self._concurrency = threading.Semaphore(concurrency or len(containers))
         self._auditor = auditor
+        self._play = self.__class__.__name__.lower()
 
         self._dependencies = dict(
             (c.name, self._gather_dependencies(c)) for c in containers)
@@ -112,6 +114,9 @@ class BaseOrchestrationPlay:
 
     def _start(self):
         """Start the orchestration play."""
+        if self._auditor:
+            self._auditor.action(level=audit.INFO, action=self._play,
+                                 what=self._containers)
         print(BaseOrchestrationPlay.HEADER_FMT
               .format(*BaseOrchestrationPlay.HEADERS))
         self._om.start()
@@ -137,7 +142,14 @@ class BaseOrchestrationPlay:
 
         # Display and raise any error that occurred
         if self._error:
+            if self._auditor:
+                self._auditor.error(action=self._play, what=self._containers,
+                                    message=str(self._error[1]))
             exceptions.raise_with_tb(self._error)
+        else:
+            if self._auditor:
+                self._auditor.success(level=audit.INFO, action=self._play,
+                                      what=self._containers)
 
     def _run(self):
         raise NotImplementedError

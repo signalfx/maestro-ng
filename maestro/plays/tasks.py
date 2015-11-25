@@ -14,6 +14,7 @@ except ImportError:
     # Try for Python3
     from urllib import parse as urlparse
 
+from .. import audit
 from .. import exceptions
 from ..termoutput import green, blue, red, time_ago
 
@@ -79,15 +80,18 @@ class Task:
 
     def run(self, auditor=None):
         if auditor:
-            auditor.action(self.container.name, self.action)
+            auditor.action(action=self.action, level=audit.DEBUG,
+                           what=self.container)
 
         try:
             self._run()
             if auditor:
-                auditor.success(self.container.name, self.action)
+                auditor.success(action=self.action, level=audit.DEBUG,
+                                what=self.container)
         except Exception as e:
             if auditor:
-                auditor.error(self.container.name, self.action, message=e)
+                auditor.error(action=self.action, what=self.container,
+                              message=e)
             exceptions.raise_with_tb()
 
     def _run(self):

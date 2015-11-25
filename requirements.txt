@@ -4,5 +4,6 @@ jinja2
 six
 bgtunnel
 python-simple-hipchat
+slacker
 requests>=2.7.0
 netifaces

@@ -5,66 +5,87 @@
 
 import getpass
 import json
+import logging
 import requests
+import six
 
 from . import exceptions
 from .version import name as maestro_name
 
+# TODO(mpetazzoni): re-implement this with Logger/logging.handlers
 
-class BaseAuditor:
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+
+DEFAULT_AUDIT_LEVEL = 'info'
+_LEVELS_MAP = {
+    'info': INFO,
+    'debug': DEBUG,
+}
+
+
+class BaseAuditor(object):
     """Base class for auditors that can save or notify about orchestration
     plays being executed."""
 
+    def __init__(self, level=DEBUG):
+        if isinstance(level, six.string_types):
+            level = _LEVELS_MAP[level]
+        self._level = level
+
+    @property
+    def level(self):
+        return self._level
+
     def _format_what(self, what):
         if type(what) == list or type(what) == tuple:
-            return ', '.join(what)
-        return what
+            return ', '.join(map(lambda e: e.name, what))
+        return what.name
 
     def _format_who(self, who=None):
         return who or getpass.getuser()
 
-    def _format_action(self, what, action=None, who=None):
+    def _format_action_verb(self, action, end='ing'):
+        if action == 'stop':
+            action = 'stopp'
+        return '{}{}'.format(action, end)
+
+    def _format_action(self, what, action, who=None):
         what = self._format_what(what)
+        action = self._format_action_verb(action)
         who = self._format_who(who)
+        return '{} is {} {}.'.format(who, action, what)
 
-        if action:
-            action = action if action is not 'stop' else 'stopp'
-            return '{} is {}ing {}.'.format(who, action, what)
-        return '{} is acting on {}.'.format(who, what)
+    def _format_success(self, what, action):
+        what = self._format_what(what)
+        return '{} of {} succeeded.'.format(action.title(), what)
 
-    def _format_success(self, what, action=None):
+    def _format_error(self, what, action, message=None):
         what = self._format_what(what)
 
-        if action:
-            return '{} of {} succeeded.'.format(action.title(), what)
-        return 'Action on {} succeeded.'.format(what)
-
-    def _format_error(self, what, action=None, message=None):
-        what = self._format_what(what)
-
-        if action:
-            s = 'Failed to {} {}!'.format(action, what)
-        else:
-            s = 'Failed action on {}!'.format(what)
-
+        s = 'Failed to {} {}!'.format(action, what)
         if message:
-            s = '{} (message: {})'.format(s, message)
+            s += ' (message: {})'.format(message)
         return s
 
-    def action(self, what, action=None, who=None):
+    def _should_audit(self, level):
+        return level >= self.level
+
+    def action(self, level, what, action, who=None):
         raise NotImplementedError
 
-    def success(self, what, action=None):
+    def success(self, level, what, action):
         raise NotImplementedError
 
-    def error(self, what, action=None, message=None):
+    def error(self, what, action, message=None):
         raise NotImplementedError
 
 
 class HipChatAuditor(BaseAuditor):
     """Auditor that sends notifications in a HipChat chat room."""
 
-    def __init__(self, name, room, token):
+    def __init__(self, name, level, room, token):
+        super(HipChatAuditor, self).__init__(level)
         if not room:
             raise exceptions.InvalidAuditorConfigurationException(
                 'Missing HipChat room name!')
@@ -81,14 +102,18 @@ class HipChatAuditor(BaseAuditor):
     def _message(self, params):
         self._hc.message_room(**params)
 
-    def action(self, what, action=None, who=None):
+    def action(self, level, what, action, who=None):
+        if not self._should_audit(level):
+            return
         self._message({
             'room_id': self._room,
             'message_from': self._name,
             'message': self._format_action(what, action, who)
         })
 
-    def success(self, what, action=None):
+    def success(self, level, what, action):
+        if not self._should_audit(level):
+            return
         self._message({
             'room_id': self._room,
             'message_from': self._name,
@@ -96,7 +121,7 @@ class HipChatAuditor(BaseAuditor):
             'color': 'green',
         })
 
-    def error(self, what, action=None, message=None):
+    def error(self, what, action, message=None):
         self._message({
             'room_id': self._room,
             'message_from': self._name,
@@ -107,14 +132,98 @@ class HipChatAuditor(BaseAuditor):
 
     @staticmethod
     def from_config(cfg):
-        return HipChatAuditor(cfg.get('name'), cfg.get('room'),
-                              cfg.get('token'))
+        return HipChatAuditor(
+            cfg.get('name'),
+            cfg.get('level', DEFAULT_AUDIT_LEVEL),
+            cfg.get('room'),
+            cfg.get('token'))
+
+
+class SlackAuditor(BaseAuditor):
+    """Auditor that sends notifications in a Slack channel."""
+
+    def __init__(self, name, level, channel, token):
+        super(SlackAuditor, self).__init__(level)
+        if not channel:
+            raise exceptions.InvalidAuditorConfigurationException(
+                'Missing Slack channel name!')
+        if not token:
+            raise exceptions.InvalidAuditorConfigurationException(
+                'Missing Slack bot token!')
+
+        self._name = name if name else maestro_name
+        self._channel = channel
+
+        import slacker
+        self._slack = slacker.Slacker(token)
+
+    def _message(self, event):
+        self._slack.chat.post_message(self._channel, None, username=self._name,
+                                      attachments=[event])
+
+    def action(self, level, what, action, who=None):
+        if not self._should_audit(level):
+            return
+        self._message({
+            'fallback': self._format_action(what, action, who),
+            'color': '#1dc7d3',
+            'fields': [
+                {'title': 'Targets',
+                 'value': self._format_what(what)},
+                {'title': 'Status',
+                 'value': self._format_action_verb(action).title(),
+                 'short': True},
+                {'title': 'Actor',
+                 'value': self._format_who(who),
+                 'short': True},
+            ]
+        })
+
+    def success(self, level, what, action):
+        if not self._should_audit(level):
+            return
+        self._message({
+            'fallback': self._format_success(what, action),
+            'color': 'good',
+            'fields': [
+                {'title': 'Targets',
+                 'value': self._format_what(what)},
+                {'title': 'Status',
+                 'value': self._format_action_verb(action, end='ed').title(),
+                 'short': True},
+            ]
+        })
+
+    def error(self, what, action, message=None):
+        self._message({
+            'fallback': self._format_error(what, action, message),
+            'color': 'danger',
+            'fields': [
+                {'title': 'Targets',
+                 'value': self._format_what(what)},
+                {'title': 'Status',
+                 'value': 'Error',
+                 'short': True},
+                {'title': 'Error',
+                 'value': message,
+                 'short': True},
+            ]
+        })
+
+    @staticmethod
+    def from_config(cfg):
+        return SlackAuditor(
+            cfg.get('name'),
+            cfg.get('level', DEFAULT_AUDIT_LEVEL),
+            cfg.get('channel'),
+            cfg.get('token'))
 
 
 class LoggerAuditor(BaseAuditor):
     """Auditor that logs the notifications into a log file."""
 
-    def __init__(self, filename):
+    def __init__(self, filename, level):
+        super(LoggerAuditor, self).__init__(level)
         if not filename:
             raise exceptions.InvalidAuditorConfigurationException(
                 'Missing audit log filename!')
@@ -127,20 +236,22 @@ class LoggerAuditor(BaseAuditor):
 
         self._logger = logging.getLogger('maestro')
         self._logger.addHandler(handler)
-        self._logger.setLevel(logging.INFO)
+        self._logger.setLevel(self.level)
 
-    def action(self, what, action=None, who=None):
-        self._logger.info(self._format_action(what, action, who))
+    def action(self, level, what, action, who=None):
+        self._logger.log(level, self._format_action(what, action, who))
 
-    def success(self, what, action=None):
-        self._logger.info(self._format_success(what, action))
+    def success(self, level, what, action):
+        self._logger.log(level, self._format_success(what, action))
 
-    def error(self, what, action=None, message=None):
+    def error(self, what, action, message=None):
         self._logger.error(self._format_error(what, action, message))
 
     @staticmethod
     def from_config(cfg):
-        return LoggerAuditor(cfg.get('file'))
+        return LoggerAuditor(
+            cfg.get('file'),
+            cfg.get('level', DEFAULT_AUDIT_LEVEL))
 
 
 class WebHookAuditor(BaseAuditor):
@@ -149,8 +260,9 @@ class WebHookAuditor(BaseAuditor):
     DEFAULT_TIMEOUT = 3
     DEFAULT_HTTP_METHOD = 'POST'
 
-    def __init__(self, endpoint, payload=None, headers=None,
+    def __init__(self, endpoint, level, payload=None, headers=None,
                  method=DEFAULT_HTTP_METHOD, timeout=DEFAULT_TIMEOUT):
+        super(WebHookAuditor, self).__init__(level)
         if not endpoint:
             raise exceptions.InvalidAuditorConfigurationException(
                 'Missing webhook endpoint!')
@@ -187,7 +299,9 @@ class WebHookAuditor(BaseAuditor):
                                     message=message),
                  self._payload)
 
-    def action(self, what, action=None, who=None):
+    def action(self, level, what, action, who=None):
+        if not self._should_audit(level):
+            return
         payload = self._prepare_payload(what, action, who,
                                         self._format_action(what, action, who))
         if not payload:
@@ -197,16 +311,17 @@ class WebHookAuditor(BaseAuditor):
         method(self._endpoint, headers=self._headers, data=json.dumps(payload),
                timeout=self._timeout)
 
-    def success(self, what, action=None):
+    def success(self, level, what, action):
         pass
 
-    def error(self, what, action=None, message=None):
+    def error(self, what, action, message=None):
         pass
 
     @staticmethod
     def from_config(cfg):
         return WebHookAuditor(
             cfg['endpoint'],
+            cfg.get('level', DEFAULT_AUDIT_LEVEL),
             cfg.get('payload', {}),
             cfg.get('headers'),
             cfg.get('method', WebHookAuditor.DEFAULT_HTTP_METHOD),
@@ -219,21 +334,21 @@ class MultiplexAuditor(BaseAuditor):
     def __init__(self, auditors):
         self._auditors = auditors
 
-    def action(self, what, action=None, who=None):
+    def action(self, level, what, action, who=None):
         for auditor in self._auditors:
             try:
-                auditor.action(what, action, who)
+                auditor.action(level, what, action, who)
+            except:
+                raise
+
+    def success(self, level, what, action):
+        for auditor in self._auditors:
+            try:
+                auditor.success(level, what, action)
             except:
                 pass
 
-    def success(self, what, action=None):
-        for auditor in self._auditors:
-            try:
-                auditor.success(what, action)
-            except:
-                pass
-
-    def error(self, what, action=None, message=None):
+    def error(self, what, action, message=None):
         for auditor in self._auditors:
             try:
                 auditor.error(what, action, message)
@@ -245,6 +360,7 @@ class AuditorFactory:
 
     AUDITORS = {
         'hipchat': HipChatAuditor,
+        'slack': SlackAuditor,
         'log': LoggerAuditor,
         'http': WebHookAuditor,
     }

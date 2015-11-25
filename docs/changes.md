@@ -1,6 +1,15 @@
 ChangeLog
 =========
 
+Maestro 0.2.8.1
+---------------
+
+_November 25th, 2015_
+
+There's always room for seconds.
+
+* Fixed a Docker 1.9 API compatibility issue with -h/--net (#159).
+
 Maestro 0.2.8
 -------------
 

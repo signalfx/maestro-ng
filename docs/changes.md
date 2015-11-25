@@ -1,6 +1,25 @@
 ChangeLog
 =========
 
+Maestro 0.2.8
+-------------
+
+_November 25th, 2015_
+
+The Thanksgiving release.
+
+* Fixed a bug in parsing the start time of containers in some
+  situations.
+* Support specifying the Docker remote API version as a float.
+* Ensure that all logging driver options (log_opts) are string/string
+  pairs, as expected by the Docker remote API (#153).
+* Add ability to define lifecycle checks at the service level (#156).
+* Documentation restructuring, switch to Sphinx with reStructuredText
+  (#158).
+* Add support for auditor levels to filter out container-level messages
+  if needed.
+* Add Slack auditor to send notifications to Slack.
+
 Maestro 0.2.7
 -------------
 

@@ -208,8 +208,8 @@ class StartTask(Task):
                 self.container.short_image))
             self.container.ship.backend.create_container(
                 image=self.container.image,
-                hostname=self.container.name,
                 name=self.container.name,
+                hostname=self.container.hostname,
                 environment=self.container.env,
                 volumes=list(self.container.get_volumes()),
                 cpu_shares=self.container.cpu_shares,

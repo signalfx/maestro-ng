@@ -538,6 +538,12 @@ class Container(Entity):
         status = self.status()
         return status and self._parse_go_time(status['State']['FinishedAt'])
 
+    @property
+    def hostname(self):
+        """Returns a hostname for the container, or None if the container has a
+        defined network mode."""
+        return self.name if not self.network_mode else None
+
     def status(self, refresh=False):
         """Retrieve the details about this container from the Docker daemon, or
         None if the container doesn't exist."""

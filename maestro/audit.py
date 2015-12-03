@@ -9,6 +9,7 @@ import logging
 import requests
 import six
 
+from . import entities
 from . import exceptions
 from .version import name as maestro_name
 
@@ -28,6 +29,8 @@ class BaseAuditor(object):
     """Base class for auditors that can save or notify about orchestration
     plays being executed."""
 
+    COMPACT_SIZE_LIMIT = 5
+
     def __init__(self, level=DEBUG):
         if isinstance(level, six.string_types):
             level = _LEVELS_MAP[level]
@@ -37,10 +40,21 @@ class BaseAuditor(object):
     def level(self):
         return self._level
 
+    def _fits_compact(self, what):
+        return isinstance(what, entities.Entity) or \
+           ((type(what) == list or type(what) == tuple) and
+            len(what) < BaseAuditor.COMPACT_SIZE_LIMIT)
+
     def _format_what(self, what):
-        if type(what) == list or type(what) == tuple:
-            return ', '.join(map(lambda e: e.name, what))
-        return what.name
+        if isinstance(what, entities.Entity):
+            return what.name
+        return ', '.join(map(lambda e: e.name, what))
+
+    def _format_what_compact(self, what):
+        if self._fits_compact(what):
+            return self._format_what(what)
+        return '{} container{}'.format(
+            len(what), 's' if len(what) > 1 else '')
 
     def _format_who(self, who=None):
         return who or getpass.getuser()
@@ -51,18 +65,14 @@ class BaseAuditor(object):
         return '{}{}'.format(action, end)
 
     def _format_action(self, what, action, who=None):
-        what = self._format_what(what)
         action = self._format_action_verb(action)
         who = self._format_who(who)
         return '{} is {} {}.'.format(who, action, what)
 
     def _format_success(self, what, action):
-        what = self._format_what(what)
         return '{} of {} succeeded.'.format(action.title(), what)
 
     def _format_error(self, what, action, message=None):
-        what = self._format_what(what)
-
         s = 'Failed to {} {}!'.format(action, what)
         if message:
             s += ' (message: {})'.format(message)
@@ -108,7 +118,9 @@ class HipChatAuditor(BaseAuditor):
         self._message({
             'room_id': self._room,
             'message_from': self._name,
-            'message': self._format_action(what, action, who)
+            'message': self._format_action(
+                self._format_what_compact(what),
+                action, who)
         })
 
     def success(self, level, what, action):
@@ -117,7 +129,9 @@ class HipChatAuditor(BaseAuditor):
         self._message({
             'room_id': self._room,
             'message_from': self._name,
-            'message': self._format_success(what, action),
+            'message': self._format_success(
+                self._format_what_compact(what),
+                action),
             'color': 'green',
         })
 
@@ -125,7 +139,9 @@ class HipChatAuditor(BaseAuditor):
         self._message({
             'room_id': self._room,
             'message_from': self._name,
-            'message': self._format_error(what, action, message),
+            'message': self._format_error(
+                self._format_what_compact(what),
+                action, message),
             'color': 'red',
             'notify': True,
         })
@@ -142,7 +158,7 @@ class HipChatAuditor(BaseAuditor):
 class SlackAuditor(BaseAuditor):
     """Auditor that sends notifications in a Slack channel."""
 
-    def __init__(self, name, level, channel, token):
+    def __init__(self, name, level, channel, token, icon=None):
         super(SlackAuditor, self).__init__(level)
         if not channel:
             raise exceptions.InvalidAuditorConfigurationException(
@@ -153,62 +169,49 @@ class SlackAuditor(BaseAuditor):
 
         self._name = name if name else maestro_name
         self._channel = channel
+        self._icon = icon
 
         import slacker
         self._slack = slacker.Slacker(token)
 
-    def _message(self, event):
-        self._slack.chat.post_message(self._channel, None, username=self._name,
-                                      attachments=[event])
+    def _message(self, text, color, what, fields=None):
+        event = {
+            'fallback': text,
+            'text': text,
+            'color': color,
+            'fields': fields or [],
+        }
+        if not self._fits_compact(what):
+            event['fields'].append({
+                'title': 'Targets',
+                'value': self._format_what(what)
+            })
+        self._slack.chat.post_message(
+            self._channel, None, username=self._name,
+            icon_url=self._icon, attachments=[event])
 
     def action(self, level, what, action, who=None):
         if not self._should_audit(level):
             return
-        self._message({
-            'fallback': self._format_action(what, action, who),
-            'color': '#1dc7d3',
-            'fields': [
-                {'title': 'Targets',
-                 'value': self._format_what(what)},
-                {'title': 'Status',
-                 'value': self._format_action_verb(action).title(),
-                 'short': True},
-                {'title': 'Actor',
-                 'value': self._format_who(who),
-                 'short': True},
-            ]
-        })
+        text = self._format_action(
+            self._format_what_compact(what),
+            action, who)
+        self._message(text, '#1dc7d3', what)
 
     def success(self, level, what, action):
         if not self._should_audit(level):
             return
-        self._message({
-            'fallback': self._format_success(what, action),
-            'color': 'good',
-            'fields': [
-                {'title': 'Targets',
-                 'value': self._format_what(what)},
-                {'title': 'Status',
-                 'value': self._format_action_verb(action, end='ed').title(),
-                 'short': True},
-            ]
-        })
+        text = self._format_success(
+                self._format_what_compact(what),
+                action)
+        self._message(text, 'good', what)
 
     def error(self, what, action, message=None):
-        self._message({
-            'fallback': self._format_error(what, action, message),
-            'color': 'danger',
-            'fields': [
-                {'title': 'Targets',
-                 'value': self._format_what(what)},
-                {'title': 'Status',
-                 'value': 'Error',
-                 'short': True},
-                {'title': 'Error',
-                 'value': message,
-                 'short': True},
-            ]
-        })
+        text = self._format_error(
+                self._format_what_compact(what),
+                action, message)
+        self._message(text, 'danger', what, {
+            'title': 'Error', 'value': message, 'short': True})
 
     @staticmethod
     def from_config(cfg):
@@ -216,7 +219,8 @@ class SlackAuditor(BaseAuditor):
             cfg.get('name'),
             cfg.get('level', DEFAULT_AUDIT_LEVEL),
             cfg.get('channel'),
-            cfg.get('token'))
+            cfg.get('token'),
+            cfg.get('icon'))
 
 
 class LoggerAuditor(BaseAuditor):
@@ -239,13 +243,16 @@ class LoggerAuditor(BaseAuditor):
         self._logger.setLevel(self.level)
 
     def action(self, level, what, action, who=None):
-        self._logger.log(level, self._format_action(what, action, who))
+        text = self._format_action(self._format_what(what), action, who)
+        self._logger.log(level, text)
 
     def success(self, level, what, action):
-        self._logger.log(level, self._format_success(what, action))
+        text = self._format_success(self._format_what(what), action)
+        self._logger.log(level, text)
 
     def error(self, what, action, message=None):
-        self._logger.error(self._format_error(what, action, message))
+        text = self._format_error(self._format_what(what), action, message)
+        self._logger.error(text)
 
     @staticmethod
     def from_config(cfg):

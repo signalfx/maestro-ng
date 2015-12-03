@@ -1,6 +1,14 @@
 ChangeLog
 =========
 
+Maestro 0.2.8.2
+---------------
+
+_December 2nd, 2015_
+
+* Improvements to the Slack notification format to be more compact and
+  help reduce noise in chatrooms.
+
 Maestro 0.2.8.1
 ---------------
 

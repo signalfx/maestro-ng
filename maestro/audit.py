@@ -42,8 +42,8 @@ class BaseAuditor(object):
 
     def _fits_compact(self, what):
         return isinstance(what, entities.Entity) or \
-           ((type(what) == list or type(what) == tuple) and
-            len(what) < BaseAuditor.COMPACT_SIZE_LIMIT)
+            ((type(what) == list or type(what) == tuple) and
+             len(what) < BaseAuditor.COMPACT_SIZE_LIMIT)
 
     def _format_what(self, what):
         if isinstance(what, entities.Entity):
@@ -202,14 +202,14 @@ class SlackAuditor(BaseAuditor):
         if not self._should_audit(level):
             return
         text = self._format_success(
-                self._format_what_compact(what),
-                action)
+            self._format_what_compact(what),
+            action)
         self._message(text, 'good', what)
 
     def error(self, what, action, message=None):
         text = self._format_error(
-                self._format_what_compact(what),
-                action, message)
+            self._format_what_compact(what),
+            action, message)
         self._message(text, 'danger', what, {
             'title': 'Error', 'value': message, 'short': True})
 

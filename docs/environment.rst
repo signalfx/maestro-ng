@@ -262,7 +262,10 @@ on (by name). Additionally, each instance may define:
 - ``restart``, to specify the restart policy (see :doc:`restart_policy`);
 
 - ``dns``, to specify one (as a single IP address) or more DNS servers (as a
-  list) to be declared inside the container.
+  list) to be declared inside the container;
+
+- ``security_opt``, to specify additional security options to customize
+  container labels, apparmor profiles, etc.
 
 For example:
 

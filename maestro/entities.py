@@ -439,6 +439,9 @@ class Container(Entity):
                 ports[port['exposed']].append(
                     (port['external'][0], port['external'][1].split('/')[0]))
 
+        # Security options
+        self.security_opt = config.get('security_opt')
+
         # host_config now contains all settings previously passed in container
         # start().
         self.host_config = self._ship.backend.create_host_config(
@@ -456,7 +459,8 @@ class Container(Entity):
             restart_policy=self.restart_policy,
             dns=self.dns,
             links=self.links,
-            volumes_from=list(self.volumes_from))
+            volumes_from=list(self.volumes_from),
+            security_opt=self.security_opt)
 
         # With everything defined, build lifecycle state helpers as configured
         lifecycle = dict(self.service.lifecycle)

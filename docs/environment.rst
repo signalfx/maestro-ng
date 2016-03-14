@@ -206,8 +206,9 @@ on (by name). Additionally, each instance may define:
 
 - ``volumes``, for container volume mappings, as a map of ``<source from host>:
   <destination in container>``. Each target can also be specified as a map
-  ``{target: <destination>, mode: <mode>}``, where ``mode`` is ``ro``
-  (read-only) or ``rw`` (read-write);
+  ``{target: <destination>, mode: <mode>}``. ``mode`` defaults to ``rw`` for
+  read-write, but can be any combination of comma-separated mode flags, like
+  ``ro,Z`` or ``z,rw``;
 
 - ``container_volumes``, a path, or list of paths inside the container to be
   used as container-only volumes with no host bind-mount. This is mostly used

@@ -210,14 +210,14 @@ class ContainerTest(unittest.TestCase):
         container = self._cntr(config={'volumes': {'/outside': '/inside'}})
         self.assertTrue('/outside' in container.volumes)
         self.assertEqual(container.volumes,
-                         {'/outside': {'bind': '/inside', 'ro': False}})
+                         {'/outside': {'bind': '/inside'}})
 
     def test_volumes_dict_bind_no_mode(self):
         container = self._cntr(config={'volumes': {
             '/outside': {'target': '/inside'}}})
         self.assertTrue('/outside' in container.volumes)
         self.assertEqual(container.volumes,
-                         {'/outside': {'bind': '/inside', 'ro': False}})
+                         {'/outside': {'bind': '/inside', 'mode': 'rw'}})
 
     def test_volumes_ro_bind(self):
         container = self._cntr(config={'volumes': {
@@ -226,7 +226,16 @@ class ContainerTest(unittest.TestCase):
             }}})
         self.assertTrue('/outside' in container.volumes)
         self.assertEqual(container.volumes,
-                         {'/outside': {'bind': '/inside', 'ro': True}})
+                         {'/outside': {'bind': '/inside', 'mode': 'ro'}})
+
+    def test_volumes_bind_with_mode(self):
+        container = self._cntr(config={'volumes': {
+            '/outside': {
+                'target': '/inside', 'mode': 'ro,Z'
+            }}})
+        self.assertTrue('/outside' in container.volumes)
+        self.assertEqual(container.volumes,
+                         {'/outside': {'bind': '/inside', 'mode': 'ro,Z'}})
 
     def test_volumes_multibind_throws(self):
         self.assertRaises(

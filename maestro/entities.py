@@ -684,10 +684,10 @@ class Container(Entity):
                 return
 
             if isinstance(spec, six.string_types):
-                result[src] = {'bind': spec, 'ro': False}
+                result[src] = {'bind': spec}
             elif type(spec) == dict and 'target' in spec:
                 result[src] = {'bind': spec['target'],
-                               'ro': spec.get('mode', 'rw') == 'ro'}
+                               'mode': spec.get('mode', 'rw')}
             else:
                 raise exceptions.InvalidVolumeConfigurationException(
                     'Invalid volume specification for container {}: {} -> {}'

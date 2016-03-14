@@ -87,6 +87,24 @@ If you encounter this problem, simply install the package without the
 $ pip install --upgrade git+git://github.com/signalfx/maestro-ng
 ```
 
+### Use as a Docker container
+
+First, build your maestro-ng image using :
+```
+docker build -t maestro-ng .
+```
+
+Then say you have a maestro-ng configuration named /fu/bar/myconf.yml
+
+If you want to start this on a docker host without install python and its pip modules :
+```
+docker run --rm -t -i -v /fu/bar/myconf.yml:/maestro.yaml maestro-ng <start/stop/status/clean>
+```
+or, if the myconf.yml is in the current dir :
+```
+docker run --rm -t -i -v $(pwd)/myconf.yml:/maestro.yaml maestro-ng <start/stop/status/clean>
+```
+
 ## Documentation
 
 The [MaestroNG documentation](http://maestro-ng.readthedocs.org/) is

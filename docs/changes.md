@@ -1,6 +1,17 @@
 ChangeLog
 =========
 
+Maestro 0.3.14
+--------------
+
+_March 14th, 2016_
+
+Hmmm, pie. Making version number to match.
+
+* Added support for `security_opt`.
+* Added support for arbitrary bind mount modes instead of restricting to
+  `ro` or `rw`.
+
 Maestro 0.2.8.2
 ---------------
 

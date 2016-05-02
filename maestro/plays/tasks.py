@@ -436,7 +436,7 @@ class PullTask(Task):
                 self.container,
                 'Pull of image {} failed: {}'.format(
                     self.container.image,
-                    last['errorDetail']['message']))
+                    last['errorDetail']['message'].encode('utf-8')))
 
         try:
             self._progress[last['id']] = (

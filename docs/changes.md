@@ -1,6 +1,15 @@
 ChangeLog
 =========
 
+Maestro 0.3.15
+--------------
+
+_May 10th, 2016_
+
+* Added the ability to run Maestro as a Docker container with the
+  provided `Dockerfile`.
+* Fixed `docker pull` error message handling.
+
 Maestro 0.3.14
 --------------
 

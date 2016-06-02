@@ -17,7 +17,7 @@ from . import exceptions
 class BaseLifecycleHelper:
     """Base class for lifecycle helpers."""
 
-    def test(self):
+    def test(self, container=None):
         """State helpers must implement this method to perform the state test.
         The method must return True if the test succeeds, False otherwise."""
         raise NotImplementedError
@@ -32,17 +32,17 @@ class RetryingLifecycleHelper(BaseLifecycleHelper):
                             RetryingLifecycleHelper.DEFAULT_MAX_ATTEMPTS)
         self.delay = int(delay)
 
-    def test(self):
+    def test(self, container=None):
         retries = self.attempts
         while retries > 0:
-            if self._test():
+            if self._test(container):
                 return True
             retries -= 1
             if retries > 0:
                 time.sleep(self.delay)
         return False
 
-    def _test(self):
+    def _test(self, container=None):
         raise NotImplementedError
 
 
@@ -63,7 +63,7 @@ class TCPPortPinger(RetryingLifecycleHelper):
         return 'PortPing(tcp://{}:{}, {} attempts)'.format(
             self.host, self.port, self.attempts)
 
-    def _test(self):
+    def _test(self, container=None):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(1)
@@ -109,13 +109,43 @@ class ScriptExecutor(RetryingLifecycleHelper):
         env.update(self.container_env)
         return dict((str(k), str(v)) for k, v in env.items())
 
-    def _test(self):
+    def _test(self, container=None):
         return subprocess.call(self.command, env=self._create_env()) == 0
 
     @staticmethod
     def from_config(container, config):
         return ScriptExecutor(config['command'], container.env,
                               attempts=config.get('attempts'))
+
+
+class RemoteScriptExecutor(RetryingLifecycleHelper):
+    """
+    Lifecycle state helper that executes a script in side of 'Remote
+    Container' and uses the exit code as the success value.
+    """
+
+    def __init__(self, command, env, attempts):
+        RetryingLifecycleHelper.__init__(self, attempts)
+        self.command = shlex.split(command)
+        self.container_env = env
+
+    def __repr__(self):
+        return 'RemoteScriptExector({}, {} attempts)'.format(self.command,
+                                                             self.attempts)
+
+    def _test(self, container):
+        """ Execute a script in side of remote container """
+        client = container.ship.backend
+        exec_instance = client.exec_create(container.name, self.command)
+        client.exec_start(exec_instance)
+        while client.exec_inspect(exec_instance)['ExitCode'] is None:
+            time.sleep(1)
+        return client.exec_inspect(exec_instance)['ExitCode'] == 0
+
+    @staticmethod
+    def from_config(container, config):
+        return RemoteScriptExecutor(config['command'], container.env,
+                                    attempts=config.get('attempts'))
 
 
 class Sleep(BaseLifecycleHelper):
@@ -130,7 +160,7 @@ class Sleep(BaseLifecycleHelper):
     def __repr__(self):
         return 'Sleep({}s)'.format(self.wait)
 
-    def test(self):
+    def test(self, container=None):
         while self.wait > 0:
             time.sleep(1)
             self.wait -= 1
@@ -172,7 +202,7 @@ class HttpRequestLifecycle(BaseLifecycleHelper):
         # Extra options passed directly to the requests library
         self.requests_options = requests_options
 
-    def test(self):
+    def test(self, container=None):
         start = time.time()
         end_by = start+self.max_wait
 
@@ -236,6 +266,7 @@ class LifecycleHelperFactory:
     HELPERS = {
         'tcp': TCPPortPinger,
         'exec': ScriptExecutor,
+        'rexec': RemoteScriptExecutor,
         'sleep': Sleep,
         'http': HttpRequestLifecycle
     }

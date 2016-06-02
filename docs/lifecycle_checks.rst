@@ -119,3 +119,29 @@ more information.
 Note that the current working directory is never changed by Maestro
 directly; paths to your scripts will be resolved from wherever you run
 Maestro, not from where the environment YAML file lives.
+
+Remote script execution
+--------------------------------------------------------------------------------
+
+Remote script execution (``type: rexec``) makes Maestro execute the given
+script inside of running container, using the script output to denote the
+success or failure of the test. Same as :doc:`Script execution`, the script
+is executed a certain number of attempts (defaulting to 180), with a
+delay between each attempt of 1 second. For example:
+
+.. code-block:: yaml
+
+  type: rexec
+  command: "python my_cool_remote_script_in_container.py"
+  attempts: 30
+
+Also, the script's execution environment is extended with the same
+environment that running container would have, which means it
+contains all the environment information about the container's
+configuration, ports, dependencies, etc. You can then use Maestro guest
+utility functions to easily grok that information from the environment
+(in Python). See :doc:`orchestration` and :doc:`guest_functions` for
+more information.
+
+Note that minimal ``api_version`` is '1.16'. See :doc:`environment` for
+more information.

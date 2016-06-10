@@ -1,2 +1,2 @@
 name = 'maestro-ng'
-version = '0.3.15'
+version = '0.3.16'

@@ -353,6 +353,24 @@ class ConfigTest(BaseConfigFileUsingTest):
         self.assertTrue('1234' in c.ships['ship2'].backend.base_url)
 
 
+class AuditorConfigTest(BaseConfigFileUsingTest):
+
+    def test_ignore_errors_wraps_with_non_failing_auditor(self):
+        config = self._get_config('auditor_ignore_errors')
+        c = maestro.Conductor(config)
+        self.assertTrue(len(c.auditor.get_auditors()), 2)
+        self.assertTrue(isinstance(c.auditor.get_auditors()[0],
+                                   maestro.audit._AlwaysFailAuditor))
+        self.assertTrue(isinstance(c.auditor.get_auditors()[1],
+                                   maestro.audit.NonFailingAuditor))
+
+    def test_non_failing_auditor(self):
+        config = self._get_config('auditor_ignore_errors')
+        c = maestro.Conductor(config)
+        # Should not fail
+        c.auditor.get_auditors()[1].action(maestro.audit.INFO, 'foo', 'start')
+
+
 class LifecycleHelperTest(unittest.TestCase):
 
     def _get_container(self):

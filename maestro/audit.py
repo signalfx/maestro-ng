@@ -91,6 +91,22 @@ class BaseAuditor(object):
         raise NotImplementedError
 
 
+class _AlwaysFailAuditor(BaseAuditor):
+    """Testing auditor that always fails."""
+    def action(self, level, what, action, who=None):
+        raise Exception
+
+    def success(self, level, what, action):
+        raise Exception
+
+    def error(self, what, action, message=None):
+        raise Exception
+
+    @staticmethod
+    def from_config(cfg):
+        return _AlwaysFailAuditor()
+
+
 class HipChatAuditor(BaseAuditor):
     """Auditor that sends notifications in a HipChat chat room."""
 
@@ -341,6 +357,9 @@ class MultiplexAuditor(BaseAuditor):
     def __init__(self, auditors):
         self._auditors = auditors
 
+    def get_auditors(self):
+        return self._auditors
+
     def action(self, level, what, action, who=None):
         for auditor in self._auditors:
             try:
@@ -363,9 +382,36 @@ class MultiplexAuditor(BaseAuditor):
                 pass
 
 
+class NonFailingAuditor(BaseAuditor):
+    """A wrapper for another auditor that catches exceptions."""
+
+    def __init__(self, auditor):
+        self._auditor = auditor
+
+    def action(self, level, what, action, who=None):
+        try:
+            self._auditor.action(level, what, action, who)
+        except:
+            pass
+
+    def success(self, level, what, action):
+        try:
+            self._auditor.success(level, what, action)
+        except:
+            pass
+
+    def error(self, what, action, message=None):
+        try:
+            self._auditor.error(what, action, message)
+        except:
+            pass
+
+
 class AuditorFactory:
 
     AUDITORS = {
+        '_fail': _AlwaysFailAuditor,
+
         'hipchat': HipChatAuditor,
         'slack': SlackAuditor,
         'log': LoggerAuditor,
@@ -380,6 +426,9 @@ class AuditorFactory:
             if auditor['type'] not in AuditorFactory.AUDITORS:
                 raise exceptions.InvalidAuditorConfigurationException(
                     'Unknown auditor type {}'.format(auditor['type']))
-            auditors.append(AuditorFactory.AUDITORS[auditor['type']]
-                            .from_config(auditor))
+            impl = (AuditorFactory.AUDITORS[auditor['type']]
+                    .from_config(auditor))
+            if auditor.get('ignore_errors') is True:
+                impl = NonFailingAuditor(impl)
+            auditors.append(impl)
         return MultiplexAuditor(auditors)

@@ -1,0 +1,17 @@
+name: test
+
+audit:
+  - type: _fail
+  - type: _fail
+    ignore_errors: True
+
+ships:
+  ship1:
+    ip: localhost
+
+services:
+  service1:
+    image: foo
+    instances:
+      instance1:
+        ship: ship1

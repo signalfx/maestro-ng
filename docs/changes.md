@@ -1,6 +1,12 @@
 ChangeLog
 =========
 
+Maestro 0.3.16
+--------------
+
+* Added `ignore_errors` option to auditors to ignore any exception/error
+  thrown by an auditor.
+
 Maestro 0.3.15
 --------------
 

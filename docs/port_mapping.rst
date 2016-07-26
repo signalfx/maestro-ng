@@ -6,13 +6,13 @@ Maestro supports several syntaxes for specifying port mappings. Unless
 the syntax supports and/or specifies otherwise, Maestro will make the
 following assumptions:
 
-* the exposed and external ports are the same (//exposed// means the port bound to
-  inside the container, //external// means the port mapped by Docker on the host
+* the exposed and external ports are the same (*exposed* means the port bound to
+  inside the container, *external* means the port mapped by Docker on the host
   to the port inside the container);
 
-* the protocol is TCP (`/tcp`);
+* the protocol is TCP (``/tcp``);
 
-* the external port is bound on all host interfaces using the `0.0.0.0` address.
+* the external port is bound on all host interfaces using the ``0.0.0.0`` address.
 
 The simplest form is a single numeric value, which maps the given TCP
 port from the container to all interfaces of the host on that same port::
@@ -72,7 +72,7 @@ expose a container's port as a random port within a given host port range::
     random: 1234:1234-1236
 
 Note that YAML supports references, which means you don't have to repeat
-your _ship_'s IP address if you do something like this::
+your *ship*'s IP address if you do something like this::
 
   ship:
     demo: {ip: &demoip 192.168.10.2, docker_port: 4243}
@@ -118,11 +118,11 @@ instances of the same service on the same host, you need to manually
 make sure they don't use the same ports, through their configuration,
 when that's possible.
 
-Finally, Maestro uses _named_ ports, where each port your configure for
+Finally, Maestro uses *named* ports, where each port your configure for
 each service instance is named. This name is the name used by the
 instance container to find out how it should be configured and on which
 port(s) it needs to listen, but it's also the name used for each port
 exposed through environment variables to other containers. This way, a
 dependent service can know the address of a remote service, and the
 specific port number of a desired endpoint. For example, service
-depending on ZooKeeper would be looking for its `client` port.
+depending on ZooKeeper would be looking for its ``client`` port.

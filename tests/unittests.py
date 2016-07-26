@@ -269,6 +269,57 @@ class ContainerTest(unittest.TestCase):
                 lambda: self._cntr(config={'volumes': {'/out': '/in1'},
                                            'container_volumes': ['/in1']}))
 
+    def test_simple_port_mapping_no_protocol_defaults_to_tcp(self):
+        container = self._cntr(config={'ports': {'http': '80'}})
+        self.assertEqual(container.ports['http'],
+                         {'exposed': '80/tcp',
+                          'external': ('0.0.0.0', '80/tcp')})
+
+    def test_simple_port_mapping_with_protocol(self):
+        container = self._cntr(config={'ports': {'http': '80/udp'}})
+        self.assertEqual(container.ports['http'],
+                         {'exposed': '80/udp',
+                          'external': ('0.0.0.0', '80/udp')})
+
+    def test_remapped_port_mapping(self):
+        container = self._cntr(config={'ports': {'http': '80:8080'}})
+        self.assertEqual(container.ports['http'],
+                         {'exposed': '80/tcp',
+                          'external': ('0.0.0.0', '8080/tcp')})
+
+    def test_remapped_port_mapping_different_protocols_not_allowed(self):
+        self.assertRaisesRegexp(
+                exceptions.InvalidPortSpecException,
+                'Mismatched protocols between 80/tcp and 8080/udp!',
+                lambda: self._cntr(
+                    config={'ports': {'http': '80/tcp:8080/udp'}}))
+
+    def test_direct_port_range_mapping(self):
+        container = self._cntr(
+                config={
+                    'ports': {
+                        'http': {
+                            'exposed': '1234-1236',
+                            'external': '1234-1236'
+                            }
+                        }})
+        self.assertEqual(container.ports['http'],
+                         {'exposed': '1234-1236/tcp',
+                          'external': ('0.0.0.0', '1234-1236/tcp')})
+
+    def test_port_range_mapping_to_single_port(self):
+        container = self._cntr(
+                config={
+                    'ports': {
+                        'http': {
+                            'exposed': '1234',
+                            'external': '1234-1236'
+                            }
+                        }})
+        self.assertEqual(container.ports['http'],
+                         {'exposed': '1234/tcp',
+                          'external': ('0.0.0.0', '1234-1236/tcp')})
+
 
 class BaseConfigFileUsingTest(unittest.TestCase):
 

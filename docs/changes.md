@@ -1,6 +1,8 @@
 ChangeLog
 =========
 
+* Added support for port ranges in port mappings (#171).
+
 Maestro 0.3.16
 --------------
 

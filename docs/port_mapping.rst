@@ -6,8 +6,8 @@ Maestro supports several syntaxes for specifying port mappings. Unless
 the syntax supports and/or specifies otherwise, Maestro will make the
 following assumptions:
 
-* the exposed and external ports are the same (_exposed_ means the port bound to
-  inside the container, _external_ means the port mapped by Docker on the host
+* the exposed and external ports are the same (//exposed// means the port bound to
+  inside the container, //external// means the port mapped by Docker on the host
   to the port inside the container);
 
 * the protocol is TCP (`/tcp`);
@@ -63,6 +63,13 @@ you need to use the dictionary form::
     dns:
       exposed: 53/udp
       external: [ 192.168.10.2, 5353/udp ]
+
+Port ranges can be specified using the usual syntax. It's also possible to
+expose a container's port as a random port within a given host port range::
+
+  ports:
+    direct: 1234-1236:1234-1236
+    random: 1234:1234-1236
 
 Note that YAML supports references, which means you don't have to repeat
 your _ship_'s IP address if you do something like this::

@@ -34,6 +34,9 @@ import weakref
 from . import exceptions
 from . import lifecycle
 
+# Valid syntax for port spec definitions
+_PORT_SPEC_REGEX = re.compile(r'^(?P<p1>\d+)(?:-(?P<p2>\d+))?(?:/(?P<proto>(tcp|udp)))?$')
+_DEFAULT_PORT_PROTOCOL = 'tcp'
 
 # Possible values for the restart policy type.
 _VALID_RESTART_POLICIES = ['no', 'always', 'on-failure']
@@ -755,21 +758,22 @@ class Container(Entity):
     def _parse_ports(self, ports):
         """Parse port mapping specifications for this container."""
 
-        def validate_proto(port):
-            parts = str(port).split('/')
-            if len(parts) == 1:
-                return '{:d}/tcp'.format(int(parts[0]))
-            elif len(parts) == 2:
-                try:
-                    int(parts[0])
-                    if parts[1] in ['tcp', 'udp']:
-                        return port
-                except ValueError:
-                    pass
-            raise exceptions.InvalidPortSpecException(
-                ('Invalid port specification {}! ' +
-                 'Expected format is <port> or <port>/{tcp,udp}.').format(
-                    port))
+        def parse_port_spec(spec):
+            if type(spec) == int:
+                spec = str(spec)
+
+            m = _PORT_SPEC_REGEX.match(spec)
+            if not m:
+                raise exceptions.InvalidPortSpecException(
+                    ('Invalid port specification {}! ' +
+                     'Expected format is <port>, <p1>-<p2> or <port>/{tcp,udp}.')
+                    .format(spec))
+            s = m.group('p1')
+            if m.group('p2'):
+                s += '-' + m.group('p2')
+            proto = m.group('proto') or _DEFAULT_PORT_PROTOCOL
+            s += '/' + proto
+            return s
 
         result = {}
         for name, spec in ports.items():
@@ -778,16 +782,17 @@ class Container(Entity):
             # interfaces.
             if type(spec) == int:
                 result[name] = {
-                    'exposed': validate_proto(spec),
-                    'external': ('0.0.0.0', validate_proto(spec)),
+                    'exposed': parse_port_spec(spec),
+                    'external': ('0.0.0.0', parse_port_spec(spec)),
                 }
 
             # Port spec is a string. This means either a protocol was specified
-            # with /tcp or /udp, or that a mapping was provided, with each side
-            # of the mapping optionally specifying the protocol.
+            # with /tcp or /udp, that a port range was specified, or that a
+            # mapping was provided, with each side of the mapping optionally
+            # specifying the protocol.
             # External port is assumed to be bound on all interfaces as well.
             elif type(spec) == str:
-                parts = list(map(validate_proto, spec.split(':')))
+                parts = list(map(parse_port_spec, spec.split(':')))
                 if len(parts) == 1:
                     # If only one port number is provided, assumed external =
                     # exposed.
@@ -811,12 +816,12 @@ class Container(Entity):
             # Port spec is fully specified.
             elif type(spec) == dict and \
                     'exposed' in spec and 'external' in spec:
-                spec['exposed'] = validate_proto(spec['exposed'])
+                spec['exposed'] = parse_port_spec(spec['exposed'])
 
                 if type(spec['external']) != list:
                     spec['external'] = ('0.0.0.0', spec['external'])
                 spec['external'] = (spec['external'][0],
-                                    validate_proto(spec['external'][1]))
+                                    parse_port_spec(spec['external'][1]))
 
                 result[name] = spec
 

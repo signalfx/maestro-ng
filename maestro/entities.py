@@ -609,7 +609,8 @@ class Container(Entity):
             thread._children = weakref.WeakKeyDictionary()
 
         pool = multiprocessing.pool.ThreadPool()
-        return pool.map_async(lambda check: check.test(),
+
+        return pool.map_async(lambda check: check.test(self),
                               self._lifecycle[state])
 
     def ping_port(self, port):

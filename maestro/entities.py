@@ -445,6 +445,9 @@ class Container(Entity):
         # Security options
         self.security_opt = config.get('security_opt')
 
+        # Ulimits options
+        self.ulimits = self._parse_ulimits(config.get('ulimits', None))
+
         # host_config now contains all settings previously passed in container
         # start().
         self.host_config = self._ship.backend.create_host_config(
@@ -462,6 +465,7 @@ class Container(Entity):
             restart_policy=self.restart_policy,
             dns=self.dns,
             links=self.links,
+            ulimits=self.ulimits,
             volumes_from=list(self.volumes_from),
             security_opt=self.security_opt)
 
@@ -850,6 +854,22 @@ class Container(Entity):
                                .from_config(self, c)), checks))
 
         return checkers
+
+    def _parse_ulimits(self, ulimits):
+        """Parse ulimits"""
+        if ulimits is None:
+            return None
+        result = []
+        for name, value in ulimits.items():
+            ulimit = {'name': name}
+            if isinstance(value, dict):
+                ulimit.update(value)
+            elif isinstance(value, int):
+                ulimit.update({'hard': value, 'soft': value})
+            else:
+                continue
+            result.append(ulimit)
+        return result
 
     def __repr__(self):
         return '{} (on {})'.format(self.name, self.ship.name)

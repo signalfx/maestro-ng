@@ -175,6 +175,9 @@ of the whole environment and in dependency declarations), a Docker image
   to confirm a service instance correctly started or stopped (see
   :doc:`lifecycle_checks`).
 
+- ``limits``: Set container limits at service scope. All service instances would
+  inherit these limits.
+
 Here's an example of a simple service with a single instance:
 
 .. code-block:: yaml
@@ -182,6 +185,9 @@ Here's an example of a simple service with a single instance:
   services:
     hello:
       image: ubuntu
+      limits:
+        memory: 10m
+        cpu: 1
       instances:
         hello1:
           ports:

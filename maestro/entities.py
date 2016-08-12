@@ -193,7 +193,7 @@ class Service(Entity):
     """
 
     def __init__(self, name, image, omit=True, schema=None, env=None,
-                 env_name='local', lifecycle=None):
+                 env_name='local', lifecycle=None, limits=None):
         """Instantiate a new named service/component of the platform using a
         given Docker image.
 
@@ -223,6 +223,7 @@ class Service(Entity):
             'SERVICE_NAME': self.name,
         })
         self._lifecycle = lifecycle or {}
+        self._limits = limits or {}
 
         self._requires = set([])
         self._wants_info = set([])
@@ -244,6 +245,10 @@ class Service(Entity):
     @property
     def lifecycle(self):
         return self._lifecycle
+
+    @property
+    def limits(self):
+        return self._limits
 
     @property
     def dependencies(self):
@@ -418,7 +423,7 @@ class Container(Entity):
         self.stop_timeout = config.get('stop_timeout', 10)
 
         # Get limits
-        limits = config.get('limits', {})
+        limits = dict(self.service.limits, **config.get('limits', {}))
         self.cpu_shares = limits.get('cpu')
         self.mem_limit = self._parse_bytes(limits.get('memory'))
         self.memswap_limit = self._parse_bytes(limits.get('swap'))

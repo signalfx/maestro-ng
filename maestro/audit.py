@@ -8,6 +8,7 @@ import json
 import logging
 import requests
 import six
+import subprocess
 
 from . import entities
 from . import exceptions
@@ -351,6 +352,55 @@ class WebHookAuditor(BaseAuditor):
             cfg.get('timeout', WebHookAuditor.DEFAULT_TIMEOUT))
 
 
+class ExecuteScriptAuditor(BaseAuditor):
+    """Auditor that executes scripts with maestro action information."""
+
+    def __init__(self, script, args, level):
+        super(ExecuteScriptAuditor, self).__init__(level)
+        if not script:
+            raise exceptions.InvalidAuditorConfigurationException(
+                'Missing script to execute!')
+
+        self._script = script
+        self._args = args
+
+    def _format_container_dict(self, what):
+        d = {}
+        for item in what:
+            x = dict(ship=item.ship.ip, service=item.service.name)
+            d[item.name] = x
+        return json.dumps(d)
+
+    def action(self, level, what, action, who):
+        if not self._should_audit(level):
+            return
+        if isinstance(what, entities.Entity):
+            return
+        ships = self._format_container_dict(what)
+
+        cmd = [self._script] + \
+            self._args.format(action=action, what=what, who=who).split()
+
+        process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+        output = process.communicate(input=ships)
+        if process.returncode != 0:
+            raise subprocess.CalledProcessError(process.return_code,
+                                                cmd, output)
+
+    def success(self, level, what, action):
+        pass
+
+    def error(self, what, action):
+        pass
+
+    @staticmethod
+    def from_config(cfg):
+        return ExecuteScriptAuditor(
+            cfg.get('script'),
+            cfg.get('args'),
+            cfg.get('level', DEFAULT_AUDIT_LEVEL))
+
+
 class MultiplexAuditor(BaseAuditor):
     """Auditor multiplexer, to broadcast through multiple auditors."""
 
@@ -416,6 +466,7 @@ class AuditorFactory:
         'slack': SlackAuditor,
         'log': LoggerAuditor,
         'http': WebHookAuditor,
+        'exec': ExecuteScriptAuditor,
     }
 
     @staticmethod

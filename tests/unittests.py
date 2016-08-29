@@ -127,6 +127,17 @@ class ContainerTest(unittest.TestCase):
         container = self._cntr(config={'limits': {'swap': '42k'}})
         self.assertEqual(container.memswap_limit, 42*1024)
 
+    def test_no_ulimit_option(self):
+        self.assertIsNone(self._cntr().ulimits)
+
+    def test_ulimit_with_hard_soft_limit(self):
+        container = self._cntr(config={'ulimits': {'nofile': {'hard': 1024, 'soft': 1024}}})
+        self.assertEqual(container.ulimits, [{'hard': 1024, 'soft': 1024, 'name': 'nofile'}])
+
+    def test_ulimit_with_single_limit(self):
+        container = self._cntr(config={'ulimits': {'nproc': 65535}})
+        self.assertEqual(container.ulimits, [{'hard': 65535, 'soft': 65535, 'name': 'nproc'}])
+
     def test_log_config_default(self):
         self.assertTrue("LogConfig" not in self._cntr().host_config)
 

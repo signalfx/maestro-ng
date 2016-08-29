@@ -267,6 +267,9 @@ on (by name). Additionally, each instance may define:
 - ``security_opt``, to specify additional security options to customize
   container labels, apparmor profiles, etc.
 
+- ``ulimits``, to override the default ulimits for a container. You can either
+  specify a single limit as an integer or soft/hard limits as a mapping.
+
 For example:
 
 .. code-block:: yaml
@@ -320,5 +323,10 @@ For example:
           restart:
             name: on-failure
             maximum_retry_count: 3
+          ulimits:
+            nproc: 65535
+            nofile:
+              soft: 1024
+              hard: 1024
       lifecycle:
         running: [{type: tcp, port: broker}]

@@ -41,6 +41,16 @@ class ServiceTest(unittest.TestCase):
         service = entities.Service('foo', 'stackbrew/ubuntu:13.10')
         self.assertEqual(service.image, 'stackbrew/ubuntu:13.10')
 
+    def test_no_limits_option(self):
+        service = entities.Service('foo', 'stackbrew/ubuntu:13.10')
+        self.assertEqual(service.limits, {})
+
+    def test_limits_option(self):
+        service = entities.Service('foo',
+                                   'stackbrew/ubuntu:13.10',
+                                   limits={'cpu': 2, 'memory': '10m'})
+        self.assertEqual(service.limits, {'cpu': 2, 'memory': '10m'})
+
 
 class ContainerTest(unittest.TestCase):
 

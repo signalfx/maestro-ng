@@ -398,7 +398,7 @@ class ConductorTest(BaseConfigFileUsingTest):
         c = maestro.Conductor(config)
         self.assertEqual(len(c.services), 2)
         self.assertEqual(len(c.containers), 2)
-        self.assertEqual(len(c.services['myservice'].containers), 1)
+        self.assertEqual(len(list(c.services['myservice'].containers)), 1)
         self.assertEqual(c.services['myservice'].dependencies,
                          set([c.services['mydata']]))
         self.assertEqual(c.services['myservice'].requires,

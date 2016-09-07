@@ -285,7 +285,7 @@ class ContainerTest(unittest.TestCase):
         self.assertEqual(container.workdir, '/tmp')
 
     def test_volume_conflict_container(self):
-        self.assertRaisesRegexp(
+        six.assertRaisesRegex(self,
                 exceptions.InvalidVolumeConfigurationException,
                 'Conflict in {} between bind-mounted volume '
                 'and container-only volume on /in1'
@@ -312,7 +312,7 @@ class ContainerTest(unittest.TestCase):
                           'external': ('0.0.0.0', '8080/tcp')})
 
     def test_remapped_port_mapping_different_protocols_not_allowed(self):
-        self.assertRaisesRegexp(
+        six.assertRaisesRegex(self,
                 exceptions.InvalidPortSpecException,
                 'Mismatched protocols between 80/tcp and 8080/udp!',
                 lambda: self._cntr(
@@ -380,14 +380,14 @@ class ConductorTest(BaseConfigFileUsingTest):
 
     def test_volume_conflict_volumes_from(self):
         config = self._get_config('test_volume_conflict_volumes_from')
-        self.assertRaisesRegexp(
+        six.assertRaisesRegex(self,
                 exceptions.InvalidVolumeConfigurationException,
                 'Volume conflicts between instance-2 and instance-1: /in1!',
                 lambda: maestro.Conductor(config))
 
     def test_volumes_from_unknown(self):
         config = self._get_config('test_volumes_from_unknown')
-        self.assertRaisesRegexp(
+        six.assertRaisesRegex(self,
                 exceptions.InvalidVolumeConfigurationException,
                 'Unknown container instance-2 to get volumes from '
                 'for instance-1!',
@@ -413,7 +413,7 @@ class ConductorTest(BaseConfigFileUsingTest):
 
     def test_missing_env_name(self):
         config = self._get_config('test_missing_envname')
-        self.assertRaisesRegexp(
+        six.assertRaisesRegex(self,
                 exceptions.EnvironmentConfigurationException,
                 'Environment name is missing',
                 lambda: maestro.Conductor(config))

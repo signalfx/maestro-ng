@@ -1,0 +1,21 @@
+__maestro:
+  schema:
+    version: 2
+
+name: "test_volumes_from_adds_dependency"
+
+ships:
+  ship1: {ip: localhost}
+
+services:
+  mydata:
+    image: my-data-image
+    instances:
+      mydata1:
+        ship: ship1
+  myservice:
+    image: my-service-image
+    instances:
+      myservice1:
+        ship: ship1
+        volumes_from: mydata1

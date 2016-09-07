@@ -141,12 +141,15 @@ class ContainerTest(unittest.TestCase):
         self.assertIsNone(self._cntr().ulimits)
 
     def test_ulimit_with_hard_soft_limit(self):
-        container = self._cntr(config={'ulimits': {'nofile': {'hard': 1024, 'soft': 1024}}})
-        self.assertEqual(container.ulimits, [{'hard': 1024, 'soft': 1024, 'name': 'nofile'}])
+        container = self._cntr(
+                config={'ulimits': {'nofile': {'hard': 1024, 'soft': 1024}}})
+        self.assertEqual(container.ulimits,
+                         [{'hard': 1024, 'soft': 1024, 'name': 'nofile'}])
 
     def test_ulimit_with_single_limit(self):
         container = self._cntr(config={'ulimits': {'nproc': 65535}})
-        self.assertEqual(container.ulimits, [{'hard': 65535, 'soft': 65535, 'name': 'nproc'}])
+        self.assertEqual(container.ulimits,
+                         [{'hard': 65535, 'soft': 65535, 'name': 'nproc'}])
 
     def test_log_config_default(self):
         self.assertTrue("LogConfig" not in self._cntr().host_config)
@@ -389,6 +392,17 @@ class ConductorTest(BaseConfigFileUsingTest):
                 'Unknown container instance-2 to get volumes from '
                 'for instance-1!',
                 lambda: maestro.Conductor(config))
+
+    def test_volumes_from_adds_dependency(self):
+        config = self._get_config('test_volumes_from_adds_dependency')
+        c = maestro.Conductor(config)
+        self.assertEqual(len(c.services), 2)
+        self.assertEqual(len(c.containers), 2)
+        self.assertEqual(len(c.services['myservice'].containers), 1)
+        self.assertEqual(c.services['myservice'].dependencies,
+                         set([c.services['mydata']]))
+        self.assertEqual(c.services['myservice'].requires,
+                         set([c.services['mydata']]))
 
     def test_env_name(self):
         config = self._get_config('test_envname')

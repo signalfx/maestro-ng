@@ -78,7 +78,9 @@ class Conductor:
                 for dependency in service.requires.union(service.wants_info):
                     container.env.update(dependency.get_link_variables())
 
-        # Check for host locality and volume conflicts on volumes_from
+        # Check for host locality and volume conflicts on volumes_from, and add
+        # service dependencies implicitely required by volumes_from another
+        # service's container(s).
         for container in self.containers.values():
             for volumes_from in container.volumes_from:
                 if volumes_from not in self.containers:
@@ -101,6 +103,9 @@ class Conductor:
                         'Volume conflicts between {} and {}: {}!'
                         .format(container.name, other.name,
                                 ', '.join(conflicts)))
+
+                # Add the dependency against the volumes_from's service.
+                container.service.add_dependency(other.service)
 
         # Instantiate audit bindings
         self.auditor = audit.AuditorFactory.from_config(

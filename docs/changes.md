@@ -1,10 +1,26 @@
 ChangeLog
 =========
 
+Maestro 0.4.0
+-------------
+
+_September 7th, 2016_
+
 * Added support for port ranges in port mappings (#171).
+* Added `rexec` lifecycle check to execute commands within the target,
+  remote container being checked (#169).
+* Added support for ulimits at the service and container levels (#173
+  and #174).
+* Added `exec` auditor to execute a local script to record the audit
+  event (#176).
+* Using `volumes_from` on a container now implicitely defines a
+  service-level dependency on the `volumes_from` container's service
+  (#175).
 
 Maestro 0.3.16
 --------------
+
+_June 10th, 2016_
 
 * Added `ignore_errors` option to auditors to ignore any exception/error
   thrown by an auditor.

@@ -51,7 +51,9 @@ class Conductor:
                 entities.Service(
                     kind, service['image'], service.get('omit', False),
                     self.schema, service.get('env', {}), self.env_name,
-                    service.get('lifecycle', {}), service.get('limits', {}))
+                    service.get('lifecycle', {}),
+                    service.get('limits', {}),
+                    service.get('ports', {}))
 
             for name, instance in service['instances'].items():
                 self.containers[name] = \

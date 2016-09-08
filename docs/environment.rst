@@ -177,6 +177,8 @@ of the whole environment and in dependency declarations), a Docker image
 
 - ``limits``: Set container limits at service scope. All service instances would
   inherit these limits.
+- ``ports``: Set container ports at service scope. All service instances would
+  inherit these ports.
 
 Here's an example of a simple service with a single instance:
 
@@ -188,6 +190,8 @@ Here's an example of a simple service with a single instance:
       limits:
         memory: 10m
         cpu: 1
+      ports:
+        server: 4848
       instances:
         hello1:
           ports:

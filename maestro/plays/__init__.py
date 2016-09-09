@@ -224,7 +224,10 @@ class FullStatus(BaseOrchestrationPlay):
                 image_info = termoutput.OutputFormatter(prefix='     ')
                 image_info.commit(container.image)
                 if status:
-                    image_info.commit(' ({})'.format(status['Image'][:7]))
+                    image_sha = status['Image']
+                    if ':' in image_sha:
+                        image_sha = image_sha.split(':', 1)[1]
+                    image_info.commit(' ({})'.format(image_sha[:7]))
                 image_info.commit('\n')
 
                 for name, port in container.ports.items():

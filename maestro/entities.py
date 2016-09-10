@@ -20,8 +20,11 @@ except ImportError:
     # Fall back to <= 0.3.1 location
     from docker.client import APIError
 
-from docker.utils.types import LogConfigTypesEnum
-
+try:
+    from docker.types import LogConfig
+except ImportError:
+    # Fall bock to <= 1.10 location
+    from docker.utils.types import LogConfig
 
 import multiprocessing.pool
 import re
@@ -726,10 +729,10 @@ class Container(Entity):
             host_config.LogConfig variable.
         """
         if log_driver:
-            if log_driver not in LogConfigTypesEnum._values:
+            if log_driver not in LogConfig.types._values:
                 raise exceptions.InvalidLogConfigurationException(
                     "log_driver must be one of ({0})".format(
-                    ', '.join(LogConfigTypesEnum._values)
+                    ', '.join(LogConfig.types._values)
                 ))
             if log_opt and not type(log_opt) == dict:
                 raise exceptions.InvalidLogConfigurationException(

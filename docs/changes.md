@@ -1,6 +1,14 @@
 ChangeLog
 =========
 
+Maestro 0.4.1
+-------------
+
+_September 10th, 2016_
+
+Small release with bugfixes working with newer versions of Docker and
+`docker-py`.
+
 Maestro 0.4.0
 -------------
 

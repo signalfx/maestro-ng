@@ -196,7 +196,7 @@ class Service(Entity):
     """
 
     def __init__(self, name, image, omit=True, schema=None, env=None,
-                 env_name='local', lifecycle=None, limits=None):
+                 env_name='local', lifecycle=None, limits=None, ports=None):
         """Instantiate a new named service/component of the platform using a
         given Docker image.
 
@@ -214,6 +214,8 @@ class Service(Entity):
                 base environment for all instances of this service.
             env_name (string): name of the Maestro environment.
             lifecycle (dict): a dictionary of lifecycle checks configurations.
+            limits (dict): a dictionary of service limits.
+            ports (dict): a dictionary of service ports.
         """
         Entity.__init__(self, name)
         self._image = image
@@ -227,6 +229,7 @@ class Service(Entity):
         })
         self._lifecycle = lifecycle or {}
         self._limits = limits or {}
+        self._ports = ports or {}
 
         self._requires = set([])
         self._wants_info = set([])
@@ -252,6 +255,10 @@ class Service(Entity):
     @property
     def limits(self):
         return self._limits
+
+    @property
+    def ports(self):
+        return self._ports
 
     @property
     def dependencies(self):
@@ -352,7 +359,7 @@ class Container(Entity):
         self.command = config.get('command', config.get('cmd'))
 
         # Parse the port specs.
-        self.ports = self._parse_ports(config.get('ports', {}))
+        self.ports = self._parse_ports(dict(self.service.ports, **config.get('ports', {})))
 
         # Gather environment variables.
         self.env = dict(service.env)

@@ -51,6 +51,16 @@ class ServiceTest(unittest.TestCase):
                                    limits={'cpu': 2, 'memory': '10m'})
         self.assertEqual(service.limits, {'cpu': 2, 'memory': '10m'})
 
+    def test_no_ports_option(self):
+        service = entities.Service('foo', 'stackbrew/ubuntu:13.10')
+        self.assertEqual(service.ports, {})
+
+    def test_ports_option(self):
+        service = entities.Service('foo',
+                                   'stackbrew/ubuntu:13.10',
+                                   ports={'server: 4848'})
+        self.assertEqual(service.ports, {'server: 4848'})
+
 
 class ContainerTest(unittest.TestCase):
 
@@ -61,13 +71,14 @@ class ContainerTest(unittest.TestCase):
     SHIP_IP = '10.0.0.1'
     SCHEMA = {'schema': 2}
     DOCKER_VERSION = '1.12'
+    PORTS = {'server': 4848}
 
     def _cntr(service_name=SERVICE, service_env=None, image=IMAGE,
               ship_name=SHIP, ship_ip=SHIP_IP,
               container_name=CONTAINER, config=None, schema=SCHEMA,
-              api_version=DOCKER_VERSION):
+              api_version=DOCKER_VERSION, ports=PORTS):
         service = entities.Service(service_name, image, schema=schema,
-                                   env=service_env)
+                                   env=service_env, ports=ports)
         return entities.Container(container_name,
                                   entities.Ship(ship_name, ship_ip,
                                                 api_version=api_version),
@@ -76,6 +87,10 @@ class ContainerTest(unittest.TestCase):
     def test_image_propagates_from_service(self):
         container = self._cntr()
         self.assertEqual(container.image, container.service.image)
+
+    def test_ports_propagates_from_service(self):
+        container = self._cntr()
+        self.assertEqual(container.ports, container._parse_ports(container.service.ports))
 
     def test_get_image_details_basic(self):
         d = self._cntr().get_image_details()

@@ -372,6 +372,9 @@ class ExecuteScriptAuditor(BaseAuditor):
         return json.dumps(d)
 
     def action(self, level, what, action, who):
+        pass
+
+    def success(self, level, what, action):
         if not self._should_audit(level):
             return
         if isinstance(what, entities.Entity):
@@ -379,7 +382,7 @@ class ExecuteScriptAuditor(BaseAuditor):
         ships = self._format_container_dict(what)
 
         cmd = [self._script] + \
-            self._args.format(action=action, what=what, who=who).split()
+            self._args.format(action=action, what=what, who=None).split()
 
         process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
         output = process.communicate(input=ships)
@@ -387,10 +390,7 @@ class ExecuteScriptAuditor(BaseAuditor):
             raise subprocess.CalledProcessError(process.return_code,
                                                 cmd, output)
 
-    def success(self, level, what, action):
-        pass
-
-    def error(self, what, action):
+    def error(self, what, action, message=None):
         pass
 
     @staticmethod

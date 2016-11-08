@@ -39,7 +39,7 @@ class BaseOrchestrationPlay:
         tasks.CONTAINER_STATUS_FMT + ' ' + tasks.TASK_RESULT_FMT
     HEADERS = ['  #', 'INSTANCE', 'SERVICE', 'SHIP', 'CONTAINER', 'STATUS']
 
-    # Output line format (to which the task output colmns are added).
+    # Output line format (to which the task output columns are added).
     LINE_FMT = ('{{:>3d}}. {}{{:<{}.{}s}}{} {{:<20.20s}} {{:<{}.{}s}}'
                 .format('\033[1m' if supports_color() else '',
                         _INST_CSIZE, _INST_CSIZE,

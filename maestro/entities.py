@@ -42,7 +42,7 @@ _PORT_SPEC_REGEX = re.compile(r'^(?P<p1>\d+)(?:-(?P<p2>\d+))?(?:/(?P<proto>(tcp|
 _DEFAULT_PORT_PROTOCOL = 'tcp'
 
 # Possible values for the restart policy type.
-_VALID_RESTART_POLICIES = ['no', 'always', 'on-failure']
+_VALID_RESTART_POLICIES = ['no', 'always', 'on-failure', 'unless-stopped']
 
 
 class Entity:

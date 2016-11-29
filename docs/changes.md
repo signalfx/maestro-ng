@@ -1,6 +1,17 @@
 ChangeLog
 =========
 
+Maestro 0.4.2
+-------------
+
+_November 29th, 2016_
+
+* Added ability to define port mappings at the service level (#165).
+* Fix for script exec auditor, should only execute on success of the
+  Maestro action.
+* Added support for the newly introduced unless-stopped container
+  restart policy (#181).
+
 Maestro 0.4.1
 -------------
 

@@ -154,7 +154,7 @@ class Conductor:
         # dependencies. Otherwise, returned the ordered list, which should now
         # be final.
         return wait and self._order_dependencies(wait, ordered, forward) \
-            or ordered
+            or list(set(ordered))
 
     def _gather_dependencies(self, containers, forward=True):
         """Transitively gather all containers from the dependencies or

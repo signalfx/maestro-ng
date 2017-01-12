@@ -38,7 +38,7 @@ class Conductor:
         # Register defined private Docker registries authentications
         self.registries = self._config.get('registries') or {}
         for name, registry in self.registries.items():
-            if 'username' not in registry or 'password' not in registry:
+            if 'username' not in registry:
                 raise exceptions.OrchestrationException(
                     'Incomplete registry auth data for {}!'.format(name))
 

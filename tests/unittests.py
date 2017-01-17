@@ -70,7 +70,7 @@ class ContainerTest(unittest.TestCase):
     SHIP = 'ship'
     SHIP_IP = '10.0.0.1'
     SCHEMA = {'schema': 2}
-    DOCKER_VERSION = '1.12'
+    DOCKER_VERSION = '1.21'
     PORTS = {'server': 4848}
 
     def _cntr(service_name=SERVICE, service_env=None, image=IMAGE,
@@ -139,6 +139,17 @@ class ContainerTest(unittest.TestCase):
 
     def test_no_dns_option(self):
         self.assertIsNone(self._cntr().dns)
+
+    def test_dns_opt_option(self):
+        container = self._cntr(config={'dns_opt': 'attempts:2'})
+        self.assertEqual(container.dns_opt, ['attempts:2'])
+
+    def test_dns_opt_as_list_option(self):
+        container = self._cntr(config={'dns_opt': ['timeout:10', 'attempts:2']})
+        self.assertEqual(container.dns_opt, ['timeout:10', 'attempts:2'])
+
+    def test_no_dns_opt_option(self):
+        self.assertIsNone(self._cntr().dns_opt)
 
     def test_swap_limit_number(self):
         container = self._cntr(config={'limits': {'swap': 42}})

@@ -429,6 +429,11 @@ class Container(Entity):
         if isinstance(self.dns, six.string_types):
             self.dns = [self.dns]
 
+        # DNS Options for resolve.conf, always as a list
+        self.dns_opt = config.get('dns_opt')
+        if isinstance(self.dns_opt, six.string_types):
+            self.dns_opt = [self.dns_opt]
+
         # Stop timeout
         self.stop_timeout = config.get('stop_timeout', 10)
 
@@ -479,6 +484,7 @@ class Container(Entity):
             network_mode=self.network_mode,
             restart_policy=self.restart_policy,
             dns=self.dns,
+            dns_opt=self.dns_opt,
             links=self.links,
             ulimits=self.ulimits,
             volumes_from=list(self.volumes_from),

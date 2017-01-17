@@ -274,6 +274,10 @@ on (by name). Additionally, each instance may define:
 - ``dns``, to specify one (as a single IP address) or more DNS servers (as a
   list) to be declared inside the container;
 
+- ``dns_opt``, to specify the options used by DNS resolvers by writing
+  an options line into the container's /etc/resolv.conf. See documentation
+  for resolv.conf for a list of valid options;
+
 - ``security_opt``, to specify additional security options to customize
   container labels, apparmor profiles, etc.
 
@@ -329,6 +333,7 @@ For example:
             swap: 200m
             cpu: 10
           dns: [ 8.8.8.8, 8.8.4.4 ]
+          dns_opt: [ 'timeout:10', 'attempts:2' ]
           net: host
           restart:
             name: on-failure

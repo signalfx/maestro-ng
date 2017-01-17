@@ -274,7 +274,7 @@ on (by name). Additionally, each instance may define:
 - ``dns``, to specify one (as a single IP address) or more DNS servers (as a
   list) to be declared inside the container;
 
-- ``dns-opt``, to specify the options used by DNS resolvers by writing
+- ``dns_opt``, to specify the options used by DNS resolvers by writing
   an options line into the container's /etc/resolv.conf. See documentation
   for resolv.conf for a list of valid options;
 

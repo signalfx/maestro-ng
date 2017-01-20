@@ -172,7 +172,8 @@ class Ship(Entity):
         running on this ship."""
         images = {}
         for image in self._backend.images():
-            if image['RepoTags'] is '<none>:<none>':
+            tags = image.get('RepoTags', [])
+            if not tags or tags is '<none>:<none>':
                 continue
             for tag in image['RepoTags']:
                 images[tag] = image['Id']

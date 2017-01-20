@@ -1,6 +1,14 @@
 ChangeLog
 =========
 
+Maestro 0.4.4
+-------------
+
+_January 19th, 2017_
+
+* Fix another bug related to image repo tags.
+
+
 Maestro 0.4.3
 -------------
 

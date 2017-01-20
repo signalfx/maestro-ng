@@ -1,6 +1,14 @@
 ChangeLog
 =========
 
+Maestro 0.4.3
+-------------
+
+_January 19th, 2017_
+
+* Fix a bug that would prevent `restart` from working if an image
+  repository contains an image with no tag.
+
 Maestro 0.4.2
 -------------
 

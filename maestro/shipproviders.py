@@ -50,12 +50,12 @@ class StaticShipsProvider(ShipsProvider):
                 ssh_tunnel=self._from_ship_or_defaults(v, 'ssh_tunnel'),
                 api_version=self._from_ship_or_defaults(v, 'api_version'),
                 timeout=self._from_ship_or_defaults(v, 'timeout'),
-                tls=v.get('tls', False),
-                tls_cert=v.get('tls_cert', None),
-                tls_key=v.get('tls_key', None),
-                tls_verify=v.get('tls_verify', False),
-                tls_ca_cert=v.get('tls_ca_cert', None),
-                ssl_version=v.get('ssl_version', None)))
+                tls=self._from_ship_or_defaults(v, 'tls'),
+                tls_cert=self._from_ship_or_defaults(v, 'tls_cert'),
+                tls_key=self._from_ship_or_defaults(v, 'tls_key'),
+                tls_verify=self._from_ship_or_defaults(v, 'tls_verify'),
+                tls_ca_cert=self._from_ship_or_defaults(v, 'tls_ca_cert'),
+                ssl_version=self._from_ship_or_defaults(v, 'ssl_version')))
             for k, v in self._config['ships'].items())
 
     def ships(self):

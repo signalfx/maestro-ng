@@ -131,13 +131,11 @@ class Ship(Entity):
             self._backend_url = '{:s}://{:s}:{:d}'.format(
                 proto, self._endpoint, self._docker_port)
 
-        self._tls = None
-        if tls:
-            self._tls = docker.tls.TLSConfig(
-                    verify = tls_verify,
-                    client_cert = (tls_cert, tls_key),
-                    ca_cert = tls_ca_cert,
-                    ssl_version = ssl_version)
+        self._tls = docker.tls.TLSConfig(
+            verify = tls_verify,
+            client_cert = (tls_cert, tls_key),
+            ca_cert = tls_ca_cert,
+            ssl_version = ssl_version) if tls else None
 
         self._backend = docker.Client(
             base_url=self._backend_url,

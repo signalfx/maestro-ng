@@ -14,6 +14,7 @@ except ImportError:
     # Try for Python3
     from urllib import parse as urlparse
 
+from docker import auth
 from .. import audit
 from .. import exceptions
 from ..termoutput import green, blue, red, time_ago
@@ -358,6 +359,14 @@ class LoginTask(Task):
     def _run(self):
         registry = LoginTask.registry_for_container(self.container,
                                                     self._registries)
+
+        if not registry.get('username'):
+            registry_auth_config = auth.load_config().\
+                get(urlparse.urlparse(registry['registry']).netloc)
+
+            registry['username'] = registry_auth_config.get('username') \
+                if registry_auth_config else None
+
         if not registry or not registry['username']:
             return
 

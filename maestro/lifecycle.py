@@ -65,9 +65,7 @@ class TCPPortPinger(RetryingLifecycleHelper):
 
     def _test(self, container=None):
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(1)
-            s.connect((self.host, self.port))
+            s = socket.create_connection((self.host, self.port), 1)
             s.close()
             return True
         except Exception:

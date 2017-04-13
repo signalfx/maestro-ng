@@ -92,7 +92,8 @@ class BaseOrchestrationPlay:
                 while not self._satisfied(task.container) and not self._error:
                     self._cv.wait(1)
             else:
-                while not self._restart_satisfied(task.container) and not self._error:
+                while not self._restart_satisfied(task.container) and \
+                        not self._error:
                     self._cv.wait(1)
 
             self._cv.release()
@@ -191,8 +192,11 @@ class BaseOrchestrationPlay:
         result = set([container])
 
         for container in result:
-            deps = container.service.needed_for if self._forward else container.service.requires
-            deps = functools.reduce(lambda x, y: x.union(y), [s.containers for s in deps], set([]))
+            deps = container.service.needed_for if self._forward \
+                else container.service.requires
+            deps = functools.reduce(lambda x, y: x.union(y),
+                                    [s.containers for s in deps],
+                                    set([]))
 
             result = result.union(deps.intersection(containers))
 
@@ -201,7 +205,7 @@ class BaseOrchestrationPlay:
 
     def _satisfied(self, container):
         """Returns True if all the dependencies of a given container have been
-        satisfied by what's been executed so far (or if it was explicitely
+        satisfied by what's been executed so far (or if it was explicitly
         requested to ignore dependencies)."""
         if self._ignore_dependencies:
             return True
@@ -211,7 +215,8 @@ class BaseOrchestrationPlay:
     def _restart_satisfied(self, container):
         if self._ignore_dependencies:
             return True
-        missing = self._restart_dependencies[container.name].difference(self._done)
+        missing = self._restart_dependencies[container.name].\
+            difference(self._done)
         return len(missing) == 0
 
 

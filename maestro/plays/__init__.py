@@ -168,8 +168,13 @@ class BaseOrchestrationPlay:
         result = set([container])
 
         for container in result:
-            deps = container.service.requires if self._forward \
-                else container.service.needed_for
+            if self._play == 'restart':
+                deps = container.service.needed_for if self._forward \
+                    else container.service.requires
+            else:
+                deps = container.service.requires if self._forward \
+                    else container.service.needed_for
+
             deps = functools.reduce(lambda x, y: x.union(y),
                                     [s.containers for s in deps],
                                     set([]))
@@ -180,7 +185,7 @@ class BaseOrchestrationPlay:
 
     def _satisfied(self, container):
         """Returns True if all the dependencies of a given container have been
-        satisfied by what's been executed so far (or if it was explicitely
+        satisfied by what's been executed so far (or if it was explicitly
         requested to ignore dependencies)."""
         if self._ignore_dependencies:
             return True

@@ -361,7 +361,7 @@ class Conductor:
         """Remove the given stopped Docker containers.
 
         Args:
-            things (set<string>): The list of things to stop.
+            things (set<string>): The list of things to clean.
             with_dependencies (boolean): Whether to act on only the specified
                 things, or their dependencies as well.
             concurrency (int): The maximum number of instances that can be

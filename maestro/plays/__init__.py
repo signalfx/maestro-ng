@@ -58,6 +58,9 @@ class BaseOrchestrationPlay:
         self._dependencies = dict(
             (c.name, self._gather_dependencies(c)) for c in containers)
 
+        self._restart_dependencies = dict(
+            (c.name, self._gather_restart_dependencies(c)) for c in containers)
+
         self._om = termoutput.OutputManager(len(containers))
         self._threads = set([])
         self._done = set([])
@@ -85,8 +88,14 @@ class BaseOrchestrationPlay:
             # Wait until we can be released (or if an error occurred for
             # another container).
             self._cv.acquire()
-            while not self._satisfied(task.container) and not self._error:
-                self._cv.wait(1)
+            if self._play != 'restart':
+                while not self._satisfied(task.container) and not self._error:
+                    self._cv.wait(1)
+            else:
+                while not self._restart_satisfied(task.container) and \
+                        not self._error:
+                    self._cv.wait(1)
+
             self._cv.release()
 
             # Abort if needed
@@ -178,13 +187,36 @@ class BaseOrchestrationPlay:
         result.remove(container)
         return result
 
+    def _gather_restart_dependencies(self, container):
+        containers = set(self._containers)
+        result = set([container])
+
+        for container in result:
+            deps = container.service.needed_for if self._forward \
+                else container.service.requires
+            deps = functools.reduce(lambda x, y: x.union(y),
+                                    [s.containers for s in deps],
+                                    set([]))
+
+            result = result.union(deps.intersection(containers))
+
+        result.remove(container)
+        return result
+
     def _satisfied(self, container):
         """Returns True if all the dependencies of a given container have been
-        satisfied by what's been executed so far (or if it was explicitely
+        satisfied by what's been executed so far (or if it was explicitly
         requested to ignore dependencies)."""
         if self._ignore_dependencies:
             return True
         missing = self._dependencies[container.name].difference(self._done)
+        return len(missing) == 0
+
+    def _restart_satisfied(self, container):
+        if self._ignore_dependencies:
+            return True
+        missing = self._restart_dependencies[container.name].\
+            difference(self._done)
         return len(missing) == 0
 
 

@@ -1,6 +1,17 @@
 ChangeLog
 =========
 
+Maestro 0.4.5
+-------------
+
+_August 7th, 2017_
+
+* Added support for using encrypted credentials for a Docker image
+  registry (#187).
+* Added support for TCP lifecycle checks on IPv6 hosts (#183).
+* Fix an exception in container start error handling when running
+  Maestro with Python3 (#197).
+
 Maestro 0.4.4
 -------------
 

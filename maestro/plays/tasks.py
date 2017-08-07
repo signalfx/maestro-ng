@@ -154,18 +154,18 @@ class StartTask(Task):
             elif result:
                 self.o.commit(green('started'))
             else:
-                self.o.commit(red('service did not start!'))
-
-            if result is False:
-                error = [
-                    ('Halting start sequence because {} failed to start!'
-                        .format(self.container)),
-                    self.container.ship.backend.logs(self.container.id)]
-                raise exceptions.ContainerOrchestrationException(
-                    self.container, '\n'.join(error).strip())
+                self.o.commit(red('container did not start!'))
         except Exception:
-            self.o.commit(red('failed to start container!'))
+            self.o.commit(red('error starting container!'))
             raise
+
+        if result is False:
+            log = self.container.ship.backend.logs(self.container.id)
+            error = (
+                'Halting start sequence because {} failed to start!\n{}'
+            ).format(self.container, log)
+            raise exceptions.ContainerOrchestrationException(
+                self.container, error.strip())
 
     def _create_and_start_container(self):
         """Start the container.

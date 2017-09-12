@@ -359,15 +359,18 @@ class LoginTask(Task):
     def _run(self):
         registry = LoginTask.registry_for_container(self.container,
                                                     self._registries)
+        if not registry:
+            # No registry found, or no registry login needed.
+            return
 
         if not registry.get('username'):
             registry_auth_config = auth.load_config().\
                 get(urlparse.urlparse(registry['registry']).netloc)
-
             registry['username'] = registry_auth_config.get('username') \
                 if registry_auth_config else None
 
-        if not registry or not registry['username']:
+        if not registry.get('username'):
+            # Still no username found; bail out.
             return
 
         self.o.reset()

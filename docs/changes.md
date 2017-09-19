@@ -1,6 +1,14 @@
 ChangeLog
 =========
 
+Maestro 0.4.6
+-------------
+
+_September 19th, 2017_
+
+* Fixed a bug in how registry credentials are looked up (#198).
+* Fixed a bug in the processing of lists in the webhook auditor payload.
+
 Maestro 0.4.5
 -------------
 

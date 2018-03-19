@@ -64,7 +64,7 @@ def get_specific_host(service, container):
     try:
         return os.environ['{}_{}_HOST'.format(_to_env_var_name(service),
                                               _to_env_var_name(container))]
-    except:
+    except Exception:
         raise MaestroEnvironmentError(
             'No host defined for container {} of service {}'
             .format(container, service))
@@ -79,7 +79,7 @@ def get_specific_exposed_port(service, container, port, default=None):
                                             _to_env_var_name(container),
                                             _to_env_var_name(port)).upper(),
             default))
-    except:
+    except Exception:
         raise MaestroEnvironmentError(
             'No internal port {} defined for container {} of service {}'
             .format(port, container, service))
@@ -94,7 +94,7 @@ def get_specific_port(service, container, port, default=None):
                                    _to_env_var_name(container),
                                    _to_env_var_name(port)).upper(),
             default))
-    except:
+    except Exception:
         raise MaestroEnvironmentError(
             'No port {} defined for container {} of service {}'
             .format(port, container, service))

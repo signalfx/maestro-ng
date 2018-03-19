@@ -270,7 +270,7 @@ class StopTask(Task):
                     self.container.shortid_and_tag))
                 self.o.commit(blue(TASK_RESULT_FMT.format('down')))
                 return
-        except:
+        except Exception:
             self.o.commit(CONTAINER_STATUS_FMT.format('-'))
             self.o.commit(red(TASK_RESULT_FMT.format('host down')))
             return
@@ -456,7 +456,7 @@ class PullTask(Task):
                 100 if last['status'] == 'Download complete' else
                 (100.0 * last['progressDetail']['current'] /
                  last['progressDetail']['total']))
-        except:
+        except Exception:
             pass
 
         total = 0

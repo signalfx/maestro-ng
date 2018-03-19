@@ -414,21 +414,21 @@ class MultiplexAuditor(BaseAuditor):
         for auditor in self._auditors:
             try:
                 auditor.action(level, what, action, who)
-            except:
+            except Exception:
                 raise
 
     def success(self, level, what, action):
         for auditor in self._auditors:
             try:
                 auditor.success(level, what, action)
-            except:
+            except Exception:
                 pass
 
     def error(self, what, action, message=None):
         for auditor in self._auditors:
             try:
                 auditor.error(what, action, message)
-            except:
+            except Exception:
                 pass
 
 
@@ -441,19 +441,19 @@ class NonFailingAuditor(BaseAuditor):
     def action(self, level, what, action, who=None):
         try:
             self._auditor.action(level, what, action, who)
-        except:
+        except Exception:
             pass
 
     def success(self, level, what, action):
         try:
             self._auditor.success(level, what, action)
-        except:
+        except Exception:
             pass
 
     def error(self, what, action, message=None):
         try:
             self._auditor.error(what, action, message)
-        except:
+        except Exception:
             pass
 
 

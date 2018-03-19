@@ -184,7 +184,7 @@ class HttpRequestLifecycle(BaseLifecycleHelper):
         if self.match_regex:
             try:
                 self.match_regex = re.compile(match_regex, re.DOTALL)
-            except:
+            except Exception:
                 raise exceptions.InvalidLifecycleCheckConfigurationException(
                     'Bad regex for {}: {}'.format(self.__class__.__name__,
                                                   match_regex)
@@ -212,7 +212,7 @@ class HttpRequestLifecycle(BaseLifecycleHelper):
                                             **self.requests_options)
                 if self._test_response(response):
                     return True
-            except:
+            except Exception:
                 pass
 
             time.sleep(1)
@@ -240,7 +240,7 @@ class HttpRequestLifecycle(BaseLifecycleHelper):
             try:
                 # accept a numbered port
                 port = int(config['port'])
-            except:
+            except Exception:
                 raise exceptions.InvalidLifecycleCheckConfigurationException(
                     'Port {} is not defined by {}!'.format(
                         config['port'], container.name))

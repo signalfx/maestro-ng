@@ -174,7 +174,7 @@ def execute(options, config):
         return 0
     except KeyboardInterrupt:
         pass
-    except:
+    except Exception:
         traceback.print_exc()
     return 1
 

@@ -54,7 +54,7 @@ def columns():
         _, cols = win.getmaxyx()
         curses.endwin()
         return cols
-    except:
+    except Exception:
         return DEFAULT_TERM_COLUMNS
 
 

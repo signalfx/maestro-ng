@@ -1,8 +1,8 @@
 ChangeLog
 =========
 
-Unreleased
-----------
+Maestro 0.4.7
+-------------
 
 * Added support for `pre-start` and `pre-stop` lifecycle checks.
 

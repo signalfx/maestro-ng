@@ -9,10 +9,18 @@ container itself. A common use-case of this is to check for a given
 service port to become available to confirm that the application
 correctly started and is accepting connections.
 
-When starting containers, Maestro will execute all the lifecycle checks
-for the ``running`` target state; all must pass for the instance to be
-considered correctly up and running. Similarly, after stopping a
-container, Maestro will execute all ``stopped`` target state checks.
+Maestro can also execute checks before starting or stopping containers,
+to confirm that the requested start or stop action should indeed take
+place.
+
+When starting containers, Maestro will first execute the ``pre-start``
+lifecycle checks before starting the container. It will then execute all
+the lifecycle checks for the ``running`` target state; all must pass for
+the instance to be considered correctly up and running.
+
+Similarly, before stopping a container, Maestro will first execute the
+``pre-stop`` lifecycle checks. After stopping the container, Maestro
+will execute all the ``stopped`` target state checks.
 
 Checks can be defined via the ``lifecycle`` dictionary at the service
 level, or for each declared instance of a service. If both are present,

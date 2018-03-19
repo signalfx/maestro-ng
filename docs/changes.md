@@ -1,6 +1,11 @@
 ChangeLog
 =========
 
+Unreleased
+----------
+
+* Added support for `pre-start` and `pre-stop` lifecycle checks.
+
 Maestro 0.4.6
 -------------
 

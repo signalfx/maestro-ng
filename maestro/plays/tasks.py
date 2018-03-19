@@ -42,8 +42,7 @@ class Task:
     def _wait_for_status(self, cond, retries=10):
         """Wait for the container's status to comply to the given condition."""
         while retries >= 0:
-            status = self.container.status(refresh=True)
-            if cond(status):
+            if cond():
                 return True
             retries -= 1
             if retries >= 0:
@@ -58,9 +57,8 @@ class Task:
 
         Args:
             state (string): the target lifecycle state.
-            cond (lambda): a lambda function that takes in the container's
-                status (from inspection) and returns True if it conforms to the
-                target desired lifecycle state.
+            cond (lambda): a function that should return True if the container
+                reaches the desired lifecycle state.
         """
         checks = self.container.start_lifecycle_checks(state)
         if not checks:
@@ -186,6 +184,9 @@ class StartTask(Task):
             # application were already running.
             return None
 
+        if not self._check_for_state('pre-start', self.container.is_down):
+            raise Exception('failed pre-start lifecycle checks')
+
         # Otherwise we need to start it.
         if (not self._reuse) or (not self.container.status()):
             CleanTask(self.o, self.container, standalone=False).run()
@@ -221,7 +222,8 @@ class StartTask(Task):
                 command=self.container.command)
 
         self.o.pending('waiting for container...')
-        if not self._wait_for_status(lambda x: x):
+        if not self._wait_for_status(
+                lambda: self.container.status(refresh=True)):
             raise exceptions.ContainerOrchestrationException(
                 self.container,
                 'Container status could not be obtained after creation!')
@@ -243,16 +245,14 @@ class StartTask(Task):
         # initialization didn't fail.
         self.o.pending('waiting for initialization...')
 
-        def check_running(x):
-            return x and x['State']['Running']
-        if not self._wait_for_status(check_running):
+        if not self._wait_for_status(self.container.is_running):
             raise exceptions.ContainerOrchestrationException(
                 self.container,
                 'Container status could not be obtained after start!')
 
         # Wait up for the container's application to come online.
         self.o.pending('waiting for service...')
-        return self._check_for_state('running', check_running)
+        return self._check_for_state('running', self.container.is_running)
 
 
 class StopTask(Task):
@@ -265,8 +265,7 @@ class StopTask(Task):
         self.o.reset()
         self.o.pending('checking container...')
         try:
-            status = self.container.status(refresh=True)
-            if not status or not status['State']['Running']:
+            if not self.container.is_running():
                 self.o.commit(CONTAINER_STATUS_FMT.format(
                     self.container.shortid_and_tag))
                 self.o.commit(blue(TASK_RESULT_FMT.format('down')))
@@ -280,13 +279,15 @@ class StopTask(Task):
             self.container.shortid_and_tag)))
 
         try:
+            if not self._check_for_state(
+                    'pre-stop', self.container.is_running):
+                raise Exception('failed pre-stop lifecycle checks')
+
             self.o.pending('stopping service...')
             self.container.ship.backend.stop(
                 self.container.id, timeout=self.container.stop_timeout)
 
-            if not self._check_for_state('stopped',
-                                         lambda x: not x or
-                                         (x and not x['State']['Running'])):
+            if not self._check_for_state('stopped', self.container.is_down):
                 raise Exception('failed stopped lifecycle checks')
             self.o.commit(green(TASK_RESULT_FMT.format('stopped')))
         except Exception as e:

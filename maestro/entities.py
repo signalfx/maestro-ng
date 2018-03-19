@@ -520,6 +520,10 @@ class Container(Entity):
         status = self.status(refresh=True)
         return status and status['State']['Running']
 
+    def is_down(self):
+        """Returns True if this container isn't defined or is not running."""
+        return not self.is_running()
+
     @property
     def image(self):
         """Return the full name and tag of the image used by instances of this

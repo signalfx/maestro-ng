@@ -1,6 +1,12 @@
 ChangeLog
 =========
 
+Unreleased
+----------
+
+* Added `-H/--show-hosts` option to `maestro status` to show ship
+  hostnames/IP address instead of the logical ship name.
+
 Maestro 0.4.7
 -------------
 

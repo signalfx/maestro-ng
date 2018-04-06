@@ -196,15 +196,18 @@ class FullStatus(BaseOrchestrationPlay):
     features.
     """
 
-    def __init__(self, containers=[]):
+    def __init__(self, containers=[], show_hosts=False):
         BaseOrchestrationPlay.__init__(self, containers)
+        self._show_hosts = show_hosts
 
     def _run(self):
         for order, container in enumerate(self._containers, 1):
+            ship_name = container.ship.ip if self._show_hosts \
+                                          else container.ship.address
             o = termoutput.OutputFormatter(prefix=(
                 BaseOrchestrationPlay.LINE_FMT.format(
                     order, container.name, container.service.name,
-                    container.ship.address)))
+                    ship_name)))
 
             try:
                 o.pending('checking container...')
@@ -246,17 +249,20 @@ class Status(BaseOrchestrationPlay):
     """A less advanced, but faster (concurrent) status display orchestration
     play that only looks at the presence and status of the containers."""
 
-    def __init__(self, containers=[], concurrency=None):
+    def __init__(self, containers=[], concurrency=None, show_hosts=False):
         BaseOrchestrationPlay.__init__(
             self, containers, ignore_dependencies=True,
             concurrency=concurrency)
+        self._show_hosts = show_hosts
 
     def _run(self):
         for order, container in enumerate(self._containers):
+            ship_name = container.ship.ip if self._show_hosts \
+                                          else container.ship.address
             o = self._om.get_formatter(order, prefix=(
                 BaseOrchestrationPlay.LINE_FMT.format(
                     order + 1, container.name, container.service.name,
-                    container.ship.address)))
+                    ship_name)))
             self.register(tasks.StatusTask(o, container))
 
 

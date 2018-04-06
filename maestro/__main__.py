@@ -76,6 +76,9 @@ def create_parser():
     subparser.add_argument(
         '-F', '--full', action='store_true',
         help='show full status with port state')
+    subparser.add_argument(
+        '-H', '--show-hosts', action='store_true',
+        help='show hostnames instead of ships names')
 
     # pull
     subparser = subparsers.add_parser(

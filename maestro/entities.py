@@ -161,9 +161,13 @@ class Ship(Entity):
 
     @property
     def address(self):
+        return self.address(False)
+
+    def address(self, use_ip):
+        name = self.ip if use_ip else self.name
         if self._tunnel:
-            return '{} (ssh:{})'.format(self.name, self._tunnel.bind_port)
-        return self.name
+            return '{} (ssh:{})'.format(name, self._tunnel.bind_port)
+        return name
 
     def get_image_ids(self):
         """Returns a dictionary of tagged images available on the Docker daemon

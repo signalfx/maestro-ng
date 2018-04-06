@@ -231,8 +231,8 @@ class Conductor:
 
         print(' '.join(filter(lambda x: x.startswith(prefix), set(choices))))
 
-    def status(self, things, full=False, with_dependencies=False,
-               concurrency=None, **kwargs):
+    def status(self, things, full=False, show_hosts=False,
+               with_dependencies=False, concurrency=None, **kwargs):
         """Display the status of the given services and containers, but only
         looking at the container's state, not the application availability.
 
@@ -249,9 +249,9 @@ class Conductor:
             if with_dependencies else self._to_containers(things)
 
         if full:
-            plays.FullStatus(containers).run()
+            plays.FullStatus(containers, show_hosts).run()
         else:
-            plays.Status(containers, concurrency).run()
+            plays.Status(containers, concurrency, show_hosts).run()
 
     def pull(self, things, with_dependencies=False,
              ignore_dependencies=False, concurrency=None, **kwargs):

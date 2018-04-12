@@ -159,11 +159,7 @@ class Ship(Entity):
         this host."""
         return self._backend
 
-    @property
-    def address(self):
-        return self.address(False)
-
-    def address(self, use_ip):
+    def address(self, use_ip=False):
         name = self.ip if use_ip else self.name
         if self._tunnel:
             return '{} (ssh:{})'.format(name, self._tunnel.bind_port)

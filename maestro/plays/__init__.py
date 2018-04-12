@@ -202,8 +202,7 @@ class FullStatus(BaseOrchestrationPlay):
 
     def _run(self):
         for order, container in enumerate(self._containers, 1):
-            ship_name = container.ship.ip if self._show_hosts \
-                                          else container.ship.address
+            ship_name = container.ship.address(self._show_hosts)
             o = termoutput.OutputFormatter(prefix=(
                 BaseOrchestrationPlay.LINE_FMT.format(
                     order, container.name, container.service.name,
@@ -257,8 +256,7 @@ class Status(BaseOrchestrationPlay):
 
     def _run(self):
         for order, container in enumerate(self._containers):
-            ship_name = container.ship.ip if self._show_hosts \
-                                          else container.ship.address
+            ship_name = container.ship.address(self._show_hosts)
             o = self._om.get_formatter(order, prefix=(
                 BaseOrchestrationPlay.LINE_FMT.format(
                     order + 1, container.name, container.service.name,
@@ -288,7 +286,7 @@ class Start(BaseOrchestrationPlay):
             o = self._om.get_formatter(order, prefix=(
                 BaseOrchestrationPlay.LINE_FMT.format(
                     order + 1, container.name, container.service.name,
-                    container.ship.address)))
+                    container.ship.address())))
             self.register(tasks.StartTask(o, container, self._registries,
                                           self._refresh_images, self._reuse))
 
@@ -310,7 +308,7 @@ class Pull(BaseOrchestrationPlay):
             o = self._om.get_formatter(order, prefix=(
                 BaseOrchestrationPlay.LINE_FMT.format(
                     order + 1, container.name, container.service.name,
-                    container.ship.address)))
+                    container.ship.address())))
             self.register(tasks.PullTask(o, container, self._registries))
 
 
@@ -331,7 +329,7 @@ class Stop(BaseOrchestrationPlay):
             o = self._om.get_formatter(order, prefix=(
                 BaseOrchestrationPlay.LINE_FMT.format(
                     len(self._containers) - order, container.name,
-                    container.service.name, container.ship.address)))
+                    container.service.name, container.ship.address())))
             self.register(tasks.StopTask(o, container))
 
 
@@ -349,7 +347,7 @@ class Clean(BaseOrchestrationPlay):
             o = self._om.get_formatter(order, prefix=(
                 BaseOrchestrationPlay.LINE_FMT.format(
                     order + 1, container.name, container.service.name,
-                    container.ship.address)))
+                    container.ship.address())))
             self.register(tasks.CleanTask(o, container))
 
 
@@ -380,7 +378,7 @@ class Restart(BaseOrchestrationPlay):
             o = self._om.get_formatter(order, prefix=(
                 BaseOrchestrationPlay.LINE_FMT.format(
                     order + 1, container.name, container.service.name,
-                    container.ship.address)))
+                    container.ship.address())))
             self.register(tasks.RestartTask(
                 o, container, self._registries, self._refresh_images,
                 self._step_delay if order > 0 else 0, self._stop_start_delay,

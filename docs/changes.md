@@ -1,8 +1,8 @@
 ChangeLog
 =========
 
-Unreleased
-----------
+Maestro 0.5.0
+-------------
 
 * Added `-H/--show-hosts` option to `maestro status` to show ship
   hostnames/IP address instead of the logical ship name.

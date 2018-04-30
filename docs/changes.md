@@ -6,6 +6,12 @@ Unreleased
 
 * Added `-H/--show-hosts` option to `maestro status` to show ship
   hostnames/IP address instead of the logical ship name.
+* Introduce `--expand-services` and `--all` command-line flags.
+  When using `stop` or `restart` commands, the user will need to pass in
+  `--expand-services` to convert service names in given arguments to
+  container names of those services, or pass `--all` to force "no
+  arguments" to mean "all containers". Otherwise, Maestro will exit with
+  an error.
 
 Maestro 0.4.7
 -------------

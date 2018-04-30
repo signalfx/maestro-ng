@@ -165,14 +165,24 @@ class Conductor:
             result = result.union(deps)
         return result
 
-    def _to_containers(self, things):
+    def _to_containers(self, things, expand_services):
         """Transform a list of "things", container names or service names, to
-        an expended list of Container objects."""
+        an expended list of Container objects.
+
+        Args:
+            expand_services (boolean): whether to allow expanding service names
+                to their container instance names. If False and a service name
+                is encountered, the method will throw an exception.
+        """
         def parse_thing(s):
             if s in self.containers:
                 return [self.containers[s]]
             elif s in self.services:
-                return self.services[s].containers
+                if expand_services:
+                    return self.services[s].containers
+                raise exceptions.OrchestrationException(
+                    '{} is a service but --expand-services was not specified'
+                    .format(s))
             raise exceptions.OrchestrationException(
                 '{} is neither a service nor a container!'.format(s))
         result = []
@@ -192,17 +202,20 @@ class Conductor:
                 '{} is neither a service nor a container!'.format(s))
         return sorted(set(map(parse_thing, things)))
 
-    def _ordered_containers(self, things, forward=True):
+    def _ordered_containers(self, things, expand_services, forward=True):
         """Return the ordered list of containers from the list of names passed
         to it (either container names or service names).
 
         Args:
             things (list<string>):
+            expand_services (boolean): whether to allow expanding service names
+                to their container instance names. If False and a service name
+                is encountered, the method will throw an exception.
             forward (boolean): controls the direction of the dependency tree.
         """
         return self._order_dependencies(
-            sorted(self._gather_dependencies(self._to_containers(things),
-                                             forward)),
+            sorted(self._gather_dependencies(
+                self._to_containers(things, expand_services), forward)),
             forward=forward)
 
     def complete(self, tokens, **kwargs):
@@ -232,7 +245,8 @@ class Conductor:
         print(' '.join(filter(lambda x: x.startswith(prefix), set(choices))))
 
     def status(self, things, full=False, show_hosts=False,
-               with_dependencies=False, concurrency=None, **kwargs):
+               with_dependencies=False, concurrency=None, expand_services=True,
+               **kwargs):
         """Display the status of the given services and containers, but only
         looking at the container's state, not the application availability.
 
@@ -244,9 +258,13 @@ class Conductor:
                 things, or their dependencies as well.
             concurrency (int): The maximum number of instances that can be
                 acted on at the same time.
+            expand_services (boolean): whether to allow expanding service names
+                to their container instance names. If False and a service name
+                is encountered, the method will throw an exception.
         """
-        containers = self._ordered_containers(things) \
-            if with_dependencies else self._to_containers(things)
+        containers = self._ordered_containers(things, expand_services) \
+            if with_dependencies \
+            else self._to_containers(things, expand_services)
 
         if full:
             plays.FullStatus(containers, show_hosts).run()
@@ -254,7 +272,8 @@ class Conductor:
             plays.Status(containers, concurrency, show_hosts).run()
 
     def pull(self, things, with_dependencies=False,
-             ignore_dependencies=False, concurrency=None, **kwargs):
+             ignore_dependencies=False, concurrency=None, expand_services=True,
+             **kwargs):
         """Force an image pull to refresh images for the given services and
         containers. Dependencies of the requested containers and services are
         pulled first.
@@ -267,16 +286,20 @@ class Conductor:
                 respected.
             concurrency (int): The maximum number of instances that can be
                 acted on at the same time.
+            expand_services (boolean): whether to allow expanding service names
+                to their container instance names. If False and a service name
+                is encountered, the method will throw an exception.
         """
-        containers = self._ordered_containers(things) \
-            if with_dependencies else self._to_containers(things)
+        containers = self._ordered_containers(things, expand_services) \
+            if with_dependencies \
+            else self._to_containers(things, expand_services)
 
         plays.Pull(containers, self.registries, ignore_dependencies,
                    concurrency, auditor=self.auditor).run()
 
     def start(self, things, refresh_images=False, with_dependencies=False,
               ignore_dependencies=False, concurrency=None, reuse=False,
-              **kwargs):
+              expand_services=True, **kwargs):
         """Start the given container(s) and services(s). Dependencies of the
         requested containers and services are started first.
 
@@ -292,9 +315,13 @@ class Conductor:
                 acted on at the same time.
             reuse (boolean): Restart the existing container instead of
                 destroying/recreating a new one.
+            expand_services (boolean): whether to allow expanding service names
+                to their container instance names. If False and a service name
+                is encountered, the method will throw an exception.
         """
-        containers = self._ordered_containers(things) \
-            if with_dependencies else self._to_containers(things)
+        containers = self._ordered_containers(things, expand_services) \
+            if with_dependencies \
+            else self._to_containers(things, expand_services)
 
         plays.Start(containers, self.registries, refresh_images,
                     ignore_dependencies, concurrency, reuse,
@@ -303,7 +330,7 @@ class Conductor:
     def restart(self, things, refresh_images=False, with_dependencies=False,
                 ignore_dependencies=False, concurrency=None, step_delay=0,
                 stop_start_delay=0, reuse=False, only_if_changed=False,
-                **kwargs):
+                expand_services=False, **kwargs):
         """Restart the given container(s) and services(s). Dependencies of the
         requested containers and services are started first.
 
@@ -325,16 +352,21 @@ class Conductor:
                 destroying/recreating a new one.
             only_if_changed (boolean): Only restart the container if its
                 underlying image was updated.
+            expand_services (boolean): whether to allow expanding service names
+                to their container instance names. If False and a service name
+                is encountered, the method will throw an exception.
         """
-        containers = self._ordered_containers(things, False) \
-            if with_dependencies else self._to_containers(things)
+        containers = self._ordered_containers(
+                things, expand_services, forward=False) \
+            if with_dependencies \
+            else self._to_containers(things, expand_services)
         plays.Restart(containers, self.registries, refresh_images,
                       ignore_dependencies, concurrency, step_delay,
                       stop_start_delay, reuse, only_if_changed,
                       auditor=self.auditor).run()
 
     def stop(self, things, with_dependencies=False, ignore_dependencies=False,
-             concurrency=None, **kwargs):
+             concurrency=None, expand_services=False, **kwargs):
         """Stop the given container(s) and service(s).
 
         This one is a bit more tricky because we don't want to look at the
@@ -350,14 +382,19 @@ class Conductor:
                 respected.
             concurrency (int): The maximum number of instances that can be
                 acted on at the same time.
+            expand_services (boolean): whether to allow expanding service names
+                to their container instance names. If False and a service name
+                is encountered, the method will throw an exception.
         """
-        containers = self._ordered_containers(things, False) \
-            if with_dependencies else self._to_containers(things)
+        containers = self._ordered_containers(
+                things, expand_services, forward=False) \
+            if with_dependencies \
+            else self._to_containers(things, expand_services)
         plays.Stop(containers, ignore_dependencies,
                    concurrency, auditor=self.auditor).run()
 
     def clean(self, things, with_dependencies=False, concurrency=None,
-              **kwargs):
+              expand_services=True, **kwargs):
         """Remove the given stopped Docker containers.
 
         Args:
@@ -367,11 +404,12 @@ class Conductor:
             concurrency (int): The maximum number of instances that can be
                 acted on at the same time.
         """
-        containers = self._ordered_containers(things) \
-            if with_dependencies else self._to_containers(things)
+        containers = self._ordered_containers(things, expand_services) \
+            if with_dependencies \
+            else self._to_containers(things, expand_services)
         plays.Clean(containers, concurrency, auditor=self.auditor).run()
 
-    def logs(self, things, follow, n, **kwargs):
+    def logs(self, things, follow, n, expand_services=True, **kwargs):
         """Display the logs of the given container.
 
         Args:
@@ -381,7 +419,7 @@ class Conductor:
             n (int): Number of lines to display (when not following), from the
                 bottom of the log.
         """
-        containers = self._to_containers(things)
+        containers = self._to_containers(things, expand_services)
         if len(containers) != 1:
             raise exceptions.ParameterException(
                 'Logs can only be shown for a single container!')

@@ -45,7 +45,16 @@ def create_parser():
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument(
         'things', nargs='*', metavar='thing',
-        help='container(s) or service(s) to display')
+        help='container(s) or service(s) to act on')
+
+    expandable = argparse.ArgumentParser(add_help=False)
+    expandable.add_argument(
+        '-s', '--expand-services', action='store_true',
+        help='expand service names to containers')
+    expandable.add_argument(
+        '-a', '--all', action='store_true',
+        dest='expand_all',
+        help='no arguments means all containers')
 
     concurrent = argparse.ArgumentParser(add_help=False)
     concurrent.add_argument(
@@ -96,14 +105,14 @@ def create_parser():
 
     # stop
     subparser = subparsers.add_parser(
-        parents=[common, concurrent],
+        parents=[common, concurrent, expandable],
         name='stop',
         description='Stop services and containers',
         help='stop services and containers')
 
     # restart
     subparser = subparsers.add_parser(
-        parents=[common, concurrent, with_refresh],
+        parents=[common, concurrent, expandable, with_refresh],
         name='restart',
         description='Restart services and containers',
         help='restart services and containers')
@@ -168,6 +177,20 @@ def execute(options, config):
 
     try:
         c = maestro.Conductor(config)
+
+        # expand_all implies expand_services
+        if hasattr(options, 'expand_all') and options.expand_all:
+            options.expand_services = True
+
+        # Bail out of stop/restart with no arguments if expand_all isn't set
+        if options.command in ['stop', 'restart'] \
+                and not options.expand_all \
+                and not options.things:
+            sys.stderr.write(
+                ('No services or containers specified for {}, '
+                 'and --all not set.\n').format(options.command))
+            return 1
+
         if options.command != 'complete' and not options.things:
             options.things = [s.name for s in c.services.values()
                               if options.command == 'status' or not s.omit]

@@ -316,7 +316,7 @@ class WebHookAuditor(BaseAuditor):
                         d[k] = v2
                 return d
             if type(on) == list or type(on) == tuple:
-                return filter(None, map(lambda e: r(fn, e), on))
+                return list(filter(None, map(lambda e: r(fn, e), on)))
             return fn(on)
 
         return r(lambda s: s.format(what=what, action=action, who=who,

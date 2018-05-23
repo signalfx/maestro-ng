@@ -61,9 +61,17 @@ class Conductor:
         # Resolve dependencies between services.
         for kind, service in self._config.get('services', {}).items():
             for dependency in service.get('requires', []):
+                if dependency not in self.services:
+                    raise exceptions.EnvironmentConfigurationException(
+                        'Service dependency {} defined on {} does not exist'
+                        .format(dependency, kind))
                 self.services[kind].add_dependency(self.services[dependency])
                 self.services[dependency].add_dependent(self.services[kind])
             for wants_info in service.get('wants_info', []):
+                if wants_info not in self.services:
+                    raise exceptions.EnvironmentConfigurationException(
+                        'Service dependency {} defined on {} does not exist'
+                        .format(dependency, kind))
                 self.services[kind].add_wants_info(self.services[wants_info])
 
         # Provide link environment variables to each container of each service

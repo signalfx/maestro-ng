@@ -1,6 +1,13 @@
 ChangeLog
 =========
 
+Maestro 0.5.1
+-------------
+
+* Improve error messages when an expected service dependency is not
+  defined in the YAML environment file.
+* Fixes for Python3 compatibility.
+
 Maestro 0.5.0
 -------------
 

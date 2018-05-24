@@ -385,7 +385,7 @@ class ExecuteScriptAuditor(BaseAuditor):
             self._args.format(action=action, what=what, who=None).split()
 
         process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-        output = process.communicate(input=ships)
+        output = process.communicate(input=ships.encode('utf-8'))
         if process.returncode != 0:
             raise subprocess.CalledProcessError(process.return_code,
                                                 cmd, output)

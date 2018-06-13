@@ -212,6 +212,7 @@ class StartTask(Task):
                 image=self.container.image,
                 name=self.container.name,
                 hostname=self.container.hostname,
+                user=self.container.username,
                 environment=self.container.env,
                 volumes=list(self.container.get_volumes()),
                 cpu_shares=self.container.cpu_shares,

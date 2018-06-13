@@ -407,6 +407,9 @@ class Container(Entity):
             (name, alias) for name, alias in
             config.get('links', {}).items())
 
+        # User name to use inside the container
+        self.username = config.get('username', None)
+
         # Should this container run with -privileged?
         self.privileged = config.get('privileged', False)
 

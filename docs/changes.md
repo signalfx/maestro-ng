@@ -1,8 +1,15 @@
 ChangeLog
 =========
 
+Unreleased
+----------
+
+* Add ability to run process inside container as a specific user.
+
 Maestro 0.5.1
 -------------
+
+_May 23rd, 2018_
 
 * Improve error messages when an expected service dependency is not
   defined in the YAML environment file.
@@ -10,6 +17,8 @@ Maestro 0.5.1
 
 Maestro 0.5.0
 -------------
+
+_April 30th, 2018_
 
 * Added `-H/--show-hosts` option to `maestro status` to show ship
   hostnames/IP address instead of the logical ship name.
@@ -22,6 +31,8 @@ Maestro 0.5.0
 
 Maestro 0.4.7
 -------------
+
+_March 19th, 2018_
 
 * Added support for `pre-start` and `pre-stop` lifecycle checks.
 

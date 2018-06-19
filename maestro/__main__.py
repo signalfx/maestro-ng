@@ -12,7 +12,7 @@ import logging
 import sys
 import traceback
 
-from . import loader, maestro, name, version
+from . import exceptions, loader, maestro, name, termoutput, version
 
 DEFAULT_MAESTRO_FILE = 'maestro.yaml'
 DEFAULT_MAESTRO_COMMAND = 'status'
@@ -200,6 +200,8 @@ def execute(options, config):
         return 0
     except KeyboardInterrupt:
         pass
+    except exceptions.OrchestrationException as e:
+        sys.stderr.write('{}: {}\n'.format(termoutput.red('ERROR'), e))
     except Exception:
         traceback.print_exc()
     return 1

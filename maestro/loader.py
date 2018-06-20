@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SignalFx, Inc. All rights reserved.
+# Copyright (C) 2015-2018 SignalFx, Inc. All rights reserved.
 #
 # Docker container orchestration utility.
 
@@ -10,7 +10,7 @@ import yaml
 from . import exceptions
 
 
-class MaestroYamlConstructor(yaml.constructor.Constructor):
+class MaestroYamlConstructor(yaml.constructor.SafeConstructor):
     """A PyYAML object constructor that errors on duplicate keys in YAML
     mappings. Because for some reason PyYAML doesn't do that since 3.x."""
 

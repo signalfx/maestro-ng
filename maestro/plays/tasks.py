@@ -195,8 +195,8 @@ class StartTask(Task):
             image = self.container.get_image_details()
             if self._refresh or \
                 not list(filter(
-                        lambda i: self.container.image in (i['RepoTags'] or []),
-                        self.container.ship.backend.images(image['repository']))):
+                    lambda i: self.container.image in (i['RepoTags'] or []),
+                    self.container.ship.backend.images(image['repository']))):
                 PullTask(self.o, self.container, self._registries,
                          standalone=False).run()
 

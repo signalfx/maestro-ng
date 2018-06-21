@@ -6,17 +6,18 @@ import jinja2
 import os
 import sys
 import yaml
+from yaml.constructor import ConstructorError, SafeConstructor
 
 from . import exceptions
 
 
-class MaestroYamlConstructor(yaml.constructor.SafeConstructor):
+class MaestroYamlConstructor(SafeConstructor):
     """A PyYAML object constructor that errors on duplicate keys in YAML
     mappings. Because for some reason PyYAML doesn't do that since 3.x."""
 
     def construct_mapping(self, node, deep=False):
         if not isinstance(node, yaml.nodes.MappingNode):
-            raise yaml.constructor.ConstructorError(
+            raise ConstructorError(
                 None, None,
                 "expected a mapping node, but found %s" % node.id,
                 node.start_mark)
@@ -24,11 +25,11 @@ class MaestroYamlConstructor(yaml.constructor.SafeConstructor):
         for key_node, value_node in node.value:
             key = self.construct_object(key_node, deep=deep)
             if key in keys:
-                raise yaml.constructor.ConstructorError(
+                raise ConstructorError(
                     "while constructing a mapping", node.start_mark,
                     "found duplicate key (%s)" % key, key_node.start_mark)
             keys.add(key)
-        return yaml.constructor.Constructor.construct_mapping(self, node, deep)
+        return SafeConstructor.construct_mapping(self, node, deep)
 
 
 class MaestroYamlLoader(yaml.reader.Reader, yaml.scanner.Scanner,

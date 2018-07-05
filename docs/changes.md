@@ -1,10 +1,13 @@
 ChangeLog
 =========
 
-Unreleased
-----------
+Maestro 0.5.2
+-------------
 
 * Add ability to run process inside container as a specific user.
+* Nicer error output.
+* Use a safe YAML loader.
+* More fixes for Python3 compatibility.
 
 Maestro 0.5.1
 -------------

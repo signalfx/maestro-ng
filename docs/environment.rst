@@ -280,6 +280,9 @@ on (by name). Additionally, each instance may define:
 - ``ulimits``, to override the default ulimits for a container. You can either
   specify a single limit as an integer or soft/hard limits as a mapping.
 
+- ``user``, to set the name of the user under which the container's processes
+  will run.
+
 For example:
 
 .. code-block:: yaml

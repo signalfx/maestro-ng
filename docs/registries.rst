@@ -26,3 +26,22 @@ for credentials to registries you are already logged in against.
 
 If credentials are found, Maestro will login to the registry before
 attempting to pull the image.
+
+Additionally, you can configure a retry policy or image pull errors or a
+per-registry basis. You can specify a maximum number of retries, and a list of
+returned HTTP status codes to retry on. For example, the following
+configuration will make two attempts to pull images from the ``quay.io``
+registry if a 500 is returned.
+
+.. code-block:: yaml
+
+  registries:
+    quay.io:
+      registry: https://quay.io/v1/
+      email: user@example.com
+      username: user
+      password: super-secret
+      retry:
+        attempts: 2
+        when:
+          - 500

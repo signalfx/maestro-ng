@@ -1,6 +1,11 @@
 ChangeLog
 =========
 
+Maestro 0.5.3
+-------------
+
+* Add retry policy support on image pulls.
+
 Maestro 0.5.2
 -------------
 

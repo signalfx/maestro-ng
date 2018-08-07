@@ -6,6 +6,13 @@
 from __future__ import print_function
 
 import collections
+
+try:
+    from docker.errors import APIError
+except ImportError:
+    # Fall back to <= 0.3.1 location
+    from docker.client import APIError
+
 import json
 import time
 try:
@@ -22,6 +29,7 @@ from ..termoutput import green, blue, red, time_ago
 
 CONTAINER_STATUS_FMT = '{:<25s} '
 TASK_RESULT_FMT = '{:<10s}'
+_DEFAULT_RETRY_ATTEMPTS = 3
 
 
 class Task:
@@ -378,7 +386,9 @@ class LoginTask(Task):
         self.o.reset()
         self.o.pending('logging in to {}...'.format(registry['registry']))
         try:
-            self.container.ship.backend.login(**registry)
+            args = dict((k, registry[k]) for k in
+                        ['username', 'password', 'email', 'registry'])
+            self.container.ship.backend.login(**args)
         except Exception as e:
             raise exceptions.ContainerOrchestrationException(
                 self.container,
@@ -429,15 +439,42 @@ class PullTask(Task):
         image = self.container.get_image_details()
 
         # Pull the image (this may be a no-op, but that's fine).
-        for dlstatus in self.container.ship.backend.pull(
-                stream=True, insecure_registry=insecure, **image):
-            if dlstatus:
-                percentage = self._update_pull_progress(dlstatus)
-                self.o.pending('... {:.1f}%'.format(percentage))
+        retry_spec = self._get_registry_retry_spec(registry)
+        attempts = retry_spec['attempts']
+        while attempts > 0:
+            try:
+                for dlstatus in self.container.ship.backend.pull(
+                        stream=True, insecure_registry=insecure, **image):
+                    if dlstatus:
+                        percentage = self._update_pull_progress(dlstatus)
+                        self.o.pending('... {:.1f}%'.format(percentage))
+                break
+            except APIError as e:
+                status = e.response.status_code
+                if status in retry_spec['when']:
+                    self.o.pending(red('... got {}; retrying'.format(status)))
+                    attempts -= 1
+                    time.sleep(1)
+                    continue
+                raise
 
         if self._standalone:
             self.o.commit(CONTAINER_STATUS_FMT.format(''))
             self.o.commit(green(TASK_RESULT_FMT.format('done')))
+
+    def _get_registry_retry_spec(self, registry):
+        """Get a retry spec for a registry.
+
+        The retry spec is an object that defines how and when to retry image
+        pulls from a registry. It contains a maximum number of retries
+        ('attempts') and a list of returned status codes to retry on ('when').
+
+        When nothing is configured, no retries are attempted (by virtue of the
+        'when' list being empty)."""
+        spec = registry.get('retry', {})
+        spec['attempts'] = int(spec.get('attempts', _DEFAULT_RETRY_ATTEMPTS))
+        spec['when'] = set(spec.get('when', []))
+        return spec
 
     def _update_pull_progress(self, last):
         """Update an image pull progress map with latest download progress

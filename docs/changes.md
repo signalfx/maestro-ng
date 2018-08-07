@@ -1,13 +1,24 @@
 ChangeLog
 =========
 
+Maestro 0.5.4
+-------------
+
+_August 6th, 2018_
+
+* Apply registry retry policy to login attempts.
+
 Maestro 0.5.3
 -------------
+
+_August 6th, 2018_
 
 * Add retry policy support on image pulls.
 
 Maestro 0.5.2
 -------------
+
+_July 5th, 2018_
 
 * Add ability to run process inside container as a specific user.
 * Nicer error output.

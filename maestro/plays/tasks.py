@@ -383,17 +383,29 @@ class LoginTask(Task):
             # Still no username found; bail out.
             return
 
+        retry_spec = LoginTask.get_registry_retry_spec(registry)
+        args = dict((k, registry[k]) for k in
+                    ['username', 'password', 'email', 'registry'])
+
         self.o.reset()
         self.o.pending('logging in to {}...'.format(registry['registry']))
-        try:
-            args = dict((k, registry[k]) for k in
-                        ['username', 'password', 'email', 'registry'])
-            self.container.ship.backend.login(**args)
-        except Exception as e:
-            raise exceptions.ContainerOrchestrationException(
-                self.container,
-                'Login to {} as {} failed: {}'
-                .format(registry['registry'], registry['username'], e))
+        attempts = retry_spec['attempts']
+        while attempts > 0:
+            try:
+                self.container.ship.backend.login(**args)
+                break
+            except APIError as e:
+                status = e.response.status_code
+                if status in retry_spec['when']:
+                    self.o.pending(red('... got {}; retrying in 1s'
+                                       .format(status)))
+                    attempts -= 1
+                    time.sleep(1)
+                    continue
+                raise exceptions.ContainerOrchestrationException(
+                    self.container,
+                    'Login to {} as {} failed: {}'
+                    .format(registry['registry'], registry['username'], e))
 
     @staticmethod
     def registry_for_container(container, registries={}):
@@ -412,6 +424,21 @@ class LoginTask(Task):
                     break
 
         return registries.get(registry)
+
+    @staticmethod
+    def get_registry_retry_spec(registry):
+        """Get a retry spec for a registry.
+
+        The retry spec is an object that defines how and when to retry image
+        pulls from a registry. It contains a maximum number of retries
+        ('attempts') and a list of returned status codes to retry on ('when').
+
+        When nothing is configured, no retries are attempted (by virtue of the
+        'when' list being empty)."""
+        spec = registry.get('retry', {})
+        spec['attempts'] = int(spec.get('attempts', _DEFAULT_RETRY_ATTEMPTS))
+        spec['when'] = set(spec.get('when', []))
+        return spec
 
 
 class PullTask(Task):
@@ -439,7 +466,7 @@ class PullTask(Task):
         image = self.container.get_image_details()
 
         # Pull the image (this may be a no-op, but that's fine).
-        retry_spec = self._get_registry_retry_spec(registry)
+        retry_spec = LoginTask.get_registry_retry_spec(registry)
         attempts = retry_spec['attempts']
         while attempts > 0:
             try:
@@ -452,7 +479,8 @@ class PullTask(Task):
             except APIError as e:
                 status = e.response.status_code
                 if status in retry_spec['when']:
-                    self.o.pending(red('... got {}; retrying'.format(status)))
+                    self.o.pending(red('... got {}; retrying in 1s'
+                                       .format(status)))
                     attempts -= 1
                     time.sleep(1)
                     continue
@@ -461,20 +489,6 @@ class PullTask(Task):
         if self._standalone:
             self.o.commit(CONTAINER_STATUS_FMT.format(''))
             self.o.commit(green(TASK_RESULT_FMT.format('done')))
-
-    def _get_registry_retry_spec(self, registry):
-        """Get a retry spec for a registry.
-
-        The retry spec is an object that defines how and when to retry image
-        pulls from a registry. It contains a maximum number of retries
-        ('attempts') and a list of returned status codes to retry on ('when').
-
-        When nothing is configured, no retries are attempted (by virtue of the
-        'when' list being empty)."""
-        spec = registry.get('retry', {})
-        spec['attempts'] = int(spec.get('attempts', _DEFAULT_RETRY_ATTEMPTS))
-        spec['when'] = set(spec.get('when', []))
-        return spec
 
     def _update_pull_progress(self, last):
         """Update an image pull progress map with latest download progress

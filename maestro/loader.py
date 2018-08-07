@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2018 SignalFx, Inc. All rights reserved.
+# Copyright (C) 2015-2018 SignalFx, Inc.
 #
 # Docker container orchestration utility.
 

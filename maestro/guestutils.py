@@ -1,5 +1,5 @@
 # Copyright (C) 2013-2014 SignalFuse, Inc.
-# Copyright (C) 2015 SignalFx, Inc.
+# Copyright (C) 2015-2018 SignalFx, Inc.
 #
 # Utility functions for service start scripts that help work with Maestro
 # orchestration.

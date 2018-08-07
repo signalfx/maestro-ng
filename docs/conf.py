@@ -49,7 +49,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'MaestroNG'
-copyright = u'2013-2018, Maxime Petazzoni'
+copyright = u'2013-2014 SignalFuse, Inc; 2015-2018 SignalFx, Inc'
 author = u'Maxime Petazzoni'
 
 # The version info for the project you're documenting, acts as replacement for

@@ -1,5 +1,5 @@
 # Copyright (C) 2014 SignalFuse, Inc.
-# Copyright (C) 2015 SignalFx, Inc.
+# Copyright (C) 2015-2018 SignalFx, Inc.
 
 # Maestro extension that can be used for wrapping the execution of a
 # long-running service with log management scaffolding, potentially sending the

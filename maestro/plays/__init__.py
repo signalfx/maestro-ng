@@ -29,7 +29,7 @@ class BaseOrchestrationPlay:
     # column is bounded between 0 and 40 characters. We keep 60 columns for
     # pending and commited output in the last column.
     _COLUMNS = columns()
-    _INST_CSIZE = min(40, max(20, (_COLUMNS - 60) / 3))
+    _INST_CSIZE = min(40, max(20, int((_COLUMNS - 60) / 3)))
     _SHIP_CSIZE = min(40, max(0, _COLUMNS - _INST_CSIZE - 80))
 
     # Header line format and titles.

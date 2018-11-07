@@ -370,10 +370,21 @@ class BaseConfigFileUsingTest(unittest.TestCase):
 
 class ConductorTest(BaseConfigFileUsingTest):
 
+    def test_duplicate_service(self):
+        self.assertRaises(
+                yaml.constructor.ConstructorError,
+                lambda: self._get_config('duplicate_service'))
+
     def test_duplicate_container_name(self):
         self.assertRaises(
                 yaml.constructor.ConstructorError,
                 lambda: self._get_config('duplicate_container'))
+
+    def test_duplicate_container_name_across_services(self):
+        config = self._get_config('duplicate_container_across_services')
+        self.assertRaises(
+                exceptions.EnvironmentConfigurationException,
+                lambda: maestro.Conductor(config))
 
     def test_empty_registry_list(self):
         config = self._get_config('empty_registries')

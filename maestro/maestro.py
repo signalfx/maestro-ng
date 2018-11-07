@@ -43,6 +43,7 @@ class Conductor:
         self.containers = {}
 
         for kind, service in self._config.get('services', {}).items():
+            # Duplicate services can't happen in the YAML structure.
             self.services[kind] = \
                 entities.Service(
                     kind, service['image'], service.get('omit', False),
@@ -52,6 +53,14 @@ class Conductor:
                     service.get('ports', {}))
 
             for name, instance in service['instances'].items():
+                # Duplicate instances can't happen within the same service in
+                # the YAML structure, but may happen across services, so we
+                # need to check for that.
+                existing = self.containers.get(name)
+                if existing:
+                    raise exceptions.EnvironmentConfigurationException(
+                            'Service instance {} is already defined in {}'
+                            .format(name, existing.service.name))
                 self.containers[name] = \
                     entities.Container(
                         name, self.ships[instance['ship']],

@@ -1,0 +1,19 @@
+name: test-duplicate-container-across-services
+ships:
+  l1:
+    ip: "127.0.0.1"
+  l2:
+    ip: "127.0.0.2"
+services:
+  webapp:
+    image: foo
+    instances:
+      w1:
+        ship: l1
+        ports: {http: 3344}
+  db:
+    image: bar
+    instances:
+      w1:
+        ship: l2
+        ports: {client: 3345}

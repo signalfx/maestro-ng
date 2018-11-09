@@ -63,9 +63,8 @@ class Conductor:
                             .format(name, existing.service.name))
                 self.containers[name] = \
                     entities.Container(
-                        name, self.ships[instance['ship']],
-                        self.services[kind], instance,
-                        self.schema)
+                        self.ships, name, self.services[kind],
+                        instance, self.schema)
 
         # Resolve dependencies between services.
         for kind, service in self._config.get('services', {}).items():

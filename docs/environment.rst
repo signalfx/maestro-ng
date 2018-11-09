@@ -240,8 +240,12 @@ on (by name). Additionally, each instance may define:
 
 - ``cap_drop``, Linux capabilities to drop from the container;
 
-- ``extra_hosts``, map a custom host to an IP for the container. Example:
-  ``<hostname>: <ip address>``;
+- ``extra_hosts``, a map of custom hostnames to IP addresses that will be added
+  to the ``/etc/hosts`` for the container. Example: ``<hostname>: <ip address>``.
+  You can also define extra hosts by reference to other *ships* defined in the
+  Maestro environment with: ``<hostname>: {ship: <ship-name>}``. Note that the
+  ship *must* be defined with an IP address (as opposed to a FQDN) for this to
+  work in the containers' host file;
 
 - ``stop_timeout``, the number of seconds Docker will wait between sending
   ``SIGTERM`` and ``SIGKILL`` (defaults to 10);

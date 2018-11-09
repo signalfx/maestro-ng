@@ -79,10 +79,12 @@ class ContainerTest(unittest.TestCase):
               api_version=DOCKER_VERSION, ports=PORTS):
         service = entities.Service(service_name, image, schema=schema,
                                    env=service_env, ports=ports)
-        return entities.Container(container_name,
-                                  entities.Ship(ship_name, ship_ip,
-                                                api_version=api_version),
-                                  service, config=config, schema=schema)
+        ship = entities.Ship(ship_name, ship_ip, api_version=api_version)
+        cfg = {'ship': ship.name}
+        if config:
+            cfg.update(config)
+        return entities.Container({ship_name: ship}, container_name,
+                                  service, config=cfg, schema=schema)
 
     def test_image_propagates_from_service(self):
         container = self._cntr()
@@ -359,6 +361,17 @@ class ContainerTest(unittest.TestCase):
                          {'exposed': '1234/tcp',
                           'external': ('0.0.0.0', '1234-1236/tcp')})
 
+    def test_simple_extra_host(self):
+        container = self._cntr(config={'extra_hosts': {'foo': '10.0.0.1'}})
+        self.assertEqual(container.extra_hosts, {'foo': '10.0.0.1'})
+
+    def test_ship_reference_extra_host(self):
+        container = self._cntr(config={
+            'extra_hosts': {'foo': {'ship': ContainerTest.SHIP}}
+        })
+        self.assertEqual(container.extra_hosts,
+                         {'foo': ContainerTest.SHIP_IP})
+
 
 class BaseConfigFileUsingTest(unittest.TestCase):
 
@@ -486,11 +499,12 @@ class AuditorConfigTest(BaseConfigFileUsingTest):
 class LifecycleHelperTest(unittest.TestCase):
 
     def _get_container(self):
-        ship = entities.Ship('ship', 'ship.ip')
+        ship = entities.Ship('test-ship', 'ship.ip')
         service = entities.Service('foo', 'stackbrew/ubuntu')
         return entities.Container(
-            'foo1', ship, service,
-            config={'ports': {'server': '4242/tcp', 'data': '4243/udp'},
+            {ship.name: ship}, 'foo1', service,
+            config={'ship': 'test-ship',
+                    'ports': {'server': '4242/tcp', 'data': '4243/udp'},
                     'env': {'foo': 'bar', 'wid': 42}})
 
     def test_script_env_all_strings(self):

@@ -329,13 +329,12 @@ class Container(Entity):
     """A Container represents an instance of a particular service that will be
     executed inside a Docker container on its target ship/host."""
 
-    def __init__(self, name, ship, service, config=None, schema=None):
+    def __init__(self, ships, name, service, config=None, schema=None):
         """Create a new Container object.
 
         Args:
+            ships (dict): the dictionary of all defined ships in the environment.
             name (string): the instance name (should be unique).
-            ship (Ship): the Ship object representing the host this container
-                is expected to be executed on.
             service (Service): the Service this container is an instance of.
             config (dict): the YAML-parsed dictionary containing this
                 instance's configuration (ports, environment, volumes, etc.)
@@ -345,7 +344,7 @@ class Container(Entity):
         config = config or {}
 
         self._status = None  # The container's status, cached.
-        self._ship = ship
+        self._ship = ships[config['ship']]
         self._service = service
         self._image = config.get('image', service.image)
         self._schema = schema
@@ -418,7 +417,8 @@ class Container(Entity):
         self.cap_drop = config.get('cap_drop', None)
 
         # Add extra hosts
-        self.extra_hosts = config.get('extra_hosts', None)
+        self.extra_hosts = self._parse_extra_hosts(
+                ships, config.get('extra_hosts'))
 
         # Network mode
         self.network_mode = config.get('net')
@@ -890,6 +890,20 @@ class Container(Entity):
             else:
                 continue
             result.append(ulimit)
+        return result
+
+    def _parse_extra_hosts(self, ships, hosts):
+        """Parse extra hosts that will be added to /etc/hosts."""
+        if not hosts:
+            return None
+        result = {}
+        for name, value in hosts.items():
+            if isinstance(value, dict):
+                result[name] = ships[value['ship']].ip
+            elif isinstance(value, six.string_types):
+                result[name] = value
+            else:
+                continue
         return result
 
     def __repr__(self):

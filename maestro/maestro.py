@@ -84,13 +84,19 @@ class Conductor:
 
         # Provide link environment variables to each container of each service
         # that requires it or wants it.
+        dep_link_vars_cache = {}
         for service in self.services.values():
+            service_link_vars = service.get_link_variables(True)
             for container in service.containers:
                 # Containers always know about their peers in the same service.
-                container.env.update(service.get_link_variables(True))
+                container.env.update(service_link_vars)
                 # Containers also get links from the service's dependencies.
                 for dependency in service.requires.union(service.wants_info):
-                    container.env.update(dependency.get_link_variables())
+                    dep_link_vars = dep_link_vars_cache.get(dependency, None)
+                    if dep_link_vars is None:
+                        dep_link_vars = dependency.get_link_variables()
+                        dep_link_vars_cache[dependency] = dep_link_vars
+                    container.env.update(dep_link_vars)
 
         # Check for host locality and volume conflicts on volumes_from, and add
         # service dependencies implicitely required by volumes_from another

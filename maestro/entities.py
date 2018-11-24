@@ -11,7 +11,7 @@ import os
 
 # Import _strptime manually to work around a thread safety issue when using
 # strptime() from threads for the first time.
-import _strptime # flake8: noqa
+import _strptime # noqa
 
 import docker
 try:
@@ -38,7 +38,7 @@ from . import exceptions
 from . import lifecycle
 
 # Valid syntax for port spec definitions
-_PORT_SPEC_REGEX = re.compile(r'^(?P<p1>\d+)(?:-(?P<p2>\d+))?(?:/(?P<proto>(tcp|udp)))?$')
+_PORT_SPEC_REGEX = re.compile(r'^(?P<p1>\d+)(?:-(?P<p2>\d+))?(?:/(?P<proto>(tcp|udp)))?$') # noqa
 _DEFAULT_PORT_PROTOCOL = 'tcp'
 
 # Possible values for the restart policy type.
@@ -83,7 +83,8 @@ class Ship(Entity):
             name (string): the name of the ship.
             ip (string): the IP address of resolvable host name of the host.
             docker_port (int): the port the Docker daemon listens on.
-            socket_path (string): the path to the unix socket the Docker daemon listens on.
+            socket_path (string): the path to the unix socket the Docker
+                daemon listens on.
             api_version (string): the API version of the Docker daemon.
             ssh_tunnel (dict): configuration for SSH tunneling to the remote
                 Docker daemon.
@@ -91,9 +92,12 @@ class Ship(Entity):
         Entity.__init__(self, name)
         self._ip = ip
         self._endpoint = endpoint or ip
-        self._docker_port = int(docker_port or
-                (self.DEFAULT_DOCKER_TLS_PORT if tls else self.DEFAULT_DOCKER_PORT))
-        self._socket_path = os.path.realpath(socket_path) if socket_path else None
+        self._docker_port = int(
+            docker_port or
+            (self.DEFAULT_DOCKER_TLS_PORT if tls
+             else self.DEFAULT_DOCKER_PORT))
+        self._socket_path = os.path.realpath(socket_path) \
+            if socket_path else None
         self._tunnel = None
 
         if ssh_tunnel:
@@ -132,10 +136,10 @@ class Ship(Entity):
                 proto, self._endpoint, self._docker_port)
 
         self._tls = docker.tls.TLSConfig(
-            verify = tls_verify,
-            client_cert = (tls_cert, tls_key),
-            ca_cert = tls_ca_cert,
-            ssl_version = ssl_version) if tls else None
+            verify=tls_verify,
+            client_cert=(tls_cert, tls_key),
+            ca_cert=tls_ca_cert,
+            ssl_version=ssl_version) if tls else None
 
         self._backend = docker.Client(
             base_url=self._backend_url,
@@ -333,7 +337,8 @@ class Container(Entity):
         """Create a new Container object.
 
         Args:
-            ships (dict): the dictionary of all defined ships in the environment.
+            ships (dict): the dictionary of all defined ships in the
+                environment.
             name (string): the instance name (should be unique).
             service (Service): the Service this container is an instance of.
             config (dict): the YAML-parsed dictionary containing this
@@ -357,7 +362,8 @@ class Container(Entity):
         self.command = config.get('command', config.get('cmd'))
 
         # Parse the port specs.
-        self.ports = self._parse_ports(dict(self.service.ports, **config.get('ports', {})))
+        self.ports = self._parse_ports(
+                dict(self.service.ports, **config.get('ports', {})))
 
         # Gather environment variables.
         self.env = dict(service.env)
@@ -556,7 +562,8 @@ class Container(Entity):
         runs on and the short ID of the running container."""
         status = self.status()
         image = status and status['Config']['Image']
-        return '{}:{}'.format(self.get_image_details(image)['tag'], self.shortid)
+        tag = self.get_image_details(image)['tag']
+        return '{}:{}'.format(tag, self.shortid)
 
     @property
     def started_at(self):
@@ -605,17 +612,19 @@ class Container(Entity):
         def _to_env_var_name(n):
             return re.sub(r'[^\w]', '_', n).upper()
 
+        def _port_number(p):
+            return p.split('/')[0]
+
         basename = _to_env_var_name(self.name)
-        port_number = lambda p: p.split('/')[0]
 
         links = {'{}_HOST'.format(basename): self.ship.ip}
         for name, spec in self.ports.items():
             links['{}_{}_PORT'.format(basename, _to_env_var_name(name))] = \
-                port_number(spec['external'][1])
+                _port_number(spec['external'][1])
             if add_internal:
                 links['{}_{}_INTERNAL_PORT'.format(
                     basename, _to_env_var_name(name))] = \
-                    port_number(spec['exposed'])
+                    _port_number(spec['exposed'])
         return links
 
     def start_lifecycle_checks(self, state):
@@ -679,8 +688,10 @@ class Container(Entity):
         def _make_policy(name='no', retries=0):
             if name not in _VALID_RESTART_POLICIES:
                 raise exceptions.InvalidRestartPolicyConfigurationException(
-                        'Invalid restart policy {} for container {}; choose one of {}.'
-                        .format(name, self.name, ', '.join(_VALID_RESTART_POLICIES)))
+                        ('Invalid restart policy {} for container {}; '
+                         'choose one of {}.').format(
+                             name, self.name,
+                             ', '.join(_VALID_RESTART_POLICIES)))
             return {'Name': name, 'MaximumRetryCount': int(retries)}
 
         try:
@@ -688,9 +699,9 @@ class Container(Entity):
                 return _make_policy(*spec.split(':', 1))
             elif type(spec) == dict:
                 return _make_policy(**spec)
-        except exceptions.InvalidRestartPolicyConfigurationException as e:
+        except exceptions.InvalidRestartPolicyConfigurationException:
             raise
-        except:
+        except Exception:
             raise exceptions.InvalidRestartPolicyConfigurationException(
                     'Invalid restart policy format for container {}: "{}"'
                     .format(self.name, spec))
@@ -709,6 +720,7 @@ class Container(Entity):
             (read-only or read-write) in docker-py's format.
         """
         result = {}
+
         def _parse_spec(src, spec):
             # Short path for obsolete schemas
             # TODO(mpetazzoni): remove when obsoleted
@@ -736,17 +748,16 @@ class Container(Entity):
         Args:
             log_driver (enum): Should be a valid value as defined by
                 docker/docker-py, e.g. json-file, syslog, none.
-            log_opt (dict): Should be a valid dictionary with additional log driver
-                settings. Values are not interpreted.
+            log_opt (dict): Should be a valid dictionary with additional log
+                driver settings. Values are not interpreted.
         Returns: A dictionary that can be passed to to docker-py via the
             host_config.LogConfig variable.
         """
         if log_driver:
             if log_driver not in LogConfig.types._values:
                 raise exceptions.InvalidLogConfigurationException(
-                    "log_driver must be one of ({0})".format(
-                    ', '.join(LogConfig.types._values)
-                ))
+                    "log_driver must be one of ({0})"
+                    .format(', '.join(LogConfig.types._values)))
             if log_opt and not type(log_opt) == dict:
                 raise exceptions.InvalidLogConfigurationException(
                     "log_opt must be a dictionary")
@@ -778,7 +789,8 @@ class Container(Entity):
         """
         if not s:
             return None
-        t = datetime.datetime.strptime(s[:-1].split('.')[0], '%Y-%m-%dT%H:%M:%S')
+        t = datetime.datetime.strptime(s[:-1].split('.')[0],
+                                       '%Y-%m-%dT%H:%M:%S')
         return t if t.year > 1 else None
 
     def _parse_ports(self, ports):
@@ -791,9 +803,9 @@ class Container(Entity):
             m = _PORT_SPEC_REGEX.match(spec)
             if not m:
                 raise exceptions.InvalidPortSpecException(
-                    ('Invalid port specification {}! ' +
-                     'Expected format is <port>, <p1>-<p2> or <port>/{tcp,udp}.')
-                    .format(spec))
+                    ('Invalid port specification {}! '
+                     'Expected format is <port>, <p1>-<p2> '
+                     'or <port>/{tcp,udp}.').format(spec))
             s = m.group('p1')
             if m.group('p2'):
                 s += '-' + m.group('p2')

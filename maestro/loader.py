@@ -32,18 +32,32 @@ class MaestroYamlConstructor(SafeConstructor):
         return SafeConstructor.construct_mapping(self, node, deep)
 
 
-class MaestroYamlLoader(yaml.reader.Reader, yaml.scanner.Scanner,
-                        yaml.parser.Parser, yaml.composer.Composer,
-                        MaestroYamlConstructor, yaml.resolver.Resolver):
-    """A custom YAML Loader that uses the custom MaestroYamlConstructor."""
+try:
+    # If possible, load the faster, C-based YAML Parser from _yaml.
+    import _yaml
 
-    def __init__(self, stream):
-        yaml.reader.Reader.__init__(self, stream)
-        yaml.scanner.Scanner.__init__(self)
-        yaml.parser.Parser.__init__(self)
-        yaml.composer.Composer.__init__(self)
-        MaestroYamlConstructor.__init__(self)
-        yaml.resolver.Resolver.__init__(self)
+    class MaestroYamlLoader(_yaml.CParser, MaestroYamlConstructor,
+                            yaml.resolver.Resolver):
+        """A custom YAML Loader that uses the custom MaestroYamlConstructor."""
+
+        def __init__(self, stream):
+            _yaml.CParser.__init__(self, stream)
+            MaestroYamlConstructor.__init__(self)
+            yaml.resolver.Resolver.__init__(self)
+except ImportError:
+    # Fallback to the pure-Python implementation otherise.
+    class MaestroYamlLoader(yaml.reader.Reader, yaml.scanner.Scanner,
+                            yaml.parser.Parser, yaml.composer.Composer,
+                            MaestroYamlConstructor, yaml.resolver.Resolver):
+        """A custom YAML Loader that uses the custom MaestroYamlConstructor."""
+
+        def __init__(self, stream):
+            yaml.reader.Reader.__init__(self, stream)
+            yaml.scanner.Scanner.__init__(self)
+            yaml.parser.Parser.__init__(self)
+            yaml.composer.Composer.__init__(self)
+            MaestroYamlConstructor.__init__(self)
+            yaml.resolver.Resolver.__init__(self)
 
 
 def load(filename):
@@ -58,6 +72,7 @@ def load(filename):
     """
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(os.path.dirname(filename)),
+        auto_reload=False,
         extensions=['jinja2.ext.with_'])
     try:
         if filename == '-':

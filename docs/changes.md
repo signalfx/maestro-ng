@@ -1,6 +1,20 @@
 ChangeLog
 =========
 
+Maestro 0.6.0
+-------------
+
+_November 23rd, 2018_
+
+* Performance improvements by using PyYAML's CParser.
+* Performance improvements by caching `get_link_variables()`
+* when creating each container instance's environment variables
+  (by @tedoc2000).
+* Ability to define extra `/etc/hosts` entry by ship reference (requires
+  the ship to be defined using a numeric IP address).
+* Added check for duplicate service instances names across services.
+* Fix for the output column width calculations (by @hgolson77).
+
 Maestro 0.5.4
 -------------
 

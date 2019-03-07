@@ -435,6 +435,8 @@ class LoginTask(Task):
 
         When nothing is configured, no retries are attempted (by virtue of the
         'when' list being empty)."""
+        if registry is None:
+            registry = {}
         spec = registry.get('retry', {})
         spec['attempts'] = int(spec.get('attempts', _DEFAULT_RETRY_ATTEMPTS))
         spec['when'] = set(spec.get('when', []))

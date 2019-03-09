@@ -5,7 +5,7 @@ Environment description
 ================================================================================
 
 The environment is described using YAML. The description of the environment
-follows a specific, versionned *schema*. The default schema version, if not
+follows a specific, versioned *schema*. The default schema version, if not
 specified, is version 1. The most recent version of the schema, described by
 this documentation, is version 2. To declare what schema version to use for
 your YAML environment description file, use the following header:

@@ -30,6 +30,7 @@ from ..termoutput import green, blue, red, time_ago
 CONTAINER_STATUS_FMT = '{:<25s} '
 TASK_RESULT_FMT = '{:<10s}'
 _DEFAULT_RETRY_ATTEMPTS = 3
+_DEFAULT_RETRY_SPEC = {'attempts': _DEFAULT_RETRY_ATTEMPTS, 'when': set([])}
 
 
 class Task:
@@ -435,6 +436,9 @@ class LoginTask(Task):
 
         When nothing is configured, no retries are attempted (by virtue of the
         'when' list being empty)."""
+        if not registry:
+            return _DEFAULT_RETRY_SPEC
+
         spec = registry.get('retry', {})
         spec['attempts'] = int(spec.get('attempts', _DEFAULT_RETRY_ATTEMPTS))
         spec['when'] = set(spec.get('when', []))

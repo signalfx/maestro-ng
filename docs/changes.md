@@ -1,10 +1,14 @@
 ChangeLog
 =========
 
-_Unreleased_
+Maestro 0.7.0
+-------------
 
 * Bump minimum Docker API version requirement to 1.18 to support
   container labels.
+* Handle public images correctly (by @sassrobi).
+* Add support for setting container labels (#202).
+* Fixed some flake8 styling issues from previous changes.
 
 Maestro 0.6.0
 -------------

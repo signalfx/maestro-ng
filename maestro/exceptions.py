@@ -57,29 +57,31 @@ class ContainerOrchestrationException(OrchestrationException):
         return '{}: {}'.format(self.container.name, self.message)
 
 
-class InvalidPortSpecException(MaestroException):
+class InvalidPortSpecException(EnvironmentConfigurationException):
     """Error thrown when a port spec is in an invalid format."""
     pass
 
 
-class InvalidLifecycleCheckConfigurationException(MaestroException):
+class InvalidLifecycleCheckConfigurationException(
+        EnvironmentConfigurationException):
     """Error thrown when a lifecycle check isn't configured properly."""
     pass
 
 
-class InvalidRestartPolicyConfigurationException(MaestroException):
+class InvalidRestartPolicyConfigurationException(
+        EnvironmentConfigurationException):
     """Error thrown when a restart policy isn't configured properly."""
     pass
 
 
-class InvalidVolumeConfigurationException(MaestroException):
+class InvalidVolumeConfigurationException(EnvironmentConfigurationException):
     """Error thrown when a volume binding isn't configured properly."""
 
 
-class InvalidAuditorConfigurationException(MaestroException):
+class InvalidAuditorConfigurationException(EnvironmentConfigurationException):
     """Invalid configuration of one of the specified auditors."""
 
 
-class InvalidLogConfigurationException(MaestroException):
+class InvalidLogConfigurationException(EnvironmentConfigurationException):
     """Error thrown when a log_driver or log_opt is in an invalid format."""
     pass

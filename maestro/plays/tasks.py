@@ -229,6 +229,7 @@ class StartTask(Task):
                 ports=ports,
                 detach=True,
                 working_dir=self.container.workdir,
+                labels=self.container.labels,
                 command=self.container.command)
 
         self.o.pending('waiting for container...')

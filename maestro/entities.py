@@ -471,6 +471,13 @@ class Container(Entity):
         # Ulimits options
         self.ulimits = self._parse_ulimits(config.get('ulimits', None))
 
+        # Container labels; may be a dictionary or a list
+        self.labels = config.get('labels', None)
+        if self.labels is not None and type(self.labels) not in [list, dict]:
+            raise exceptions.EnvironmentConfigurationException(
+                    ('Invalid labels configuration for container {}; '
+                     'must be a list or mapping! ').format(self.name))
+
         # host_config now contains all settings previously passed in container
         # start().
         self.host_config = self._ship.backend.create_host_config(

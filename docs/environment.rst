@@ -287,6 +287,8 @@ on (by name). Additionally, each instance may define:
 - ``username``, to set the name of the user under which the container's
   processes will run.
 
+- ``labels``, a list or a map (dictionary) of labels to set on the container.
+
 For example:
 
 .. code-block:: yaml
@@ -304,6 +306,8 @@ For example:
           limits:
             memory: 1g
             cpu: 2
+          labels:
+            - no-relocate
         zk-2:
           ship: vm2.ore1
           ports: {client: 2181, peer: 2888, leader_election: 3888}
@@ -314,6 +318,8 @@ For example:
           limits:
             memory: 1g
             cpu: 2
+          labels:
+            - no-relocate
       lifecycle:
         running: [{type: tcp, port: client}]
     kafka:

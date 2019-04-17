@@ -373,6 +373,25 @@ class ContainerTest(unittest.TestCase):
                          {'foo': ContainerTest.SHIP_IP})
 
 
+    def test_invalid_labels(self):
+        six.assertRaisesRegex(self,
+                exceptions.EnvironmentConfigurationException,
+                'Invalid labels configuration',
+                lambda: self._cntr(config={'labels': 'foo'}))
+        six.assertRaisesRegex(self,
+                exceptions.EnvironmentConfigurationException,
+                'Invalid labels configuration',
+                lambda: self._cntr(config={'labels': 42}))
+
+    def test_list_labels(self):
+        container = self._cntr(config={'labels': ['foo']})
+        self.assertEqual(container.labels, ['foo'])
+
+    def test_dict_labels(self):
+        container = self._cntr(config={'labels': {'foo': 'bar'}})
+        self.assertEqual(container.labels, {'foo': 'bar'})
+
+
 class BaseConfigFileUsingTest(unittest.TestCase):
 
     def _get_config(self, name):

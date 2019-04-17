@@ -70,7 +70,7 @@ class ContainerTest(unittest.TestCase):
     SHIP = 'ship'
     SHIP_IP = '10.0.0.1'
     SCHEMA = {'schema': 2}
-    DOCKER_VERSION = '1.12'
+    DOCKER_VERSION = '1.18'
     PORTS = {'server': 4848}
 
     def _cntr(service_name=SERVICE, service_env=None, image=IMAGE,

@@ -1,6 +1,11 @@
 ChangeLog
 =========
 
+_Unreleased_
+
+* Bump minimum Docker API version requirement to 1.18 to support
+  container labels.
+
 Maestro 0.6.0
 -------------
 

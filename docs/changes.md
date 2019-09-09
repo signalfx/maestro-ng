@@ -1,8 +1,18 @@
 ChangeLog
 =========
 
+Maestro 0.7.1
+-------------
+
+_September 9th, 2019_
+
+* Allow for passing additional Jinja2 filters to
+  `loader.load_config_from_file()` (by @tedoc2000, #206).
+
 Maestro 0.7.0
 -------------
+
+_April 17th, 2019_
 
 * Bump minimum Docker API version requirement to 1.18 to support
   container labels.

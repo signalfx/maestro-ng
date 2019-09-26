@@ -7,6 +7,7 @@
 import netifaces
 import os
 import re
+import socket
 
 
 class MaestroEnvironmentError(Exception):
@@ -35,10 +36,12 @@ def get_container_name():
     return name
 
 
-def get_container_host_address():
+def get_container_host_address(as_ip_address=False):
     """Return the publicly-addressable IP address of the host of the
     container."""
     address = os.environ.get('CONTAINER_HOST_ADDRESS', '')
+    if as_ip_address:
+        address = socket.gethostbyname(address)
     if not address:
         raise MaestroEnvironmentError('Container host address was not defined')
     return address

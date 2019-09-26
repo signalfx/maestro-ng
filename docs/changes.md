@@ -1,6 +1,15 @@
 ChangeLog
 =========
 
+Maestro 0.7.2
+-------------
+
+_September 26th, 2019_
+
+* Add optional parameter `as_ip_address` to
+  `guestutils.get_container_host_address()` to return an IPv4 address
+  instead of a FQDN.
+
 Maestro 0.7.1
 -------------
 

@@ -1,0 +1,31 @@
+__maestro:
+  schema: 2
+
+name: test-envfiles
+ships:
+  ship:
+    ip: localhost
+services:
+  s1:
+    image: ubuntu
+    envfile: env1.env
+    env:
+      OVERRIDE: "dog"
+    instances:
+      s1a:
+        ship: ship
+      s1b:
+        ship: ship
+        envfile: env2.env
+  s2:
+    image: ubuntu
+    envfile:
+      - env1.env
+      - env2.env
+    instances:
+      s2a:
+        ship: ship
+      s2b:
+        ship: ship
+        env:
+          OVERRIDE: "cat"

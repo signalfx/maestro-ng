@@ -46,11 +46,17 @@ class Conductor:
             # Duplicate services can't happen in the YAML structure.
             self.services[kind] = \
                 entities.Service(
-                    kind, service['image'], service.get('omit', False),
-                    self.schema, service.get('env', {}), self.env_name,
-                    service.get('lifecycle', {}),
-                    service.get('limits', {}),
-                    service.get('ports', {}))
+                    name=kind,
+                    image=service['image'],
+                    omit=service.get('omit', False),
+                    envfile=service.get('envfile', []),
+                    env=service.get('env', {}),
+                    maestro_schema=self.schema,
+                    maestro_env_name=self.env_name,
+                    maestro_env_base=self.base_dir,
+                    lifecycle=service.get('lifecycle', {}),
+                    limits=service.get('limits', {}),
+                    ports=service.get('ports', {}))
 
             for name, instance in service['instances'].items():
                 # Duplicate instances can't happen within the same service in
@@ -63,8 +69,12 @@ class Conductor:
                             .format(name, existing.service.name))
                 self.containers[name] = \
                     entities.Container(
-                        self.ships, name, self.services[kind],
-                        instance, self.schema)
+                        ships=self.ships,
+                        name=name,
+                        service=self.services[kind],
+                        config=instance,
+                        maestro_schema=self.schema,
+                        maestro_env_base=self.base_dir)
 
         # Resolve dependencies between services.
         for kind, service in self._config.get('services', {}).items():
@@ -133,7 +143,11 @@ class Conductor:
 
     @property
     def schema(self):
-        return self._config.get('__maestro', {'schema': 1})
+        return self._config['__maestro'].get('schema', 1)
+
+    @property
+    def base_dir(self):
+        return self._config['__maestro']['base_dir']
 
     @property
     def env_name(self):

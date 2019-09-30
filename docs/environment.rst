@@ -162,23 +162,28 @@ of the whole environment and in dependency declarations), a Docker image
 (``image``), and a description of each instance of that service (under
 ``instances``). Services may also define:
 
+- ``envfile``: Filename, or list of filenames, of Docker environment files that
+  will apply to all of that service's instances. File names are relative to the
+  Maestro environment YAML file's location;
+
 - ``env``: Environment variables that will apply to all of that service's
-  instances.
+  instances. ``env`` values take precedence over the contents of ``envfile``s;
 
 - ``omit``: If ``true``, excludes the service from non-specific actions (when
-  Maestro is executed without a list of services or containers as arguments).
+  Maestro is executed without a list of services or containers as arguments);
 
 - ``requires`` and ``wants_info``: Define hard and soft dependencies (see
-  :doc:`dependencies`).
+  :doc:`dependencies`);
 
 - ``lifecycle``: Service instances' lifecycle state checks, which Maestro uses
   to confirm a service instance correctly started or stopped (see
-  :doc:`lifecycle_checks`).
+  :doc:`lifecycle_checks`);
 
 - ``limits``: Set container limits at service scope. All service instances would
-  inherit these limits.
+  inherit these limits;
+
 - ``ports``: Set container ports at service scope. All service instances would
-  inherit these ports.
+  inherit these ports;
 
 Here's an example of a simple service with a single instance:
 
@@ -192,6 +197,9 @@ Here's an example of a simple service with a single instance:
         cpu: 1
       ports:
         server: 4848
+      envfile:
+        - hello-base.env
+        - hello-extras.env
       instances:
         hello1:
           ports:
@@ -228,9 +236,13 @@ on (by name). Additionally, each instance may define:
   to get volumes from. This is useful to get the volumes of a data-container
   into an application container;
 
+- ``envfile``: Filename, or list of filenames, of Docker environment files for
+  this container. File names are relative to the Maestro environment YAML
+  file's location;
+
 - ``env``, for environment variables, as a map of ``<variable name>: <value>``
   (variables defined at the instance level override variables defined at the
-  service level);
+  service level). ``env`` values take precedence over ``envfiles``s;
 
 - ``privileged``, a boolean specifying whether the container should run in
   privileged mode or not (defaults to ``false``);
@@ -325,6 +337,7 @@ For example:
     kafka:
       image: kafka:latest
       requires: [ zookeeper ]
+      envfile: kafka.env
       instances:
         kafka-broker:
           ship: vm2.ore1

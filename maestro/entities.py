@@ -1,5 +1,5 @@
 # Copyright (C) 2013-2014 SignalFuse, Inc.
-# Copyright (C) 2015-2018 SignalFx, Inc.
+# Copyright (C) 2015-2019 SignalFx, Inc.
 #
 # Docker container orchestration utility.
 
@@ -34,6 +34,7 @@ import six
 import threading
 import weakref
 
+from . import environment
 from . import exceptions
 from . import lifecycle
 
@@ -198,8 +199,10 @@ class Service(Entity):
     services need to be started.
     """
 
-    def __init__(self, name, image, omit=True, schema=None, env=None,
-                 env_name='local', lifecycle=None, limits=None, ports=None):
+    def __init__(self, name, image, omit=True, env=None, envfile=None,
+                 maestro_schema=None, maestro_env_name='local',
+                 maestro_env_base=None, lifecycle=None, limits=None,
+                 ports=None):
         """Instantiate a new named service/component of the platform using a
         given Docker image.
 
@@ -212,10 +215,15 @@ class Service(Entity):
                 service should use.
             omit (boolean): Whether to include this service in no-argument
                 commands or omit it.
-            schema (dict): Maestro schema versioning information.
             env (dict): a dictionary of environment variables to use as the
                 base environment for all instances of this service.
-            env_name (string): name of the Maestro environment.
+            envfile (string or list): filename, or list of filenames, to
+                environment files for all instances of this service. Explicit
+                environment from 'env' take precedence over the contents of
+                those files.
+            maestro_schema (dict): Maestro schema versioning information.
+            maestro_env_name (string): name of the Maestro environment.
+            maestro_env_base (string): base path of the Maestro environment.
             lifecycle (dict): a dictionary of lifecycle checks configurations.
             limits (dict): a dictionary of service limits.
             ports (dict): a dictionary of service ports.
@@ -223,13 +231,18 @@ class Service(Entity):
         Entity.__init__(self, name)
         self._image = image
         self._omit = omit
-        self._schema = schema
+        self._schema = maestro_schema
 
-        self._env = env or {}
-        self._env.update({
-            'MAESTRO_ENVIRONMENT_NAME': env_name,
-            'SERVICE_NAME': self.name,
-        })
+        try:
+            self._env = environment.build(maestro_env_base, envfile, env, {
+                'MAESTRO_ENVIRONMENT_NAME': maestro_env_name,
+                'SERVICE_NAME': self.name,
+            })
+        except ValueError:
+            raise exceptions.EnvironmentConfigurationException(
+                    'Invalid environment configuration for service {}'
+                    .format(name))
+
         self._lifecycle = lifecycle or {}
         self._limits = limits or {}
         self._ports = ports or {}
@@ -333,7 +346,8 @@ class Container(Entity):
     """A Container represents an instance of a particular service that will be
     executed inside a Docker container on its target ship/host."""
 
-    def __init__(self, ships, name, service, config=None, schema=None):
+    def __init__(self, ships, name, service, config=None, maestro_schema=None,
+                 maestro_env_base=None):
         """Create a new Container object.
 
         Args:
@@ -343,7 +357,8 @@ class Container(Entity):
             service (Service): the Service this container is an instance of.
             config (dict): the YAML-parsed dictionary containing this
                 instance's configuration (ports, environment, volumes, etc.)
-            schema (dict): Maestro schema versioning information.
+            maestro_schema (dict): Maestro schema versioning information.
+            maestro_env_base (string): base path of the Maestro environment.
         """
         Entity.__init__(self, name)
         config = config or {}
@@ -352,7 +367,7 @@ class Container(Entity):
         self._ship = ships[config['ship']]
         self._service = service
         self._image = config.get('image', service.image)
-        self._schema = schema
+        self._schema = maestro_schema
 
         # Register this instance container as being part of its parent service.
         self._service.register_container(self)
@@ -366,24 +381,22 @@ class Container(Entity):
                 dict(self.service.ports, **config.get('ports', {})))
 
         # Gather environment variables.
-        self.env = dict(service.env)
-        self.env.update(config.get('env', {}))
-        # Seed the service name, container name and host address as part of the
-        # container's environment.
-        self.env.update({
-            'CONTAINER_NAME': self.name,
-            'CONTAINER_HOST_ADDRESS': self.ship.ip,
-            'DOCKER_IMAGE': self.image,
-            'DOCKER_TAG': self.get_image_details()['tag'],
-        })
-
-        def env_list_expand(elt):
-            return type(elt) != list and elt \
-                or ' '.join(map(env_list_expand, elt))
-
-        for k, v in self.env.items():
-            if type(v) == list:
-                self.env[k] = env_list_expand(v)
+        try:
+            self.env = environment.build(
+                maestro_env_base, service.env,
+                config.get('envfile', []),
+                config.get('env', {}), {
+                    # Seed the service name, container name and host address as
+                    # part of the container's environment.
+                    'CONTAINER_NAME': self.name,
+                    'CONTAINER_HOST_ADDRESS': self.ship.ip,
+                    'DOCKER_IMAGE': self.image,
+                    'DOCKER_TAG': self.get_image_details()['tag'],
+                })
+        except ValueError:
+            raise exceptions.EnvironmentConfigurationException(
+                    'Invalid environment configuration for container {}'
+                    .format(name))
 
         self.volumes = self._parse_volumes(config.get('volumes', {}))
         self.container_volumes = config.get('container_volumes', [])
@@ -731,7 +744,7 @@ class Container(Entity):
         def _parse_spec(src, spec):
             # Short path for obsolete schemas
             # TODO(mpetazzoni): remove when obsoleted
-            if self._schema and self._schema.get('schema') == 1:
+            if self._schema == 1:
                 result[spec] = {'bind': src, 'ro': False}
                 return
 

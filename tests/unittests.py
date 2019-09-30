@@ -69,7 +69,7 @@ class ContainerTest(unittest.TestCase):
     CONTAINER = 'foo1'
     SHIP = 'ship'
     SHIP_IP = '10.0.0.1'
-    SCHEMA = {'schema': 2}
+    SCHEMA = 2
     DOCKER_VERSION = '1.18'
     PORTS = {'server': 4848}
 
@@ -77,14 +77,16 @@ class ContainerTest(unittest.TestCase):
               ship_name=SHIP, ship_ip=SHIP_IP,
               container_name=CONTAINER, config=None, schema=SCHEMA,
               api_version=DOCKER_VERSION, ports=PORTS):
-        service = entities.Service(service_name, image, schema=schema,
+        service = entities.Service(name=service_name, image=image,
+                                   maestro_schema=schema,
                                    env=service_env, ports=ports)
         ship = entities.Ship(ship_name, ship_ip, api_version=api_version)
         cfg = {'ship': ship.name}
         if config:
             cfg.update(config)
         return entities.Container({ship_name: ship}, container_name,
-                                  service, config=cfg, schema=schema)
+                                  service, config=cfg,
+                                  maestro_schema=schema)
 
     def test_image_propagates_from_service(self):
         container = self._cntr()
@@ -293,7 +295,7 @@ class ContainerTest(unittest.TestCase):
     def test_volumes_old_schema(self):
         container = self._cntr(
             config={'volumes': {'/inside': '/outside'}},
-            schema={'schema': 1})
+            schema=1)
         self.assertEqual(container.volumes,
                          {'/outside': {'bind': '/inside', 'ro': False}})
 
@@ -476,8 +478,84 @@ class ConductorTest(BaseConfigFileUsingTest):
                 'Environment name is missing',
                 lambda: maestro.Conductor(config))
 
+    def test_envfiles(self):
+        config = self._get_config('test_envfiles')
+        c = maestro.Conductor(config)
+        self.assertEqual(c.services['s1'].env, {
+            'MAESTRO_ENVIRONMENT_NAME': 'test-envfiles',
+            'SERVICE_NAME': 's1',
+            'SOME_ENV': 'value',
+            'OVERRIDE': 'dog'
+        })
+        self.assertEqual(c.containers['s1a'].env, {
+            'MAESTRO_ENVIRONMENT_NAME': 'test-envfiles',
+            'SERVICE_NAME': 's1',
+            'CONTAINER_NAME': 's1a',
+            'CONTAINER_HOST_ADDRESS': 'localhost',
+            'CONTAINER_HOST_ADDRESS': 'localhost',
+            'DOCKER_IMAGE': 'ubuntu',
+            'DOCKER_TAG': 'latest',
+            'S1_INSTANCES': 's1a,s1b',
+            'S1_S1A_HOST': 'localhost',
+            'S1_S1B_HOST': 'localhost',
+            'SOME_ENV': 'value',
+            'OVERRIDE': 'dog'
+        })
+        self.assertEqual(c.containers['s1b'].env, {
+            'MAESTRO_ENVIRONMENT_NAME': 'test-envfiles',
+            'SERVICE_NAME': 's1',
+            'CONTAINER_NAME': 's1b',
+            'CONTAINER_HOST_ADDRESS': 'localhost',
+            'CONTAINER_HOST_ADDRESS': 'localhost',
+            'DOCKER_IMAGE': 'ubuntu',
+            'DOCKER_TAG': 'latest',
+            'S1_INSTANCES': 's1a,s1b',
+            'S1_S1A_HOST': 'localhost',
+            'S1_S1B_HOST': 'localhost',
+            'SOME_ENV': 'value',
+            'OVERRIDE': 'giraffe'
+        })
+
+        self.assertEqual(c.services['s2'].env, {
+            'MAESTRO_ENVIRONMENT_NAME': 'test-envfiles',
+            'SERVICE_NAME': 's2',
+            'SOME_ENV': 'value',
+            'OVERRIDE': 'giraffe'
+        })
+        self.assertEqual(c.containers['s2a'].env, {
+            'MAESTRO_ENVIRONMENT_NAME': 'test-envfiles',
+            'SERVICE_NAME': 's2',
+            'CONTAINER_NAME': 's2a',
+            'CONTAINER_HOST_ADDRESS': 'localhost',
+            'DOCKER_IMAGE': 'ubuntu',
+            'DOCKER_TAG': 'latest',
+            'S2_INSTANCES': 's2a,s2b',
+            'S2_S2A_HOST': 'localhost',
+            'S2_S2B_HOST': 'localhost',
+            'SOME_ENV': 'value',
+            'OVERRIDE': 'giraffe'
+        })
+        self.assertEqual(c.containers['s2b'].env, {
+            'MAESTRO_ENVIRONMENT_NAME': 'test-envfiles',
+            'SERVICE_NAME': 's2',
+            'CONTAINER_NAME': 's2b',
+            'CONTAINER_HOST_ADDRESS': 'localhost',
+            'DOCKER_IMAGE': 'ubuntu',
+            'DOCKER_TAG': 'latest',
+            'S2_INSTANCES': 's2a,s2b',
+            'S2_S2A_HOST': 'localhost',
+            'S2_S2B_HOST': 'localhost',
+            'SOME_ENV': 'value',
+            'OVERRIDE': 'cat'
+        })
+
 
 class ConfigTest(BaseConfigFileUsingTest):
+
+    def test_base_dir_gets_set_by_loader(self):
+        config = self._get_config('test_env')
+        self.assertEqual(os.path.join(os.path.dirname(__file__), 'yaml'),
+                         config['__maestro']['base_dir'])
 
     def test_yaml_parsing_test1(self):
         """Make sure the env variables are working."""

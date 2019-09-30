@@ -70,8 +70,9 @@ def load(filename, filters=None):
     Returns:
         A python data structure corresponding to the YAML configuration.
     """
+    base_dir = os.path.dirname(filename) if filename != '-' else os.getcwd()
     env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(os.path.dirname(filename)),
+        loader=jinja2.FileSystemLoader(base_dir),
         auto_reload=False,
         extensions=['jinja2.ext.with_'])
     if filters:
@@ -89,4 +90,9 @@ def load(filename, filters=None):
             'Error reading environment description file {}: {}!'
             .format(filename, e))
 
-    return yaml.load(template.render(env=os.environ), Loader=MaestroYamlLoader)
+    config = yaml.load(template.render(env=os.environ),
+                       Loader=MaestroYamlLoader)
+    if '__maestro' not in config:
+        config['__maestro'] = {}
+    config['__maestro']['base_dir'] = base_dir
+    return config

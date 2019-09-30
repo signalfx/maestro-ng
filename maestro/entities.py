@@ -338,7 +338,7 @@ class Service(Entity):
             for name, value in c.get_link_variables(add_internal).items():
                 links['{}_{}'.format(basename, name)] = value
         links['{}_INSTANCES'.format(basename)] = \
-            ','.join(self._containers.keys())
+            ','.join(sorted(self._containers.keys()))
         return links
 
 

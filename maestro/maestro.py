@@ -153,7 +153,7 @@ class Conductor:
     def env_name(self):
         return self._config['name']
 
-    def _order_dependencies(self, pending=[], ordered=[], forward=True):
+    def _order_dependencies(self, pending=None, ordered=None, forward=True):
         """Order the given set of containers into an order respecting the
         service dependencies in the given direction.
 
@@ -165,6 +165,8 @@ class Conductor:
         be constructed for startup (dependencies first) or shutdown (dependents
         first).
         """
+        pending = pending or []
+        ordered = ordered or []
         wait = []
         for container in pending:
             deps = self._gather_dependencies([container], forward)

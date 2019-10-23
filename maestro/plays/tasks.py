@@ -302,6 +302,43 @@ class StopTask(Task):
                 raise Exception('failed stopped lifecycle checks')
             self.o.commit(green(TASK_RESULT_FMT.format('stopped')))
         except Exception as e:
+            # Stop failures are non-fatal, usualy it's just the container
+            # taking more time to stop than the timeout allows.
+            self.o.commit(red('failed: {}'.format(e)))
+
+
+class KillTask(Task):
+    """Kill a container."""
+
+    def __init__(self, o, container):
+        Task.__init__(self, 'kill', o, container)
+
+    def _run(self):
+        self.o.reset()
+        self.o.pending('checking container...')
+        try:
+            if not self.container.is_running():
+                self.o.commit(CONTAINER_STATUS_FMT.format(
+                    self.container.shortid_and_tag))
+                self.o.commit(blue(TASK_RESULT_FMT.format('down')))
+                return
+        except Exception:
+            self.o.commit(CONTAINER_STATUS_FMT.format('-'))
+            self.o.commit(red(TASK_RESULT_FMT.format('host down')))
+            return
+
+        self.o.commit(green(CONTAINER_STATUS_FMT.format(
+            self.container.shortid_and_tag)))
+
+        try:
+            self.o.pending('killing the service...')
+            self.container.ship.backend.kill(
+                self.container.id)
+
+            if not self._check_for_state('stopped', self.container.is_down):
+                raise Exception('failed killed lifecycle checks')
+            self.o.commit(green(TASK_RESULT_FMT.format('killed')))
+        except Exception as e:
             # Stop failures are non-fatal, usually it's just the container
             # taking more time to stop than the timeout allows.
             self.o.commit(red('failed: {}'.format(e)))

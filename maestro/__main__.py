@@ -110,6 +110,13 @@ def create_parser():
         description='Stop services and containers',
         help='stop services and containers')
 
+    # kill
+    subparser = subparsers.add_parser(
+        parents=[common, concurrent, expandable],
+        name='kill',
+        description='Kill services and containers',
+        help='kills the services and containers')
+
     # restart
     subparser = subparsers.add_parser(
         parents=[common, concurrent, expandable, with_refresh],
@@ -183,7 +190,7 @@ def execute(options, config):
             options.expand_services = True
 
         # Bail out of stop/restart with no arguments if expand_all isn't set
-        if options.command in ['stop', 'restart'] \
+        if options.command in ['stop', 'restart', 'kill'] \
                 and not options.expand_all \
                 and not options.things:
             sys.stderr.write(

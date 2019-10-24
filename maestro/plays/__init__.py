@@ -332,6 +332,26 @@ class Stop(BaseOrchestrationPlay):
                     container.service.name, container.ship.address())))
             self.register(tasks.StopTask(o, container))
 
+class Kill(BaseOrchestrationPlay):
+    """A Maestro orchestration play that will stop the containers of the
+    requested services. The list of containers should be provided reversed so
+    that dependent services are stopped first."""
+
+    def __init__(self, containers=[], ignore_dependencies=True,
+                 concurrency=None, auditor=None):
+        BaseOrchestrationPlay.__init__(
+            self, containers, forward=False,
+            ignore_dependencies=ignore_dependencies,
+            concurrency=concurrency, auditor=auditor)
+
+    def _run(self):
+        for order, container in enumerate(self._containers):
+            o = self._om.get_formatter(order, prefix=(
+                BaseOrchestrationPlay.LINE_FMT.format(
+                    len(self._containers) - order, container.name,
+                    container.service.name, container.ship.address())))
+            self.register(tasks.KillTask(o, container))
+
 
 class Kill(BaseOrchestrationPlay):
     """A Maestro orchestration play that will stop the containers of the

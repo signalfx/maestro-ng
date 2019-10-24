@@ -133,7 +133,6 @@ def create_parser():
         '--only-if-changed', action='store_true',
         help='only restart if the container image was updated')
 
-
     # clean
     subparser = subparsers.add_parser(
         parents=[common, concurrent],

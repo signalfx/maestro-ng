@@ -332,6 +332,7 @@ class Stop(BaseOrchestrationPlay):
                     container.service.name, container.ship.address())))
             self.register(tasks.StopTask(o, container))
 
+
 class Kill(BaseOrchestrationPlay):
     """A Maestro orchestration play that will stop the containers of the
     requested services. The list of containers should be provided reversed so

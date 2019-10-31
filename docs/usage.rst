@@ -23,6 +23,7 @@ contains the path to your ``maestro-ng`` repository clone and using
       pull                pull images from repository
       start               start services and containers
       stop                stop services and containers
+      kill                kill services and containers
       restart             restart services and containers
       logs                show logs from a container
       deptree             show the dependency tree

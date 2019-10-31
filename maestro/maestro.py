@@ -431,6 +431,34 @@ class Conductor:
         plays.Stop(containers, ignore_dependencies,
                    concurrency, auditor=self.auditor).run()
 
+    def kill(self, things, with_dependencies=False, ignore_dependencies=False,
+             concurrency=None, expand_services=False, **kwargs):
+        """Kill the given container(s) and service(s).
+
+        This one is a bit more tricky because we don't want to look at the
+        dependencies of the containers and services we want to stop, but at
+        which services depend on the containers and services we want to stop.
+        Unless of course the only parameter is set to True.
+
+        Args:
+            things (set<string>): The list of things to stop.
+            with_dependencies (boolean): Whether to act on only the specified
+                things, or their dependencies as well.
+            ignore_dependencies (boolean): Whether dependency order should be
+                respected.
+            concurrency (int): The maximum number of instances that can be
+                acted on at the same time.
+            expand_services (boolean): whether to allow expanding service names
+                to their container instance names. If False and a service name
+                is encountered, the method will throw an exception.
+        """
+        containers = self._ordered_containers(
+                things, expand_services, forward=False) \
+            if with_dependencies \
+            else self._to_containers(things, expand_services)
+        plays.Kill(containers, ignore_dependencies,
+                   concurrency, auditor=self.auditor).run()
+
     def clean(self, things, with_dependencies=False, concurrency=None,
               expand_services=True, **kwargs):
         """Remove the given stopped Docker containers.

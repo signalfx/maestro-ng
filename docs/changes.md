@@ -1,5 +1,13 @@
 ChangeLog
 =========
+Maestro 0.7.3
+-------------
+
+_October 28th, 2019_
+
+*  Support for Docker Kill command
+  This commit contains all the codes changes required for running a
+  docker kill command equivalent command via the maestro framework.
 
 Maestro 0.7.2
 -------------

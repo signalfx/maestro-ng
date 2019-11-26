@@ -3,12 +3,14 @@
 #
 # Docker container orchestration utility.
 
+import json
 import os
 import re
 import requests
 import shlex
 import socket
 import subprocess
+import threading
 import time
 
 from . import exceptions
@@ -93,10 +95,11 @@ class ScriptExecutor(RetryingLifecycleHelper):
     success value.
     """
 
-    def __init__(self, command, env, attempts):
+    def __init__(self, command, env, attempts, envfrom):
         RetryingLifecycleHelper.__init__(self, attempts)
         self.command = shlex.split(command)
         self.container_env = env
+        self.envfrom = envfrom
 
     def __repr__(self):
         return 'ScriptExec({}, {} attempts)'.format(self.command,
@@ -108,12 +111,31 @@ class ScriptExecutor(RetryingLifecycleHelper):
         return dict((str(k), str(v)) for k, v in env.items())
 
     def _test(self, container=None):
-        return subprocess.call(self.command, env=self._create_env()) == 0
+        env = self._create_env()
+        if self.envfrom == "env":
+            return subprocess.call(self.command, env=env) == 0
+        elif self.envfrom == 'stdin':
+            file_name = "/tmp/stdin_{}_{}".format(
+                threading.current_thread().ident, time.time(),
+            )
+            try:
+                with open(file_name, "w") as f:
+                    json.dump(env, f)
+                command = self.command + ["-f", file_name]
+                return subprocess.call(command) == 0
+            finally:
+                try:
+                    os.remove(file_name)
+                except OSError:
+                    pass
+        else:
+            raise ValueError("Unknown source of environment variables!")
 
     @staticmethod
     def from_config(container, config):
         return ScriptExecutor(config['command'], container.env,
-                              attempts=config.get('attempts'))
+                              attempts=config.get('attempts'),
+                              envfrom=config.get('envfrom', 'env'))
 
 
 class RemoteScriptExecutor(RetryingLifecycleHelper):

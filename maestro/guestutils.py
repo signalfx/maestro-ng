@@ -14,6 +14,11 @@ class MaestroEnvironmentError(Exception):
     pass
 
 
+def update_os_env(env_vars=None):
+    """Update environment dictionary with the given dictionary of variables."""
+    os.environ.update(env_vars or {})
+
+
 def get_environment_name():
     """Return the name of the environment the container calling this in a part
     of."""

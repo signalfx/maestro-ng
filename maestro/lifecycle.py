@@ -10,7 +10,6 @@ import requests
 import shlex
 import socket
 import subprocess
-import threading
 import time
 
 from . import exceptions
@@ -115,21 +114,11 @@ class ScriptExecutor(RetryingLifecycleHelper):
         if self.envfrom == "env":
             return subprocess.call(self.command, env=env) == 0
         elif self.envfrom == 'stdin':
-            file_name = "/tmp/stdin_{}_{}".format(
-                threading.current_thread().ident, time.time(),
-            )
-            try:
-                with open(file_name, "w") as f:
-                    json.dump(env, f)
-                command = self.command + ["-f", file_name]
-                return subprocess.call(command) == 0
-            finally:
-                try:
-                    os.remove(file_name)
-                except OSError:
-                    pass
+            p = subprocess.Popen(self.command, stdin=subprocess.PIPE)
+            p.communicate(json.dumps(env).encode('utf-8'))
+            return p.wait() == 0
         else:
-            raise ValueError("Unknown source of environment variables!")
+            raise ValueError(self.envfrom)
 
     @staticmethod
     def from_config(container, config):

@@ -111,14 +111,16 @@ class ScriptExecutor(RetryingLifecycleHelper):
 
     def _test(self, container=None):
         env = self._create_env()
-        if self.envfrom == "env":
+        if self.envfrom == 'env':
             return subprocess.call(self.command, env=env) == 0
         elif self.envfrom == 'stdin':
             p = subprocess.Popen(self.command, stdin=subprocess.PIPE)
             p.communicate(json.dumps(env).encode('utf-8'))
             return p.wait() == 0
         else:
-            raise ValueError(self.envfrom)
+            raise ValueError(
+                'Lifecycle check: invalid envfrom {}'.format(self.envfrom)
+            )
 
     @staticmethod
     def from_config(container, config):

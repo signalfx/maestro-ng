@@ -112,7 +112,9 @@ class ScriptExecutor(RetryingLifecycleHelper):
     def _test(self, container=None):
         env = self._create_env()
         if self.envfrom == "env":
-            return subprocess.call(self.command, env=env) == 0
+            p = subprocess.Popen(self.command, env=env, stdin=subprocess.PIPE)
+            p.communicate()
+            return p.wait() == 0
         elif self.envfrom == 'stdin':
             p = subprocess.Popen(self.command, stdin=subprocess.PIPE)
             p.communicate(json.dumps(env).encode('utf-8'))

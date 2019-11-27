@@ -1,6 +1,14 @@
 ChangeLog
 =========
 
+Maestro 0.7.4
+-------------
+
+_November 27th, 2019_
+
+* Adds support for alternative ways of passing environment to lifecycle
+  check commands to get around limits in process environment size.
+
 Maestro 0.7.3
 -------------
 

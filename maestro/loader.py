@@ -60,7 +60,7 @@ except ImportError:
             yaml.resolver.Resolver.__init__(self)
 
 
-def load(filename, filters=None):
+def load(filename, filters=None, functions=None):
     """Load a config from the given file.
 
     Args:
@@ -77,6 +77,8 @@ def load(filename, filters=None):
         extensions=['jinja2.ext.with_'])
     if filters:
         env.filters.update(**filters)
+    if functions:
+        env.globals.update(**functions)
     try:
         if filename == '-':
             template = env.from_string(sys.stdin.read())

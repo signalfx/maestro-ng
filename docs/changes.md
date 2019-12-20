@@ -1,6 +1,13 @@
 ChangeLog
 =========
 
+Maestro 0.7.5
+-------------
+
+_December 20th, 2019_
+
+* Allow for passing custom Jinja2 functions to `loader.load_config_from_file()`.
+
 Maestro 0.7.4
 -------------
 

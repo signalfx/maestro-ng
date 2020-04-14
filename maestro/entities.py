@@ -431,6 +431,9 @@ class Container(Entity):
         # Should this container run with -privileged?
         self.privileged = config.get('privileged', False)
 
+        # Should this container run with --read-only ?
+        self.read_only = config.get('read_only', False)
+
         # Add or drop privileges
         self.cap_add = config.get('cap_add', None)
         self.cap_drop = config.get('cap_drop', None)
@@ -501,6 +504,7 @@ class Container(Entity):
             port_bindings=ports,
             lxc_conf=self.lxc_conf,
             privileged=self.privileged,
+            read_only=self.read_only,
             cap_add=self.cap_add,
             cap_drop=self.cap_drop,
             extra_hosts=self.extra_hosts,

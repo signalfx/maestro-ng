@@ -247,6 +247,9 @@ on (by name). Additionally, each instance may define:
 - ``privileged``, a boolean specifying whether the container should run in
   privileged mode or not (defaults to ``false``);
 
+- ``read_only``, a boolean specifying whether the container root filesystem
+  should be mount as read only or not.
+
 - ``cap_add``, Linux capabilities to add to the container (see the documentation
   for `docker run`_;
 
@@ -313,6 +316,7 @@ For example:
           ship: vm1.ore1
           ports: {client: 2181, peer: 2888, leader_election: 3888}
           privileged: true
+          read_only: true
           volumes:
             /data/zookeeper: /var/lib/zookeeper
           limits:

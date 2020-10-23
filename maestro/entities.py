@@ -825,7 +825,7 @@ class Container(Entity):
                 raise exceptions.InvalidPortSpecException(
                     ('Invalid port specification {}! '
                      'Expected format is <port>, <p1>-<p2> '
-                     'or <port>/{tcp,udp}.').format(spec))
+                     'or <port>/{{tcp,udp}}.').format(spec))
             s = m.group('p1')
             if m.group('p2'):
                 s += '-' + m.group('p2')

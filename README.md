@@ -1,6 +1,6 @@
 # MaestroNG
 
-[![Build Status](https://travis-ci.org/signalfx/maestro-ng.png)](https://travis-ci.org/signalfx/maestro-ng) [![Docs](https://readthedocs.org/projects/maestro-ng/badge/?version=latest)](http://maestro-ng.readthedocs.io)
+[![Build Status](https://travis-ci.org/signalfx/maestro-ng.png)](https://travis-ci.org/signalfx/maestro-ng) [![Docs](https://readthedocs.org/projects/maestro-ng/badge/?version=main)](http://maestro-ng.readthedocs.io)
 
 _MaestroNG is an orchestrator of Docker-based, multi-hosts environments._
 

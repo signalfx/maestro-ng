@@ -126,7 +126,7 @@ class BaseOrchestrationPlay:
         complete."""
         for t in self._threads:
             try:
-                while not self._error and t.isAlive():
+                while not self._error and t.is_alive():
                     t.join(1)
             except KeyboardInterrupt:
                 self._error = (exceptions.MaestroException,

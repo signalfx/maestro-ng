@@ -6,6 +6,7 @@
 from __future__ import print_function
 
 import functools
+import fnmatch
 
 from . import audit
 from . import entities
@@ -203,7 +204,8 @@ class Conductor:
             result = result.union(deps)
         return result
 
-    def _to_containers(self, things, expand_services):
+    def _to_containers(self, things, expand_services, container_filter,
+                       ship_filter):
         """Transform a list of "things", container names or service names, to
         an expended list of Container objects.
 
@@ -211,6 +213,10 @@ class Conductor:
             expand_services (boolean): whether to allow expanding service names
                 to their container instance names. If False and a service name
                 is encountered, the method will throw an exception.
+            container_filter (string): optional pattern to filter container
+                 names
+            ship_filter (string): optional pattern to filter containers on
+                 ship names
         """
         def parse_thing(s):
             if s in self.containers:
@@ -226,7 +232,13 @@ class Conductor:
         result = []
         for thing in things:
             result += parse_thing(thing)
-        return sorted(set(result))
+        if container_filter:
+            result = [c for c in set(result)
+                      if fnmatch.fnmatch(c.name, container_filter)]
+        if ship_filter:
+            result = [c for c in set(result)
+                      if fnmatch.fnmatch(c.ship.name, ship_filter)]
+        return sorted(result)
 
     def _to_services(self, things):
         """Transform a list of "things", container names or service names, to a
@@ -253,7 +265,8 @@ class Conductor:
         """
         return self._order_dependencies(
             sorted(self._gather_dependencies(
-                self._to_containers(things, expand_services), forward)),
+                self._to_containers(things, expand_services, None, None),
+                forward)),
             forward=forward)
 
     def complete(self, tokens, **kwargs):
@@ -284,7 +297,7 @@ class Conductor:
 
     def status(self, things, full=False, show_hosts=False,
                with_dependencies=False, concurrency=None, expand_services=True,
-               **kwargs):
+               container_filter=None, ship_filter=None, **kwargs):
         """Display the status of the given services and containers, but only
         looking at the container's state, not the application availability.
 
@@ -299,10 +312,15 @@ class Conductor:
             expand_services (boolean): whether to allow expanding service names
                 to their container instance names. If False and a service name
                 is encountered, the method will throw an exception.
+            container_filter (string): optional pattern to filter container
+                names
+            ship_filter (string): optional pattern to filter containers on
+                 ship names
         """
         containers = self._ordered_containers(things, expand_services) \
             if with_dependencies \
-            else self._to_containers(things, expand_services)
+            else self._to_containers(things, expand_services, container_filter,
+                                     ship_filter)
 
         if full:
             plays.FullStatus(containers, show_hosts).run()
@@ -311,7 +329,7 @@ class Conductor:
 
     def pull(self, things, with_dependencies=False,
              ignore_dependencies=False, concurrency=None, expand_services=True,
-             **kwargs):
+             container_filter=None, ship_filter=None, **kwargs):
         """Force an image pull to refresh images for the given services and
         containers. Dependencies of the requested containers and services are
         pulled first.
@@ -327,17 +345,23 @@ class Conductor:
             expand_services (boolean): whether to allow expanding service names
                 to their container instance names. If False and a service name
                 is encountered, the method will throw an exception.
+            container_filter (string): optional pattern to filter container
+                names
+            ship_filter (string): optional pattern to filter containers on
+                 ship names
         """
         containers = self._ordered_containers(things, expand_services) \
             if with_dependencies \
-            else self._to_containers(things, expand_services)
+            else self._to_containers(things, expand_services, container_filter,
+                                     ship_filter)
 
         plays.Pull(containers, self.registries, ignore_dependencies,
                    concurrency, auditor=self.auditor).run()
 
     def start(self, things, refresh_images=False, with_dependencies=False,
               ignore_dependencies=False, concurrency=None, reuse=False,
-              expand_services=True, **kwargs):
+              expand_services=True, container_filter=None, ship_filter=None,
+              **kwargs):
         """Start the given container(s) and services(s). Dependencies of the
         requested containers and services are started first.
 
@@ -356,10 +380,15 @@ class Conductor:
             expand_services (boolean): whether to allow expanding service names
                 to their container instance names. If False and a service name
                 is encountered, the method will throw an exception.
+            container_filter (string): optional pattern to filter container
+                names
+            ship_filter (string): optional pattern to filter containers on
+                 ship names
         """
         containers = self._ordered_containers(things, expand_services) \
             if with_dependencies \
-            else self._to_containers(things, expand_services)
+            else self._to_containers(things, expand_services, container_filter,
+                                     ship_filter)
 
         plays.Start(containers, self.registries, refresh_images,
                     ignore_dependencies, concurrency, reuse,
@@ -368,7 +397,8 @@ class Conductor:
     def restart(self, things, refresh_images=False, with_dependencies=False,
                 ignore_dependencies=False, concurrency=None, step_delay=0,
                 stop_start_delay=0, reuse=False, only_if_changed=False,
-                expand_services=False, **kwargs):
+                expand_services=False, container_filter=None, ship_filter=None,
+                **kwargs):
         """Restart the given container(s) and services(s). Dependencies of the
         requested containers and services are started first.
 
@@ -393,18 +423,25 @@ class Conductor:
             expand_services (boolean): whether to allow expanding service names
                 to their container instance names. If False and a service name
                 is encountered, the method will throw an exception.
+            container_filter (string): optional pattern to filter container
+                names
+            ship_filter (string): optional pattern to filter containers on
+                 ship names
         """
         containers = self._ordered_containers(
                 things, expand_services, forward=False) \
             if with_dependencies \
-            else self._to_containers(things, expand_services)
+            else self._to_containers(things, expand_services, container_filter,
+                                     ship_filter)
         plays.Restart(containers, self.registries, refresh_images,
                       ignore_dependencies, concurrency, step_delay,
                       stop_start_delay, reuse, only_if_changed,
                       auditor=self.auditor).run()
 
     def stop(self, things, with_dependencies=False, ignore_dependencies=False,
-             concurrency=None, expand_services=False, **kwargs):
+             concurrency=None, expand_services=False, container_filter=None,
+             ship_filter=None, **kwargs):
+
         """Stop the given container(s) and service(s).
 
         This one is a bit more tricky because we don't want to look at the
@@ -423,16 +460,22 @@ class Conductor:
             expand_services (boolean): whether to allow expanding service names
                 to their container instance names. If False and a service name
                 is encountered, the method will throw an exception.
+            container_filter (string): optional pattern to filter container
+                names
+            ship_filter (string): optional pattern to filter containers on
+                 ship names
         """
         containers = self._ordered_containers(
                 things, expand_services, forward=False) \
             if with_dependencies \
-            else self._to_containers(things, expand_services)
+            else self._to_containers(things, expand_services, container_filter,
+                                     ship_filter)
         plays.Stop(containers, ignore_dependencies,
                    concurrency, auditor=self.auditor).run()
 
     def kill(self, things, with_dependencies=False, ignore_dependencies=False,
-             concurrency=None, expand_services=False, **kwargs):
+             concurrency=None, expand_services=False, container_filter=None,
+             ship_filter=None, **kwargs):
         """Kill the given container(s) and service(s).
 
         This one is a bit more tricky because we don't want to look at the
@@ -455,12 +498,14 @@ class Conductor:
         containers = self._ordered_containers(
                 things, expand_services, forward=False) \
             if with_dependencies \
-            else self._to_containers(things, expand_services)
+            else self._to_containers(things, expand_services, container_filter,
+                                     ship_filter)
         plays.Kill(containers, ignore_dependencies,
                    concurrency, auditor=self.auditor).run()
 
     def clean(self, things, with_dependencies=False, concurrency=None,
-              expand_services=True, **kwargs):
+              expand_services=True, container_filter=None, ship_filter=None,
+              **kwargs):
         """Remove the given stopped Docker containers.
 
         Args:
@@ -469,13 +514,22 @@ class Conductor:
                 things, or their dependencies as well.
             concurrency (int): The maximum number of instances that can be
                 acted on at the same time.
+            expand_services (boolean): whether to allow expanding service names
+                to their container instance names. If False and a service name
+                is encountered, the method will throw an exception.
+            container_filter (string): optional pattern to filter container
+                names
+            ship_filter (string): optional pattern to filter containers on
+                 ship names
         """
         containers = self._ordered_containers(things, expand_services) \
             if with_dependencies \
-            else self._to_containers(things, expand_services)
+            else self._to_containers(things, expand_services, container_filter,
+                                     ship_filter)
         plays.Clean(containers, concurrency, auditor=self.auditor).run()
 
-    def logs(self, things, follow, n, expand_services=True, **kwargs):
+    def logs(self, things, follow, n, expand_services=True,
+             container_filter=None, ship_filter=None, **kwargs):
         """Display the logs of the given container.
 
         Args:
@@ -484,8 +538,16 @@ class Conductor:
             follow (boolean): Whether to follow (tail) the log.
             n (int): Number of lines to display (when not following), from the
                 bottom of the log.
+            expand_services (boolean): whether to allow expanding service names
+                to their container instance names. If False and a service name
+                is encountered, the method will throw an exception.
+            container_filter (string): optional pattern to filter container
+                names
+            ship_filter (string): optional pattern to filter containers on
+                 ship names
         """
-        containers = self._to_containers(things, expand_services)
+        containers = self._to_containers(things, expand_services,
+                                         container_filter, ship_filter)
         if len(containers) != 1:
             raise exceptions.ParameterException(
                 'Logs can only be shown for a single container!')

@@ -1,0 +1,26 @@
+
+name: test-container-filtering
+ships:
+  ship1:
+     ip: "ship-ab"
+  ship2:
+     ip: "ship-bb"
+services:
+  webapp:
+     image: foo
+     instances:
+       webapp-a:
+         ship: ship1
+         ports: {http: 3344}
+       webapp-b:
+         ship: ship2
+         ports: {http: 3344}
+  webapp1:
+     image: foo
+     instances:
+       webapp1-a:
+         ship: ship1
+         ports: {http: 3345}
+       webapp1-b:
+         ship: ship2
+         ports: {http: 3345}

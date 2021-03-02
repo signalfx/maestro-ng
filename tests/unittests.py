@@ -549,6 +549,30 @@ class ConductorTest(BaseConfigFileUsingTest):
             'OVERRIDE': 'cat'
         })
 
+    def test_container_filter(self):
+        config = self._get_config('container_filter')
+        c = maestro.Conductor(config)
+
+        #No filter
+        containers = c._to_containers(['webapp'], True, None, None)
+        self.assertEquals(len(containers), 2)
+
+        #Filter on container name
+        containers = c._to_containers(['webapp'], True, '*-a', None)
+        self.assertEquals(len(containers), 1)
+        self.assertEquals(containers[0].name, 'webapp-a')
+
+        #Filter on container's ship name
+        containers = c._to_containers(['webapp'], True, None, 'ship*2')
+        self.assertEquals(len(containers), 1)
+        self.assertEquals(containers[0].name, 'webapp-b')
+
+        #Filter on container name and container's ship name
+        containers = c._to_containers(['webapp', 'webapp1'], True, '*-b', 
+                                      'ship*2')
+        self.assertEquals(len(containers), 2)
+        container_names = set([c.name for c in containers])
+        self.assertEquals(container_names, {'webapp-b', 'webapp1-b'})
 
 class ConfigTest(BaseConfigFileUsingTest):
 

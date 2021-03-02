@@ -47,6 +47,14 @@ def create_parser():
         'things', nargs='*', metavar='thing',
         help='container(s) or service(s) to act on')
 
+    filterable = argparse.ArgumentParser(add_help=False)
+    filterable.add_argument(
+        '-C', '--container-filter',
+        help='filter for container names. Uses fnmatch semantics')
+    filterable.add_argument(
+        '-S', '--ship-filter',
+        help='filter for container names by ship name. Uses fnmatch semantics')
+
     expandable = argparse.ArgumentParser(add_help=False)
     expandable.add_argument(
         '-s', '--expand-services', action='store_true',
@@ -78,7 +86,7 @@ def create_parser():
 
     # status
     subparser = subparsers.add_parser(
-        parents=[common, concurrent],
+        parents=[common, concurrent, filterable],
         name='status',
         description='Display container status',
         help='display container status')
@@ -91,14 +99,14 @@ def create_parser():
 
     # pull
     subparser = subparsers.add_parser(
-        parents=[common, concurrent],
+        parents=[common, concurrent, filterable],
         name='pull',
         description='Pull container images from registry',
         help='pull container images from registry')
 
     # start
     subparser = subparsers.add_parser(
-        parents=[common, concurrent, with_refresh],
+        parents=[common, concurrent, with_refresh, filterable],
         name='start',
         description='Start services and containers',
         help='start services and containers')
@@ -112,14 +120,14 @@ def create_parser():
 
     # kill
     subparser = subparsers.add_parser(
-        parents=[common, concurrent, expandable],
+        parents=[common, concurrent, expandable, filterable],
         name='kill',
         description='Kill services and containers',
         help='kills the services and containers')
 
     # restart
     subparser = subparsers.add_parser(
-        parents=[common, concurrent, expandable, with_refresh],
+        parents=[common, concurrent, expandable, with_refresh, filterable],
         name='restart',
         description='Restart services and containers',
         help='restart services and containers')
@@ -135,7 +143,7 @@ def create_parser():
 
     # clean
     subparser = subparsers.add_parser(
-        parents=[common, concurrent],
+        parents=[common, concurrent, filterable],
         name='clean',
         description='Cleanup and remove stopped containers',
         help='remove stopped containers')

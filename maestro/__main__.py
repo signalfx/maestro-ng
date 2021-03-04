@@ -50,10 +50,10 @@ def create_parser():
     filterable = argparse.ArgumentParser(add_help=False)
     filterable.add_argument(
         '-C', '--container-filter',
-        help='filter for container names. Uses fnmatch semantics')
+        help='filter for container names (fnmatch semantics)')
     filterable.add_argument(
         '-S', '--ship-filter',
-        help='filter for container names by ship name. Uses fnmatch semantics')
+        help='filter for container names by ship name (fnmatch semantics)')
 
     expandable = argparse.ArgumentParser(add_help=False)
     expandable.add_argument(
@@ -123,7 +123,7 @@ def create_parser():
         parents=[common, concurrent, expandable, filterable],
         name='kill',
         description='Kill services and containers',
-        help='kills the services and containers')
+        help='kill services and containers')
 
     # restart
     subparser = subparsers.add_parser(

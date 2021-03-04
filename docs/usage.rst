@@ -12,27 +12,27 @@ contains the path to your ``maestro-ng`` repository clone and using
 .. code::
 
   $ maestro -h
-  usage: maestro [-h] [-f FILE] [-v]
-                 {status,pull,start,stop,restart,logs,deptree} ...
+  usage: maestro-ng [-h] [-f FILE] [-v]
+                    {status,start,stop,restart,pull,clean,logs,deptree} ...
 
-  Maestro, Docker container orchestrator.
+  Maestro-Ng v0.8.0, Docker container orchestrator.
 
   positional arguments:
-    {status,pull,start,stop,restart,logs,deptree}
+    {status,start,stop,restart,pull,clean,logs,deptree}
       status              display container status
-      pull                pull images from repository
+      pull                pull container images from registry
       start               start services and containers
       stop                stop services and containers
       kill                kill services and containers
       restart             restart services and containers
+      clean               remove stopped containers
       logs                show logs from a container
       deptree             show the dependency tree
       complete            shell auto-completion helper
 
   optional arguments:
     -h, --help            show this help message and exit
-    -f FILE, --file FILE  read environment description from FILE (use - for
-                          stdin, defaults to ./maestro.yaml)
+    -f FILE, --file FILE  read environment description from FILE (use - for stdin, defaults to ./maestro.yaml)
     -v, --version         show program version and exit
 
 You can then get help on each individual command with:
@@ -40,23 +40,29 @@ You can then get help on each individual command with:
 .. code::
 
   $ maestro start -h
-  usage: maestro start [-h] [-c LIMIT] [-d] [-i] [-r] [thing [thing ...]]
+  usage: maestro-ng start [-h] [-c LIMIT] [-d] [-i] [-r | --reuse]
+                          [-C CONTAINER_FILTER] [-S SHIP_FILTER]
+                          [thing ...]
 
   Start services and containers
 
   positional arguments:
-    thing                 container(s) or service(s) to display
+    thing                 container(s) or service(s) to act on
 
   optional arguments:
     -h, --help            show this help message and exit
     -c LIMIT, --concurrency LIMIT
-                          limit how many containers can be acted on at the same
-                          time to LIMIT
+                          limit how many containers can be acted on at the same time
     -d, --with-dependencies
                           include dependencies
     -i, --ignore-dependencies
                           ignore dependency order
     -r, --refresh-images  force refresh of container images from registry
+    --reuse               reuse existing container if it exists
+    -C CONTAINER_FILTER, --container-filter CONTAINER_FILTER
+                          filter for container names (fnmatch semantics)
+    -S SHIP_FILTER, --ship-filter SHIP_FILTER
+                          filter for container names by ship name (fnmatch semantics)
 
 By default, Maestro will read the environment description configuration
 from the ``maestro.yaml`` file in the current directory. You can

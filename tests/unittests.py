@@ -549,30 +549,34 @@ class ConductorTest(BaseConfigFileUsingTest):
             'OVERRIDE': 'cat'
         })
 
-    def test_container_filter(self):
+    def test_container_filters_no_filter(self):
         config = self._get_config('container_filter')
         c = maestro.Conductor(config)
-
-        #No filter
         containers = c._to_containers(['webapp'], True, None, None)
-        self.assertEquals(len(containers), 2)
+        self.assertEqual(len(containers), 2)
 
-        #Filter on container name
+    def test_container_filters_container_name(self):
+        config = self._get_config('container_filter')
+        c = maestro.Conductor(config)
         containers = c._to_containers(['webapp'], True, '*-a', None)
-        self.assertEquals(len(containers), 1)
-        self.assertEquals(containers[0].name, 'webapp-a')
+        self.assertEqual(len(containers), 1)
+        self.assertEqual(containers[0].name, 'webapp-a')
 
-        #Filter on container's ship name
+    def test_container_filters_ship_name(self):
+        config = self._get_config('container_filter')
+        c = maestro.Conductor(config)
         containers = c._to_containers(['webapp'], True, None, 'ship*2')
-        self.assertEquals(len(containers), 1)
-        self.assertEquals(containers[0].name, 'webapp-b')
+        self.assertEqual(len(containers), 1)
+        self.assertEqual(containers[0].name, 'webapp-b')
 
-        #Filter on container name and container's ship name
-        containers = c._to_containers(['webapp', 'webapp1'], True, '*-b', 
-                                      'ship*2')
-        self.assertEquals(len(containers), 2)
+    def test_container_filters_container_and_ship_name(self):
+        config = self._get_config('container_filter')
+        c = maestro.Conductor(config)
+        containers = c._to_containers(['webapp', 'webapp1'], True, '*-b', 'ship*2')
+        self.assertEqual(len(containers), 2)
         container_names = set([c.name for c in containers])
-        self.assertEquals(container_names, {'webapp-b', 'webapp1-b'})
+        self.assertEqual(container_names, {'webapp-b', 'webapp1-b'})
+
 
 class ConfigTest(BaseConfigFileUsingTest):
 

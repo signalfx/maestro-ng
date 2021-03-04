@@ -3,14 +3,16 @@ ChangeLog
 
 Maestro 0.8.0
 -------------
-* Added --container-filter option to allow the filtering
-  of container names based on python fnmatch syntax.
-  E.g *foo* will match only containers that contain foo
-* Added --ship-filter option to allow the filtering
-  of container names based on their ship name using
-  python fnmatch syntax.
-  E.g *foo* will match only containers whose ship contains
-  foo
+
+_March 3rd, 2021_
+
+* Added `--container-filter` option to allow the filtering of container
+  names based on python fnmatch syntax. E.g `*foo*` will match only
+  containers that contain `foo`.
+* Added `--ship-filter` option to allow the filtering of container names
+  based on their ship name using python fnmatch syntax. E.g `*foo*` will
+  match only containers whose ship's name contains `foo`.
+* Fixed compatibility with Python 3.9.
 
 Maestro 0.7.5
 -------------

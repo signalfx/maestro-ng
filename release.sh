@@ -57,7 +57,7 @@ fi
 log "Committing changes..."
 git commit -a -s -m "Maestro ${1}"
 if [ -z "${NO_PUBLISH}" ] ; then
-  git push origin master
+  git push origin main
 else
   warn "Skipped branch push"
 fi

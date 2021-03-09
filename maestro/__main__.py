@@ -113,7 +113,7 @@ def create_parser():
 
     # stop
     subparser = subparsers.add_parser(
-        parents=[common, concurrent, expandable],
+        parents=[common, concurrent, expandable, filterable],
         name='stop',
         description='Stop services and containers',
         help='stop services and containers')

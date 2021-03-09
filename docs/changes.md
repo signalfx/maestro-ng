@@ -1,6 +1,11 @@
 ChangeLog
 =========
 
+Maestro 0.8.1
+-------------
+
+* Add container/ship filter support to stop command
+
 Maestro 0.8.0
 -------------
 

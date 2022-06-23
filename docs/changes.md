@@ -1,6 +1,13 @@
 ChangeLog
 =========
 
+Maestro 0.8.2
+-------------
+
+_June 23rd, 2022_
+
+* Small Jinja3 compatibility fix (by @kpawlik-splunk, #223).
+
 Maestro 0.8.1
 -------------
 

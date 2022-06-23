@@ -71,10 +71,13 @@ def load(filename, filters=None, functions=None):
         A python data structure corresponding to the YAML configuration.
     """
     base_dir = os.path.dirname(filename) if filename != '-' else os.getcwd()
+    extensions = []
+    if jinja2.__version__.split(".")[0] == "2":
+        extensions = ['jinja2.ext.with_']
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(base_dir),
         auto_reload=False,
-        extensions=['jinja2.ext.with_'])
+        extensions=extensions)
     if filters:
         env.filters.update(**filters)
     if functions:

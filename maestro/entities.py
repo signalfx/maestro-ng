@@ -341,6 +341,9 @@ class Service(Entity):
             ','.join(sorted(self._containers.keys()))
         return links
 
+    def __lt__(self, other):
+        return self.name < other.name
+
 
 class Container(Entity):
     """A Container represents an instance of a particular service that will be

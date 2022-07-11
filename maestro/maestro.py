@@ -7,6 +7,8 @@ from __future__ import print_function
 
 import functools
 import fnmatch
+import json
+import sys
 
 from . import audit
 from . import entities
@@ -326,6 +328,19 @@ class Conductor:
             plays.FullStatus(containers, show_hosts).run()
         else:
             plays.Status(containers, concurrency, show_hosts).run()
+
+    def dump(self, things, config, **kwargs):
+        """Display the internal Conductor state, useful for debugging.
+
+        Args:
+            things (set<string>): The list of things to display the state for.
+            config (boolean): whenever to display used configuration.
+        """
+        if config:
+            sys.stderr.write(json.dumps(self._config, indent=2) + '\n\n')
+
+        containers = self._ordered_containers(things, True)
+        sys.stderr.write('\n'.join([c.to_json() for c in containers]) + '\n')
 
     def pull(self, things, with_dependencies=False,
              ignore_dependencies=False, concurrency=None, expand_services=True,

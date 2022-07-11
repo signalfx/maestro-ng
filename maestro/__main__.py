@@ -97,6 +97,16 @@ def create_parser():
         '-H', '--show-hosts', action='store_true',
         help='show hostnames instead of ships names')
 
+    # dump
+    subparser = subparsers.add_parser(
+        parents=[common],
+        name='dump',
+        description='Dump internal state to output',
+        help='display container status')
+    subparser.add_argument(
+        '-c', '--config', action='store_true',
+        help='display parsed configuration')
+
     # pull
     subparser = subparsers.add_parser(
         parents=[common, concurrent, filterable],
@@ -209,8 +219,9 @@ def execute(options, config):
         if options.command != 'complete' and not options.things:
             options.things = [s.name for s in c.services.values()
                               if options.command == 'status' or not s.omit]
-            options.with_dependencies = options.command == 'deptree' \
-                or not options.ignore_dependencies
+            options.with_dependencies = \
+                options.command in ['deptree', 'dump'] or \
+                not options.ignore_dependencies
         getattr(c, options.command)(**vars(options))
         return 0
     except KeyboardInterrupt:

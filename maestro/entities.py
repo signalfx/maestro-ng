@@ -6,6 +6,7 @@
 import bgtunnel
 import collections
 import datetime
+import json
 import time
 import os
 
@@ -45,6 +46,9 @@ _DEFAULT_PORT_PROTOCOL = 'tcp'
 # Possible values for the restart policy type.
 _VALID_RESTART_POLICIES = ['no', 'always', 'on-failure', 'unless-stopped']
 
+# Skip those attributes from debug output:
+_SKIP_ATTRIBUTES = ['__dict__']
+
 
 class Entity:
     """Base class for named entities in the orchestrator."""
@@ -58,6 +62,31 @@ class Entity:
 
     def __repr__(self):
         return self._name
+
+    def to_json(self, obj=None):
+        def recurse_thing_to_json(thing):
+            if type(thing) is dict:
+                return {k: recurse_thing_to_json(v) for k, v in thing.items()}
+            elif type(thing) in [set, list]:
+                return [recurse_thing_to_json(x) for x in thing]
+            else:
+                return repr(thing)
+
+        object_to_inspect = obj if obj else self
+        json_data = {
+            "___repr": repr(object_to_inspect)
+        }
+        if type(object_to_inspect) is dict:
+            json_data["___dict_data"] = recurse_thing_to_json(
+                object_to_inspect)
+
+        for attribute in dir(object_to_inspect):
+            if attribute in _SKIP_ATTRIBUTES:
+                continue
+
+            thing = getattr(object_to_inspect, attribute)
+            json_data[attribute] = recurse_thing_to_json(thing)
+        return json.dumps(json_data, indent=2, sort_keys=True)
 
 
 class Ship(Entity):

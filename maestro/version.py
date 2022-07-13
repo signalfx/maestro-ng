@@ -2,4 +2,4 @@
 # Copyright (C) 2015-2018 SignalFx, Inc.
 
 name = 'maestro-ng'
-version = '0.8.2'
+version = '0.8.3'

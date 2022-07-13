@@ -1,6 +1,17 @@
 ChangeLog
 =========
 
+Maestro 0.8.3
+-------------
+
+_July 13th, 2022_
+
+* Make services sortable (by name) to get consistent ordered outputs (by
+  @kpawlik-splunk, #224).
+* Add a `dump` command to dump the internal, fully parsed and
+  interpreted Maestro Conductor state in JSON format (by
+  @kpawlik-splunk, #225).
+
 Maestro 0.8.2
 -------------
 
